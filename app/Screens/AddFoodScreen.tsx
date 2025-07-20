@@ -33,19 +33,22 @@ export default function AddFoodScreen({ route }: { route: any }) {
     setIngredients(ingredients.filter((_, index) => index !== i));
 
   const saveFoodInfo = async () => {
-    console.log("AddFoodScreen: ", dayInfoKey);
     const newFood = {
       meal,
       foodName,
       time,
       ingredients,
+      completed: false,
     };
+
     try {
       const saved = await getAsyncInfo({ keyPath: dayInfoKey });
+
       if (!saved) {
-        await setAsyncInfo({ keyPath: dayInfoKey, info: newFood });
+        await setAsyncInfo({ keyPath: dayInfoKey, info: [newFood] });
       } else {
-        await mergeAsyncInfo({ keyPath: dayInfoKey, info: newFood });
+        const updatedArray = Array.isArray(saved) ? [...saved, newFood] : [saved, newFood];
+        await setAsyncInfo({ keyPath: dayInfoKey, info: updatedArray });
       }
       alert("Comida guardada correctamente.");
     } catch (error) {

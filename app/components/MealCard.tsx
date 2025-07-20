@@ -25,24 +25,39 @@ interface MealInfo {
   completed: boolean;
 }
 
+const meals = ["Desayuno", "Almuerzo", "Comida", "Merienda", "Cena"];
+
+function sortMealsByOrder(mealInfo: MealInfo[]) {
+  return mealInfo.slice().sort((a, b) => {
+    const indexA = meals.indexOf(a.meal);
+    const indexB = meals.indexOf(b.meal);
+    return indexA - indexB;
+  });
+}
+
 export default function MealCard({ dayInfoKey, mealInfo }: MealCardProps) {
   const navigation = useNavigation();
 
-  const mealsArray = Array.isArray(mealInfo) ? mealInfo : [mealInfo];
+  const mealsArray = Array.isArray(mealInfo) ? sortMealsByOrder(mealInfo) : [mealInfo];
   const [completedStates, setCompletedStates] = useState<boolean[]>(() =>
     mealsArray.map(m => m.completed)
   );
 
   const toggleCompleted = async (index: number) => {
-    const newStates = [...completedStates];
-    newStates[index] = !newStates[index];
-    setCompletedStates(newStates);
     try {
-      const updatedMealInfo = Array.isArray(mealInfo) ? [...mealInfo] : [mealInfo];
-      updatedMealInfo[index].completed = newStates[index];
-      console.log("BB", updatedMealInfo);
+      const saved = await getAsyncInfo({ keyPath: dayInfoKey });
+      if (!saved) {
+        console.warn("No hay comidas guardadas para actualizar.");
+        return;
+      }
 
-      await setAsyncInfo({ keyPath: dayInfoKey, info: updatedMealInfo });
+      const mealsArray: MealInfo[] = Array.isArray(saved) ? saved : JSON.parse(saved);
+      const sortedMeals = sortMealsByOrder(mealsArray);
+      sortedMeals[index].completed = !sortedMeals[index].completed;
+
+      setCompletedStates(sortedMeals.map(m => m.completed));
+      await setAsyncInfo({ keyPath: dayInfoKey, info: sortedMeals });
+
     } catch (err) {
       console.error("Error updating completion status:", err);
     }
