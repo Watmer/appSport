@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { getAsyncInfo } from "./AsyncStorageCRUD";
 
 const { width, height } = Dimensions.get("window");
 const daysOfWeek = ["L", "M", "X", "J", "V", "S", "D"];
@@ -28,19 +29,22 @@ export default function Dashboard() {
 
       for (let i = 1; i <= daysInMonth; i++) {
         const dayInfoKey = `dayInfo:${i}-${today.getMonth()}-${today.getFullYear()}`;
-        const saved = await AsyncStorage.getItem(dayInfoKey);
-        if (saved) {
-          const parsed = JSON.parse(saved);
-          if (parsed?.isStreak) {
-            results.push({ day: i, ...parsed });
-          }
+        const saved = await getAsyncInfo({ keyPath: dayInfoKey });
+
+        if (dayIsStrike(saved)) {
+          results.push(i);
         }
       }
+
       setStreakDays(results);
     };
     fetchDayInfo();
   }, [currentDay]);
 
+  const dayIsStrike = (saved: any): boolean => {
+    if (!Array.isArray(saved)) return false;
+    return saved.every((item: any) => item.completed === true);
+  };
 
   return (
     <View style={styles.dashboardContainer}>
@@ -63,8 +67,8 @@ export default function Dashboard() {
                 <TouchableOpacity
                   style={[
                     styles.dayCircle,
+                    streakDays.includes(day) && { backgroundColor: "rgba(70, 115, 200, 1)" },
                     day === currentDay && styles.todayCircle,
-                    streakDays[day]?.isStreak && { backgroundColor: "rgba(70, 115, 200, 1)" },
                   ]}
                   onPress={() => navigation.getParent()?.navigate("FoodListScreen", { dayInfoKey: `dayInfo:${day}-${today.getMonth()}-${today.getFullYear()}` })}>
                   <Text style={styles.dayText}>{day}</Text>

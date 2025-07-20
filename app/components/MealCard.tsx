@@ -76,6 +76,15 @@ export default function MealCard({ dayInfoKey, mealInfo }: MealCardProps) {
     (a, b) => meals.indexOf(a) - meals.indexOf(b)
   );
 
+  const findGlobalIndex = (target: MealInfo) => {
+    return mealsArray.findIndex(
+      (meal) =>
+        meal.foodName === target.foodName &&
+        meal.meal === target.meal &&
+        meal.time === target.time
+    );
+  };
+
   return (
     <>
       {mealTypesSorted.map((mealType) => (
@@ -93,9 +102,9 @@ export default function MealCard({ dayInfoKey, mealInfo }: MealCardProps) {
                 <View style={styles.groupCardInfo} key={index}>
                   <View style={styles.cardInfo}>
                     <View style={{ flexDirection: "row", marginBottom: 5 }}>
-                      <TouchableOpacity onPress={() => toggleCompleted(index)}>
+                      <TouchableOpacity onPress={() => toggleCompleted(findGlobalIndex(mealInf))}>
                         <MaterialCommunityIcons
-                          name={completedStates[index] ? "checkbox-marked" : "checkbox-blank-outline"}
+                          name={completedStates[findGlobalIndex(mealInf)] ? "checkbox-marked" : "checkbox-blank-outline"}
                           size={25}
                           color="rgba(255, 200, 0, 1)"
                         />
@@ -107,7 +116,7 @@ export default function MealCard({ dayInfoKey, mealInfo }: MealCardProps) {
 
                     <Text style={styles.text}>⏱ {mealInf.time} min</Text>
 
-                    <Text style={[styles.text, { marginTop: 10 }]}>Ingredientes:</Text>
+                    <Text style={[styles.text, { marginTop: 10, fontWeight: "600" }]}>Ingredientes:</Text>
                     {mealInf.ingredients.map((ing, i) => (
                       <Text key={i} style={styles.text}>
                         • {ing.name} ({ing.quantity})
@@ -173,7 +182,6 @@ const styles = StyleSheet.create({
     minWidth: 350,
     maxWidth: 500,
     minHeight: 100,
-    maxHeight: 400,
   },
   groupCard: {
     margin: 10,
@@ -197,23 +205,21 @@ const styles = StyleSheet.create({
   cardInfo: {
     width: "100%",
     minHeight: 100,
-    backgroundColor: "rgba(60, 80, 145, 1)",
+    backgroundColor: "rgba(35, 80, 120, 1)",
     borderRadius: 10,
     justifyContent: "center",
-    alignItems: "center",
+    padding: 15,
   },
   titleText: {
     fontSize: 20,
     color: "rgba(255, 255, 255, 1)",
-    fontWeight: "bold",
+    fontWeight: "800",
     textAlign: "center",
   },
   text: {
-    fontSize: 20,
+    fontSize: 18,
     color: "rgb(255, 255, 255)",
   },
-
-
   calendarGrid: {
     flexDirection: "row",
     flexWrap: "wrap",

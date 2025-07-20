@@ -4,6 +4,7 @@ import React, { useEffect, useLayoutEffect, useState } from "react";
 import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { getAsyncInfo } from "../components/AsyncStorageCRUD";
 import MealCard from "../components/MealCard";
+import { RefreshControl } from "react-native-gesture-handler";
 
 const { width, height } = Dimensions.get("window");
 
@@ -12,6 +13,14 @@ const meals = ["Desayuno", "Almuerzo", "Comida", "Merienda", "Cena"];
 export default function FoodListScreen({ route }: { route: any }) {
   const today = new Date();
   const currentDay = today.getDate();
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchDayInfo();
+    setRefreshing(false);
+  };
 
   const { dayInfoKey } = route.params || {};
   const defaultKey = `dayInfo:${currentDay}-${today.getMonth()}-${today.getFullYear()}`;
@@ -33,31 +42,33 @@ export default function FoodListScreen({ route }: { route: any }) {
     });
   }, [navigation, keyToUse]);
 
-  useEffect(() => {
-    const fetchDayInfo = async () => {
-      const data = await getAsyncInfo({ keyPath: keyToUse });
-      console.log("Fetched day info:", data);
-      console.log(keyToUse);
-      setMealInfo(data);
-    };
+  const fetchDayInfo = async () => {
+    const data = await getAsyncInfo({ keyPath: keyToUse });
+    setMealInfo(data);
+  };
 
+  useEffect(() => {
     fetchDayInfo();
   }, [keyToUse]);
 
   const renderMealCards = () => {
-  if (!mealInfo) return null;
-  console.log(mealInfo);
-  return (
-    <MealCard
-      key={keyToUse}
-      dayInfoKey={keyToUse}
-      mealInfo={mealInfo}
-    />
-  );
-};
+    if (!mealInfo) return null;
+    console.log(mealInfo);
+    return (
+      <MealCard
+        key={keyToUse}
+        dayInfoKey={keyToUse}
+        mealInfo={mealInfo}
+      />
+    );
+  };
 
   return (
-    <ScrollView style={styles.scrollContainer}>
+    <ScrollView
+      style={styles.scrollContainer}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }>
       <View style={styles.container}>
         <View style={styles.cardsContainer}>
           {renderMealCards()}

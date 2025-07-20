@@ -34,7 +34,7 @@ export default function Home() {
 
   const renderMealCards = () => {
     return (<MealCard dayInfoKey={defaultKey} mealInfo={mealInfo} />);
-  }
+  };
 
   return (
     <ScrollView
