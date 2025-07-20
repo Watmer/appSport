@@ -8,8 +8,6 @@ import MealCard from "../components/MealCard";
 
 const { width, height } = Dimensions.get("window");
 
-const meals = ["Desayuno", "Almuerzo", "Comida", "Merienda", "Cena"];
-
 export default function Home() {
   const [mealInfo, setMealInfo] = useState<any>();
 
@@ -23,6 +21,7 @@ export default function Home() {
       console.log("Fetched day info:", data);
       console.log(defaultKey);
       setMealInfo(data);
+      //AsyncStorage.clear();
     };
 
     fetchDayInfo();
@@ -34,11 +33,8 @@ export default function Home() {
         <View style={styles.cardsContainer}>
           {mealInfo && (
             <MealCard
-              meal="Desayuno"
-              foodName={mealInfo.foodName}
-              time={mealInfo.time}
-              ingredients={mealInfo.ingredients}
               dayInfoKey={defaultKey}
+              mealInfo={mealInfo}
             />
           )}
         </View>

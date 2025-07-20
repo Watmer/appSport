@@ -1,6 +1,8 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
+  Dimensions,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
@@ -8,7 +10,11 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { setAsyncInfo } from "../components/AsyncStorageCRUD";
+import { getAsyncInfo, mergeAsyncInfo, setAsyncInfo } from "../components/AsyncStorageCRUD";
+
+const { width, height } = Dimensions.get("window");
+
+const meals = ["Desayuno", "Almuerzo", "Comida", "Merienda", "Cena"];
 
 export default function AddFoodScreen({ route }: { route: any }) {
   const { dayInfoKey } = route.params || {};
@@ -16,6 +22,9 @@ export default function AddFoodScreen({ route }: { route: any }) {
   const [ingredients, setIngredients] = useState([{ name: "", quantity: "" },]);
   const [foodName, setFoodName] = useState("");
   const [time, setTime] = useState(0);
+  const [meal, setMeal] = useState("");
+
+  const [showMealType, setShowMealType] = useState(false);
 
   const addIngredient = () =>
     setIngredients([...ingredients, { name: "", quantity: "" }]);
@@ -26,12 +35,18 @@ export default function AddFoodScreen({ route }: { route: any }) {
   const saveFoodInfo = async () => {
     console.log("AddFoodScreen: ", dayInfoKey);
     const newFood = {
+      meal,
       foodName,
       time,
       ingredients,
     };
     try {
-      await setAsyncInfo({ keyPath: dayInfoKey, info: newFood })
+      const saved = await getAsyncInfo({ keyPath: dayInfoKey });
+      if (!saved) {
+        await setAsyncInfo({ keyPath: dayInfoKey, info: newFood });
+      } else {
+        await mergeAsyncInfo({ keyPath: dayInfoKey, info: newFood });
+      }
       alert("Comida guardada correctamente.");
     } catch (error) {
       console.error("Error guardando comida:", error);
@@ -41,8 +56,46 @@ export default function AddFoodScreen({ route }: { route: any }) {
 
   return (
     <ScrollView style={styles.scrollContainer}>
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={showMealType}
+        onRequestClose={() => setShowMealType(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalView}>
+            <ScrollView style={styles.scrollModalContainer}>
+              {meals.map((meal) => (
+                <TouchableOpacity
+                  key={meal}
+                  onPress={() => {
+                    setMeal(meal);
+                    setShowMealType(false);
+                  }}
+                  style={styles.modalOption}
+                >
+                  <Text style={styles.modalOptionText}>{meal}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <TouchableOpacity style={styles.modalCancel}
+              onPress={() => setShowMealType(false)}>
+              <Text style={styles.cancelText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
       <View style={styles.container}>
         <View style={styles.formContainer}>
+          <Text style={styles.label}>Tipo de comida:</Text>
+          <TouchableOpacity onPress={() => setShowMealType(true)}>
+            <Text style={[styles.input, { paddingVertical: 9 }]}>
+              {meal ? meal : "Selecciona tipo de comida"}
+            </Text>
+          </TouchableOpacity>
           <Text style={styles.label}>Nombre de la comida:</Text>
           <TextInput
             style={styles.input}
@@ -64,7 +117,7 @@ export default function AddFoodScreen({ route }: { route: any }) {
           {ingredients.map((item, i) => (
             <View key={i} style={styles.inputListGroup}>
               <TextInput
-                style={[styles.input, { flex: 1, marginRight: 5 }]}
+                style={[styles.input, { flex: 1 }]}
                 placeholder="Ingrediente"
                 value={item.name}
                 onChangeText={(text) => {
@@ -75,7 +128,7 @@ export default function AddFoodScreen({ route }: { route: any }) {
                 placeholderTextColor="gray"
               />
               <TextInput
-                style={[styles.input, { flex: 1, marginRight: 5 }]}
+                style={[styles.input, { flex: 1 }]}
                 placeholder="Cantidad"
                 value={item.quantity}
                 onChangeText={(text) => {
@@ -142,6 +195,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 10,
+    gap: 10,
   },
   addButton: {
     backgroundColor: "rgba(170, 170, 170, 1)",
@@ -158,5 +212,43 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "white",
     textAlign: "center",
+  },
+  scrollModalContainer: {
+    width: "100%",
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalView: {
+    backgroundColor: "rgba(0, 0, 0, 1)",
+    borderRadius: 15,
+    padding: 10,
+    alignItems: "center",
+    width: width * 0.8,
+    overflow: "hidden",
+  },
+  modalOption: {
+    width: "100%",
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255, 255, 255, 0.3)",
+  },
+  modalOptionText: {
+    fontSize: 20,
+    textAlign: "center",
+    color: "rgba(190, 190, 190, 1)",
+  },
+  modalCancel: {
+    width: "100%",
+    padding: 16,
+  },
+  cancelText: {
+    fontSize: 20,
+    textAlign: "center",
+    color: "rgba(180, 0, 0, 1)",
+    fontWeight: "bold",
   },
 });

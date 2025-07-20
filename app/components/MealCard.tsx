@@ -2,6 +2,8 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useState } from "react";
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { getAsyncInfo, mergeAsyncInfo, setAsyncInfo } from "./AsyncStorageCRUD";
+import { useNavigation } from "@react-navigation/native";
 
 const { width, height } = Dimensions.get("window");
 
@@ -11,67 +13,80 @@ interface Ingredient {
 }
 
 interface MealCardProps {
-  meal: string;
-  foodName: string;
-  time: string;
-  ingredients: Ingredient[];
   dayInfoKey: string;
+  mealInfo: MealInfo[];
 }
 
-export default function MealCard({ meal, foodName, time, ingredients, dayInfoKey }:MealCardProps) {
-  const [isCompleted, setIsCompleted] = useState(false);
+interface MealInfo {
+  meal: string;
+  foodName: string;
+  time: number;
+  ingredients: Ingredient[];
+  completed: boolean;
+}
 
-  useEffect(() => {
-    const fetchStatus = async () => {
-      try {
-        const saved = await AsyncStorage.getItem(dayInfoKey);
-        const parsed = JSON.parse(saved || "false");
-        setIsCompleted(parsed.completed || false);
-      } catch (err) {
-        console.error("Error loading completion status:", err);
-      }
-    };
-    fetchStatus();
-  }, [dayInfoKey]);
+export default function MealCard({ dayInfoKey, mealInfo }: MealCardProps) {
+  const navigation = useNavigation();
 
-  const toggleCompleted = async () => {
-    const newValue = !isCompleted;
-    setIsCompleted(newValue);
-    await AsyncStorage.mergeItem(dayInfoKey, JSON.stringify({ completed: newValue }));
+  const mealsArray = Array.isArray(mealInfo) ? mealInfo : [mealInfo];
+  const [completedStates, setCompletedStates] = useState<boolean[]>(() =>
+    mealsArray.map(m => m.completed)
+  );
 
-    const allKeys = await AsyncStorage.getAllKeys();
-    console.log("All keys", allKeys);
-    const dayInfo = await AsyncStorage.getItem(dayInfoKey);
-    console.log("info", dayInfo);
+  const toggleCompleted = async (index: number) => {
+    const newStates = [...completedStates];
+    newStates[index] = !newStates[index];
+    setCompletedStates(newStates);
+    try {
+      const updatedMealInfo = Array.isArray(mealInfo) ? [...mealInfo] : [mealInfo];
+      updatedMealInfo[index].completed = newStates[index];
+      console.log("BB", updatedMealInfo);
+
+      await setAsyncInfo({ keyPath: dayInfoKey, info: updatedMealInfo });
+    } catch (err) {
+      console.error("Error updating completion status:", err);
+    }
+  };
+
+  const handleCardPress = async () => {
+    (navigation as any).navigate("FoodDetailScreen", { dayInfoKey });
   };
 
   return (
-    <View style={styles.cardContainer}>
-      <View style={styles.groupCard}>
-        <View style={styles.groupCardTitle}>
-          <TouchableOpacity onPress={toggleCompleted}>
-            <MaterialCommunityIcons
-              name={isCompleted ? "checkbox-marked" : "checkbox-blank-outline"}
-              size={25}
-              color="rgba(255, 200, 0, 1)"
-            />
-          </TouchableOpacity>
-          <Text style={styles.groupCardTitleText}>{meal}</Text>
-        </View>
+    <>
+      {mealsArray.map((mealInf, index) => (
+        <TouchableOpacity
+          key={index}
+          style={styles.cardContainer}
+          onPress={() => handleCardPress()}
+        >
+          <View style={styles.groupCard}>
+            <View style={styles.groupCardTitle}>
+              <TouchableOpacity onPress={() => toggleCompleted(index)}>
+                <MaterialCommunityIcons
+                  name={completedStates[index] ? "checkbox-marked" : "checkbox-blank-outline"}
+                  size={25}
+                  color="rgba(255, 200, 0, 1)"
+                />
+              </TouchableOpacity>
+              <Text style={styles.groupCardTitleText}>{mealInf.meal}</Text>
+            </View>
 
-        <View style={styles.cardInfo}>
-          <Text style={styles.titleText}>{foodName}</Text>
-          <Text style={styles.text}>Tiempo: {time} min</Text>
+            <View style={styles.cardInfo}>
+              <Text style={styles.titleText}>{mealInf.foodName}</Text>
+              <Text style={styles.text}>Tiempo: {mealInf.time} min</Text>
 
-          <Text style={[styles.text, { marginTop: 10 }]}>Ingredientes:</Text>
-          {ingredients.map((ing, i) => (
-            <Text key={i} style={styles.text}>
-              • {ing.name} ({ing.quantity})
-            </Text>
-          ))}
-        </View>
-      </View>
-    </View>
+              <Text style={[styles.text, { marginTop: 10 }]}>Ingredientes:</Text>
+              {mealInf.ingredients.map((ing, i) => (
+                <Text key={i} style={styles.text}>
+                  • {ing.name} ({ing.quantity})
+                </Text>
+              ))}
+            </View>
+          </View>
+        </TouchableOpacity>
+      ))}
+    </>
   );
 }
 

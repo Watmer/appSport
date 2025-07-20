@@ -1,6 +1,8 @@
 import { View, StyleSheet } from "react-native";
 
-export default function FoodDetailScreen() {
+export default function FoodDetailScreen({route}: {route:any}) {
+    const {dayInfoKey} = route.params || {};
+    
     return (
         <></>
     );

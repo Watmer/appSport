@@ -44,24 +44,23 @@ export default function FoodListScreen({ route }: { route: any }) {
     fetchDayInfo();
   }, [keyToUse]);
 
-  const renderMealCard = () => {
-    if (!mealInfo) return null;
-    return (
-      <MealCard
-        meal="Desayuno"
-        foodName={mealInfo.foodName}
-        time={mealInfo.time}
-        ingredients={mealInfo.ingredients}
-        dayInfoKey={keyToUse}
-      />
-    );
-  };
+  const renderMealCards = () => {
+  if (!mealInfo) return null;
+  console.log(mealInfo);
+  return (
+    <MealCard
+      key={keyToUse}
+      dayInfoKey={keyToUse}
+      mealInfo={mealInfo}
+    />
+  );
+};
 
   return (
     <ScrollView style={styles.scrollContainer}>
       <View style={styles.container}>
         <View style={styles.cardsContainer}>
-          {renderMealCard()}
+          {renderMealCards()}
         </View>
       </View>
     </ScrollView>
