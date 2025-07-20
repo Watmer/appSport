@@ -1,9 +1,9 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useLayoutEffect, useState } from "react";
 import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
 import { getAsyncInfo } from "../components/AsyncStorageCRUD";
 import MealCard from "../components/MealCard";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
 
 const { width, height } = Dimensions.get("window");
 
@@ -12,7 +12,7 @@ const meals = ["Desayuno", "Almuerzo", "Comida", "Merienda", "Cena"];
 export default function FoodListScreen({ route }: { route: any }) {
   const today = new Date();
   const currentDay = today.getDate();
-  
+
   const { dayInfoKey } = route.params || {};
   const defaultKey = `dayInfo:${currentDay}-${today.getMonth()}-${today.getFullYear()}`;
   const keyToUse = dayInfoKey || defaultKey;
@@ -44,19 +44,24 @@ export default function FoodListScreen({ route }: { route: any }) {
     fetchDayInfo();
   }, [keyToUse]);
 
+  const renderMealCard = () => {
+    if (!mealInfo) return null;
+    return (
+      <MealCard
+        meal="Desayuno"
+        foodName={mealInfo.foodName}
+        time={mealInfo.time}
+        ingredients={mealInfo.ingredients}
+        dayInfoKey={keyToUse}
+      />
+    );
+  };
+
   return (
     <ScrollView style={styles.scrollContainer}>
       <View style={styles.container}>
         <View style={styles.cardsContainer}>
-          {mealInfo && (
-            <MealCard
-              meal="Desayuno"
-              foodName={mealInfo.foodName}
-              time={mealInfo.time}
-              ingredients={mealInfo.ingredients}
-              dayInfoKey={keyToUse}
-            />
-          )}
+          {renderMealCard()}
         </View>
       </View>
     </ScrollView>
