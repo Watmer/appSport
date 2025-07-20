@@ -2,12 +2,16 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
   Dimensions,
+  Keyboard,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { getAsyncInfo, mergeAsyncInfo, setAsyncInfo } from "../components/AsyncStorageCRUD";
@@ -23,6 +27,8 @@ export default function AddFoodScreen({ route }: { route: any }) {
   const [foodName, setFoodName] = useState("");
   const [time, setTime] = useState(0);
   const [meal, setMeal] = useState("");
+  const [recepy, setRecepy] = useState("");
+  const [comments, setComments] = useState("");
 
   const [showMealType, setShowMealType] = useState(false);
 
@@ -38,6 +44,8 @@ export default function AddFoodScreen({ route }: { route: any }) {
       foodName,
       time,
       ingredients,
+      recepy,
+      comments,
       completed: false,
     };
 
@@ -58,109 +66,134 @@ export default function AddFoodScreen({ route }: { route: any }) {
   };
 
   return (
-    <ScrollView style={styles.scrollContainer}>
+    <KeyboardAvoidingView
+      style={styles.scrollContainer}
+      behavior={"padding"}
+      keyboardVerticalOffset={100}
+    >
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView style={styles.scrollContainer}>
 
-      <Modal
-        animationType="fade"
-        transparent={true}
-        visible={showMealType}
-        onRequestClose={() => setShowMealType(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalView}>
-            <ScrollView style={styles.scrollModalContainer}>
-              {meals.map((meal) => (
-                <TouchableOpacity
-                  key={meal}
-                  onPress={() => {
-                    setMeal(meal);
-                    setShowMealType(false);
-                  }}
-                  style={styles.modalOption}
-                >
-                  <Text style={styles.modalOptionText}>{meal}</Text>
+          <Modal
+            animationType="fade"
+            transparent={true}
+            visible={showMealType}
+            onRequestClose={() => setShowMealType(false)}
+          >
+            <View style={styles.modalContainer}>
+              <View style={styles.modalView}>
+                <ScrollView style={styles.scrollModalContainer}>
+                  {meals.map((meal) => (
+                    <TouchableOpacity
+                      key={meal}
+                      onPress={() => {
+                        setMeal(meal);
+                        setShowMealType(false);
+                      }}
+                      style={styles.modalOption}
+                    >
+                      <Text style={styles.modalOptionText}>{meal}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+
+                <TouchableOpacity style={styles.modalCancel}
+                  onPress={() => setShowMealType(false)}>
+                  <Text style={styles.cancelText}>Cancelar</Text>
                 </TouchableOpacity>
+              </View>
+            </View>
+          </Modal>
+
+          <View style={styles.container}>
+            <View style={styles.formContainer}>
+              <Text style={styles.label}>Tipo de comida:</Text>
+              <TouchableOpacity onPress={() => setShowMealType(true)}>
+                <Text style={[styles.input, { paddingVertical: 9 }]}>
+                  {meal ? meal : "Selecciona tipo de comida"}
+                </Text>
+              </TouchableOpacity>
+              <Text style={styles.label}>Nombre de la comida:</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Ej: Tostada con Aguacate"
+                placeholderTextColor="gray"
+                onChangeText={setFoodName}
+              />
+
+              <Text style={styles.label}>Tiempo (min):</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Ej: 10"
+                keyboardType="numeric"
+                placeholderTextColor="gray"
+                onChangeText={(text) => setTime(parseInt(text) || 0)}
+              />
+
+              <Text style={styles.label}>Ingredientes:</Text>
+              {ingredients.map((item, i) => (
+                <View key={i} style={styles.inputListGroup}>
+                  <TextInput
+                    style={[styles.input, { flex: 1 }]}
+                    placeholder="Ingrediente"
+                    value={item.name}
+                    onChangeText={(text) => {
+                      const copy = [...ingredients];
+                      copy[i].name = text;
+                      setIngredients(copy);
+                    }}
+                    placeholderTextColor="gray"
+                  />
+                  <TextInput
+                    style={[styles.input, { flex: 1 }]}
+                    placeholder="Cantidad"
+                    value={item.quantity}
+                    onChangeText={(text) => {
+                      const copy = [...ingredients];
+                      copy[i].quantity = text;
+                      setIngredients(copy);
+                    }}
+                    placeholderTextColor="gray"
+                  />
+                  <TouchableOpacity onPress={() => deleteIngredient(i)}>
+                    <MaterialCommunityIcons
+                      name="delete"
+                      size={24}
+                      color="rgba(255, 50, 50, 1)"
+                    />
+                  </TouchableOpacity>
+                </View>
               ))}
-            </ScrollView>
 
-            <TouchableOpacity style={styles.modalCancel}
-              onPress={() => setShowMealType(false)}>
-              <Text style={styles.cancelText}>Cancelar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+              <TouchableOpacity onPress={addIngredient} style={styles.addButton}>
+                <Text style={styles.buttonText}>Añadir Ingrediente</Text>
+              </TouchableOpacity>
 
-      <View style={styles.container}>
-        <View style={styles.formContainer}>
-          <Text style={styles.label}>Tipo de comida:</Text>
-          <TouchableOpacity onPress={() => setShowMealType(true)}>
-            <Text style={[styles.input, { paddingVertical: 9 }]}>
-              {meal ? meal : "Selecciona tipo de comida"}
-            </Text>
-          </TouchableOpacity>
-          <Text style={styles.label}>Nombre de la comida:</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ej: Tostada con Aguacate"
-            placeholderTextColor="gray"
-            onChangeText={setFoodName}
-          />
-
-          <Text style={styles.label}>Tiempo (min):</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ej: 10"
-            keyboardType="numeric"
-            placeholderTextColor="gray"
-            onChangeText={(text) => setTime(parseInt(text) || 0)}
-          />
-
-          <Text style={styles.label}>Ingredientes:</Text>
-          {ingredients.map((item, i) => (
-            <View key={i} style={styles.inputListGroup}>
+              <Text style={styles.label}>Receta:</Text>
               <TextInput
-                style={[styles.input, { flex: 1 }]}
-                placeholder="Ingrediente"
-                value={item.name}
-                onChangeText={(text) => {
-                  const copy = [...ingredients];
-                  copy[i].name = text;
-                  setIngredients(copy);
-                }}
+                style={styles.input}
+                placeholder="..."
                 placeholderTextColor="gray"
+                multiline={true}
+                onChangeText={(text) => setRecepy(text)}
               />
+              <Text style={styles.label}>Comentarios:</Text>
               <TextInput
-                style={[styles.input, { flex: 1 }]}
-                placeholder="Cantidad"
-                value={item.quantity}
-                onChangeText={(text) => {
-                  const copy = [...ingredients];
-                  copy[i].quantity = text;
-                  setIngredients(copy);
-                }}
+                style={styles.input}
+                placeholder="..."
                 placeholderTextColor="gray"
+                multiline={true}
+                onChangeText={(text) => setComments(text)}
               />
-              <TouchableOpacity onPress={() => deleteIngredient(i)}>
-                <MaterialCommunityIcons
-                  name="delete"
-                  size={24}
-                  color="rgba(255, 50, 50, 1)"
-                />
+
+              <TouchableOpacity style={styles.submitButton} onPress={saveFoodInfo}>
+                <Text style={styles.buttonText}>Guardar Comida</Text>
               </TouchableOpacity>
             </View>
-          ))}
-
-          <TouchableOpacity onPress={addIngredient} style={styles.addButton}>
-            <Text style={styles.buttonText}>Añadir Ingrediente</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.submitButton} onPress={saveFoodInfo}>
-            <Text style={styles.buttonText}>Guardar Comida</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </ScrollView>
+          </View>
+        </ScrollView>
+      </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -185,7 +218,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   input: {
-    height: 40,
+    maxHeight: 100,
     borderColor: "rgba(200, 200, 200, 1)",
     borderWidth: 1,
     borderRadius: 5,
@@ -204,7 +237,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(170, 170, 170, 1)",
     padding: 10,
     borderRadius: 5,
-    marginTop: 10,
+    marginBottom: 10,
   },
   submitButton: {
     backgroundColor: "rgba(255, 170, 0, 1)",

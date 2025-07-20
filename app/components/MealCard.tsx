@@ -1,9 +1,8 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { useEffect, useState } from "react";
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { getAsyncInfo, mergeAsyncInfo, setAsyncInfo } from "./AsyncStorageCRUD";
 import { useNavigation } from "@react-navigation/native";
+import React, { useState } from "react";
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { getAsyncInfo, setAsyncInfo } from "./AsyncStorageCRUD";
 
 const { width, height } = Dimensions.get("window");
 
@@ -63,43 +62,63 @@ export default function MealCard({ dayInfoKey, mealInfo }: MealCardProps) {
     }
   };
 
-  const handleCardPress = async () => {
-    (navigation as any).navigate("FoodDetailScreen", { dayInfoKey });
+  const handleCardPress = async (meal: any) => {
+    (navigation as any).navigate("FoodDetailScreen", { dayInfoKey, meal });
   };
+
+  const groupedMeals: { [mealType: string]: MealInfo[] } = {};
+  mealsArray.forEach((item) => {
+    if (!groupedMeals[item.meal]) groupedMeals[item.meal] = [];
+    groupedMeals[item.meal].push(item);
+  });
+
+  const mealTypesSorted = Object.keys(groupedMeals).sort(
+    (a, b) => meals.indexOf(a) - meals.indexOf(b)
+  );
 
   return (
     <>
-      {mealsArray.map((mealInf, index) => (
-        <TouchableOpacity
-          key={index}
-          style={styles.cardContainer}
-          onPress={() => handleCardPress()}
-        >
+      {mealTypesSorted.map((mealType) => (
+        <View key={mealType} style={styles.cardContainer}>
           <View style={styles.groupCard}>
-            <View style={styles.groupCardTitle}>
-              <TouchableOpacity onPress={() => toggleCompleted(index)}>
-                <MaterialCommunityIcons
-                  name={completedStates[index] ? "checkbox-marked" : "checkbox-blank-outline"}
-                  size={25}
-                  color="rgba(255, 200, 0, 1)"
-                />
-              </TouchableOpacity>
-              <Text style={styles.groupCardTitleText}>{mealInf.meal}</Text>
-            </View>
+            <TouchableOpacity
+              key={mealType}
+              onPress={() => handleCardPress(mealType)}
+            >
+              <View style={styles.groupCardTitle}>
+                <Text style={styles.groupCardTitleText}>{mealType}</Text>
+              </View>
 
-            <View style={styles.cardInfo}>
-              <Text style={styles.titleText}>{mealInf.foodName}</Text>
-              <Text style={styles.text}>Tiempo: {mealInf.time} min</Text>
+              {groupedMeals[mealType].map((mealInf, index) => (
+                <View style={styles.groupCardInfo} key={index}>
+                  <View style={styles.cardInfo}>
+                    <View style={{ flexDirection: "row", marginBottom: 5 }}>
+                      <TouchableOpacity onPress={() => toggleCompleted(index)}>
+                        <MaterialCommunityIcons
+                          name={completedStates[index] ? "checkbox-marked" : "checkbox-blank-outline"}
+                          size={25}
+                          color="rgba(255, 200, 0, 1)"
+                        />
+                      </TouchableOpacity>
+                      <Text style={[styles.titleText, { marginLeft: 10 }]}>
+                        {mealInf.foodName}
+                      </Text>
+                    </View>
 
-              <Text style={[styles.text, { marginTop: 10 }]}>Ingredientes:</Text>
-              {mealInf.ingredients.map((ing, i) => (
-                <Text key={i} style={styles.text}>
-                  • {ing.name} ({ing.quantity})
-                </Text>
+                    <Text style={styles.text}>⏱ {mealInf.time} min</Text>
+
+                    <Text style={[styles.text, { marginTop: 10 }]}>Ingredientes:</Text>
+                    {mealInf.ingredients.map((ing, i) => (
+                      <Text key={i} style={styles.text}>
+                        • {ing.name} ({ing.quantity})
+                      </Text>
+                    ))}
+                  </View>
+                </View>
               ))}
-            </View>
+            </TouchableOpacity>
           </View>
-        </TouchableOpacity>
+        </View>
       ))}
     </>
   );
@@ -171,6 +190,9 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     alignSelf: "center",
     margin: 5,
+  },
+  groupCardInfo: {
+    padding: 5,
   },
   cardInfo: {
     width: "100%",

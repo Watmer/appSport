@@ -1,41 +1,52 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
-import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import Dashboard from "../components/Dashboard";
+import { Dimensions, ScrollView, StyleSheet, View } from "react-native";
+import { RefreshControl } from "react-native-gesture-handler";
 import { getAsyncInfo } from "../components/AsyncStorageCRUD";
+import Dashboard from "../components/Dashboard";
 import MealCard from "../components/MealCard";
 
 const { width, height } = Dimensions.get("window");
 
 export default function Home() {
   const [mealInfo, setMealInfo] = useState<any>();
+  const [refreshing, setRefreshing] = useState(false);
 
   const today = new Date();
   const currentDay = today.getDate();
   const defaultKey = `dayInfo:${currentDay}-${today.getMonth()}-${today.getFullYear()}`;
 
-  useEffect(() => {
-    const fetchDayInfo = async () => {
-      const data = await getAsyncInfo({ keyPath: defaultKey });
-      console.log("Fetched day info:", data);
-      console.log(defaultKey);
-      setMealInfo(data);
-      //AsyncStorage.clear();
-    };
+  const fetchDayInfo = async () => {
+    const data = await getAsyncInfo({ keyPath: defaultKey });
+    console.log("Fetched day info:", data);
+    console.log(defaultKey);
+    setMealInfo(data);
+  };
 
+  useEffect(() => {
     fetchDayInfo();
   }, [defaultKey]);
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchDayInfo();
+    setRefreshing(false);
+  };
+
+  const renderMealCards = () => {
+    return (<MealCard dayInfoKey={defaultKey} mealInfo={mealInfo} />);
+  }
+
   return (
-    <ScrollView style={styles.scrollContainer}>
+    <ScrollView
+      style={styles.scrollContainer}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       <View style={styles.container}>
         <View style={styles.cardsContainer}>
           {mealInfo && (
-            <MealCard
-              dayInfoKey={defaultKey}
-              mealInfo={mealInfo}
-            />
+            renderMealCards()
           )}
         </View>
         <Dashboard />
@@ -55,7 +66,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 15,
     flexWrap: "wrap-reverse",
     flexDirection: "row",
-    justifyContent: "flex-start",
+    justifyContent: "center",
     alignItems: "center",
     gap: 10,
   },

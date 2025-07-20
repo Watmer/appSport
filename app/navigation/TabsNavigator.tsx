@@ -32,11 +32,6 @@ export default function TabsNavigator() {
           <MaterialCommunityIcons name={focused ? 'home' : 'home-outline'} color={color} size={24} />
         ),
       }}/>
-      <Tab.Screen name="FoodListScreen" component={FoodListScreen} options={{
-        title: "Food List", tabBarIcon: ({ color, focused }) => (
-          <MaterialCommunityIcons name={focused ? 'food' : 'food-outline'} color={color} size={24} />
-        ),
-      }} />
       <Tab.Screen name="ShopListScreen" component={ShopListScreen} options={{
         title: "Shop List", tabBarIcon: ({ color, focused }) => (
           <MaterialCommunityIcons name={focused ? 'cart' : 'cart-outline'} color={color} size={24} />
