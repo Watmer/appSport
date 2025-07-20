@@ -1,37 +1,62 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { useEffect } from "react";
-import { Dimensions, ScrollView, StyleSheet, View } from "react-native";
+import React, { useEffect, useLayoutEffect, useState } from "react";
+import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
+import { getAsyncInfo } from "../components/AsyncStorageCRUD";
 import MealCard from "../components/MealCard";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 
 const { width, height } = Dimensions.get("window");
 
 const meals = ["Desayuno", "Almuerzo", "Comida", "Merienda", "Cena"];
 
 export default function FoodListScreen({ route }: { route: any }) {
-  const { key } = route.params || {};
+  const today = new Date();
+  const currentDay = today.getDate();
+  
+  const { dayInfoKey } = route.params || {};
+  const defaultKey = `dayInfo:${currentDay}-${today.getMonth()}-${today.getFullYear()}`;
+  const keyToUse = dayInfoKey || defaultKey;
+
+  const navigation = useNavigation();
+  const [mealInfo, setMealInfo] = useState<any>();
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity
+          style={{ marginRight: 20 }}
+          onPress={() => (navigation as any).navigate("AddFoodScreen", { dayInfoKey: keyToUse })}
+        >
+          <MaterialCommunityIcons name="plus" size={30} color="rgba(255, 170, 0, 1)" />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, keyToUse]);
 
   useEffect(() => {
     const fetchDayInfo = async () => {
-      const data = await AsyncStorage.getItem(`${key.toString()}`);
+      const data = await getAsyncInfo({ keyPath: keyToUse });
       console.log("Fetched day info:", data);
+      console.log(keyToUse);
+      setMealInfo(data);
     };
-    if (key) fetchDayInfo();
-  }, [key]);
+
+    fetchDayInfo();
+  }, [keyToUse]);
 
   return (
     <ScrollView style={styles.scrollContainer}>
       <View style={styles.container}>
         <View style={styles.cardsContainer}>
-          <MealCard
-            meal="Desayuno"
-            foodName="Tostada con Aguacate"
-            time="10"
-            ingredients={[
-              { name: "Pan", quantity: "2" },
-              { name: "Aguacate", quantity: "1" },
-            ]}
-            key={key.toString()}
-          />
+          {mealInfo && (
+            <MealCard
+              meal="Desayuno"
+              foodName={mealInfo.foodName}
+              time={mealInfo.time}
+              ingredients={mealInfo.ingredients}
+              dayInfoKey={keyToUse}
+            />
+          )}
         </View>
       </View>
     </ScrollView>

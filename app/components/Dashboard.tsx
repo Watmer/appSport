@@ -27,8 +27,8 @@ export default function Dashboard() {
       const results = [];
 
       for (let i = 1; i <= daysInMonth; i++) {
-        const key = `dayInfo:${i}-${today.getMonth()}-${today.getFullYear()}`;
-        const saved = await AsyncStorage.getItem(key);
+        const dayInfoKey = `dayInfo:${i}-${today.getMonth()}-${today.getFullYear()}`;
+        const saved = await AsyncStorage.getItem(dayInfoKey);
         if (saved) {
           const parsed = JSON.parse(saved);
           if (parsed?.isStreak) {
@@ -66,7 +66,7 @@ export default function Dashboard() {
                     day === currentDay && styles.todayCircle,
                     streakDays[day]?.isStreak && { backgroundColor: "rgba(70, 115, 200, 1)" },
                   ]}
-                  onPress={() => navigation.getParent()?.navigate("FoodListScreen", { key: `dayInfo:${day}-${today.getMonth()}-${today.getFullYear()}` })}>
+                  onPress={() => navigation.getParent()?.navigate("FoodListScreen", { dayInfoKey: `dayInfo:${day}-${today.getMonth()}-${today.getFullYear()}` })}>
                   <Text style={styles.dayText}>{day}</Text>
                 </TouchableOpacity>
               )}

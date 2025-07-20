@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { useEffect, useState } from "react";
+import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const { width, height } = Dimensions.get("window");
 
@@ -15,16 +15,16 @@ interface MealCardProps {
   foodName: string;
   time: string;
   ingredients: Ingredient[];
-  key: string;
+  dayInfoKey: string;
 }
 
-export default function MealCard({ meal, foodName, time, ingredients, key }:MealCardProps) {
+export default function MealCard({ meal, foodName, time, ingredients, dayInfoKey }:MealCardProps) {
   const [isCompleted, setIsCompleted] = useState(false);
 
   useEffect(() => {
     const fetchStatus = async () => {
       try {
-        const saved = await AsyncStorage.getItem(key);
+        const saved = await AsyncStorage.getItem(dayInfoKey);
         const parsed = JSON.parse(saved || "false");
         setIsCompleted(parsed.completed || false);
       } catch (err) {
@@ -32,12 +32,17 @@ export default function MealCard({ meal, foodName, time, ingredients, key }:Meal
       }
     };
     fetchStatus();
-  }, []);
+  }, [dayInfoKey]);
 
   const toggleCompleted = async () => {
     const newValue = !isCompleted;
     setIsCompleted(newValue);
-    await AsyncStorage.setItem(key, JSON.stringify({ completed: newValue }));
+    await AsyncStorage.mergeItem(dayInfoKey, JSON.stringify({ completed: newValue }));
+
+    const allKeys = await AsyncStorage.getAllKeys();
+    console.log("All keys", allKeys);
+    const dayInfo = await AsyncStorage.getItem(dayInfoKey);
+    console.log("info", dayInfo);
   };
 
   return (

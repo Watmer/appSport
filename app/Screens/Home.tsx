@@ -3,76 +3,44 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useEffect, useState } from "react";
 import { Dimensions, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import Dashboard from "../components/Dashboard";
+import { getAsyncInfo } from "../components/AsyncStorageCRUD";
+import MealCard from "../components/MealCard";
 
 const { width, height } = Dimensions.get("window");
 
 const meals = ["Desayuno", "Almuerzo", "Comida", "Merienda", "Cena"];
 
 export default function Home() {
-  const [completed, setCompleted] = useState(false);
-  const title = "FoodList";
-  const ingredients = "This is a sample food list for the week.";
+  const [mealInfo, setMealInfo] = useState<any>();
+
+  const today = new Date();
+  const currentDay = today.getDate();
+  const defaultKey = `dayInfo:${currentDay}-${today.getMonth()}-${today.getFullYear()}`;
 
   useEffect(() => {
-    const fetchStatus = async () => {
-      const saved = await AsyncStorage.getItem(`comida:${title}`);
-      setCompleted(saved === 'true');
+    const fetchDayInfo = async () => {
+      const data = await getAsyncInfo({ keyPath: defaultKey });
+      console.log("Fetched day info:", data);
+      console.log(defaultKey);
+      setMealInfo(data);
     };
-    fetchStatus();
-  }, []);
 
-  const toggleCompleted = async () => {
-    const newValue = !completed;
-    setCompleted(newValue);
-    await AsyncStorage.setItem(`comida:${title}`, newValue.toString());
-  };
-
-  const createCard = (
-    meal: string,
-    foodName: string,
-    time: string,
-    ingredients: { name: string; quantity: string }[]
-  ) => {
-    return (
-      <View key={meal} style={styles.cardContainer}>
-        <View style={styles.groupCard}>
-          <View style={styles.groupCardTitle}>
-            <TouchableOpacity onPress={toggleCompleted}>
-              <MaterialCommunityIcons
-                name={completed ? "checkbox-marked" : "checkbox-blank-outline"}
-                size={25}
-                color="rgba(255, 200, 0, 1)"
-              />
-            </TouchableOpacity>
-
-            <Text style={styles.groupCardTitleText}>{meal}</Text>
-          </View>
-          <View style={styles.cardInfo}>
-            <Text style={styles.titleText}>{foodName}</Text>
-            <Text style={styles.text}>Tiempo: {time} min</Text>
-
-            <Text style={[styles.text, { marginTop: 10 }]}>Ingredientes:</Text>
-            {ingredients.map((ing, i) => (
-              <Text key={i} style={styles.text}>
-                • {ing.name} ({ing.quantity})
-              </Text>
-            ))}
-
-          </View>
-        </View>
-      </View>
-    );
-  };
-
+    fetchDayInfo();
+  }, [defaultKey]);
 
   return (
     <ScrollView style={styles.scrollContainer}>
       <View style={styles.container}>
         <View style={styles.cardsContainer}>
-          {createCard(meals[0], "Tortilla", "10", [
-            { name: "Huevo", quantity: "2" },
-            { name: "Patata", quantity: "100g" },
-          ])}
+          {mealInfo && (
+            <MealCard
+              meal="Desayuno"
+              foodName={mealInfo.foodName}
+              time={mealInfo.time}
+              ingredients={mealInfo.ingredients}
+              dayInfoKey={defaultKey}
+            />
+          )}
         </View>
         <Dashboard />
       </View>

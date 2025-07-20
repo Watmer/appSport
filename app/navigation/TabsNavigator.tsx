@@ -33,11 +33,6 @@ export default function TabsNavigator() {
         ),
       }}/>
       <Tab.Screen name="FoodListScreen" component={FoodListScreen} options={{
-        headerRight: () => (
-          <TouchableOpacity style={{ marginRight: 20 }} onPress={() => navigation.navigate("AddFoodScreen")}>
-          <MaterialCommunityIcons name="plus" size={30} color="rgba(255, 170, 0, 1)" />
-          </TouchableOpacity>
-        ),
         title: "Food List", tabBarIcon: ({ color, focused }) => (
           <MaterialCommunityIcons name={focused ? 'food' : 'food-outline'} color={color} size={24} />
         ),

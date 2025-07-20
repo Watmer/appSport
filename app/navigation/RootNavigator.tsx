@@ -30,17 +30,16 @@ export default function RootNavigator() {
         options={{ headerShown: false }}
       />
       <RootStack.Screen name="Home" component={Home} />
-      <RootStack.Screen name="DayInfoScreen" component={DayInfoScreen} />
-      <RootStack.Screen name="FoodDetailScreen" component={FoodDetailScreen} />
-      <RootStack.Screen name="FoodListScreen" component={FoodListScreen} options={{
-        headerRight: () => (
-          <TouchableOpacity style={{ marginRight: 20 }} onPress={() => navigation.navigate("AddFoodScreen")}>
-            <MaterialCommunityIcons name="plus" size={30} color="rgba(255, 170, 0, 1)" />
-          </TouchableOpacity>
-        ),
-      }} />
-      <RootStack.Screen name="AddFoodScreen" component={AddFoodScreen} />
-      <RootStack.Screen name="ShopListScreen" component={ShopListScreen} />
+      <RootStack.Screen name="DayInfoScreen" component={DayInfoScreen} 
+      options={{ title: "Day Info" }} />
+      <RootStack.Screen name="FoodDetailScreen" component={FoodDetailScreen} 
+      options={{ title: "Food Detail" }} />
+      <RootStack.Screen name="FoodListScreen" component={FoodListScreen} 
+      options={{ title: "Food List" }} />
+      <RootStack.Screen name="AddFoodScreen" component={AddFoodScreen} 
+      options={{ title: "Add Food" }} />
+      <RootStack.Screen name="ShopListScreen" component={ShopListScreen} 
+      options={{ title: "Shop List" }} />
     </RootStack.Navigator>
   );
 }
