@@ -40,6 +40,8 @@ export default function RootNavigator() {
       options={{ title: "Add Food" }} />
       <RootStack.Screen name="ShopListScreen" component={ShopListScreen} 
       options={{ title: "Shop List" }} />
+      <RootStack.Screen name="EditFoodScreen" component={AddFoodScreen} 
+      options={{ title: "Edit Food" }} />
     </RootStack.Navigator>
   );
 }

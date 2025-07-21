@@ -10,6 +10,7 @@ const { width, height } = Dimensions.get("window");
 export default function Home() {
   const [mealInfo, setMealInfo] = useState<any>();
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0); // ← ADD THIS
 
   const today = new Date();
   const currentDay = today.getDate();
@@ -18,7 +19,6 @@ export default function Home() {
   const fetchDayInfo = async () => {
     const data = await getAsyncInfo({ keyPath: defaultKey });
     console.log("Fetched day info:", data);
-    console.log(defaultKey);
     setMealInfo(data);
   };
 
@@ -29,6 +29,7 @@ export default function Home() {
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchDayInfo();
+    setRefreshTrigger(prev => prev + 1); // ← TRIGGER REFRESH FOR DASHBOARD
     setRefreshing(false);
   };
 
@@ -49,7 +50,7 @@ export default function Home() {
             renderMealCards()
           )}
         </View>
-        <Dashboard />
+        <Dashboard refreshTrigger={refreshTrigger} />
       </View>
     </ScrollView>
   );

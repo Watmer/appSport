@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { View, TextInput, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
+const shopKey = "shopList";
+
 export default function ShopListScreen() {
   const [items, setItems] = useState([{ id: "0", text: "", completed: false }]);
 

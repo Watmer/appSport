@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { getAsyncInfo, setAsyncInfo } from "./AsyncStorageCRUD";
 
@@ -38,9 +38,12 @@ export default function MealCard({ dayInfoKey, mealInfo }: MealCardProps) {
   const navigation = useNavigation();
 
   const mealsArray = Array.isArray(mealInfo) ? sortMealsByOrder(mealInfo) : [mealInfo];
-  const [completedStates, setCompletedStates] = useState<boolean[]>(() =>
-    mealsArray.map(m => m.completed)
-  );
+  const [completedStates, setCompletedStates] = useState<boolean[]>([]);
+
+  useEffect(() => {
+    const mealsArray = Array.isArray(mealInfo) ? sortMealsByOrder(mealInfo) : [mealInfo];
+    setCompletedStates(mealsArray.map(m => m.completed));
+  }, [mealInfo]);
 
   const toggleCompleted = async (index: number) => {
     try {
@@ -101,20 +104,21 @@ export default function MealCard({ dayInfoKey, mealInfo }: MealCardProps) {
               {groupedMeals[mealType].map((mealInf, index) => (
                 <View style={styles.groupCardInfo} key={index}>
                   <View style={styles.cardInfo}>
-                    <View style={{ flexDirection: "row", marginBottom: 5 }}>
-                      <TouchableOpacity onPress={() => toggleCompleted(findGlobalIndex(mealInf))}>
-                        <MaterialCommunityIcons
-                          name={completedStates[findGlobalIndex(mealInf)] ? "checkbox-marked" : "checkbox-blank-outline"}
-                          size={25}
-                          color="rgba(255, 200, 0, 1)"
-                        />
-                      </TouchableOpacity>
-                      <Text style={[styles.titleText, { marginLeft: 10 }]}>
-                        {mealInf.foodName}
-                      </Text>
+                    <View style={{ paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: "rgba(255, 255, 255, 1)" }}>
+                      <View style={{ flexDirection: "row" }}>
+                        <TouchableOpacity onPress={() => toggleCompleted(findGlobalIndex(mealInf))}>
+                          <MaterialCommunityIcons
+                            name={completedStates[findGlobalIndex(mealInf)] ? "checkbox-marked" : "checkbox-blank-outline"}
+                            size={25}
+                            color="rgba(255, 200, 0, 1)"
+                          />
+                        </TouchableOpacity>
+                        <Text style={[styles.titleText, { marginLeft: 10 }]}>
+                          {mealInf.foodName}
+                        </Text>
+                      </View>
+                      <Text style={styles.text}>⏱ {mealInf.time} min</Text>
                     </View>
-
-                    <Text style={styles.text}>⏱ {mealInf.time} min</Text>
 
                     <Text style={[styles.text, { marginTop: 10, fontWeight: "600" }]}>Ingredientes:</Text>
                     {mealInf.ingredients.map((ing, i) => (

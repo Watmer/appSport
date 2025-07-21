@@ -21,8 +21,8 @@ const { width, height } = Dimensions.get("window");
 
 const meals = ["Desayuno", "Almuerzo", "Comida", "Merienda", "Cena"];
 
-export default function AddFoodScreen({ route }: { route: any }) {
-  const { dayInfoKey } = route.params || {};
+export default function EditFoodScreen({ route }: { route: any }) {
+  const { dayInfoKey, mealData } = route.params || {};
   const navigation = useNavigation();
 
   const [ingredients, setIngredients] = useState([{ name: "", quantity: "" },]);

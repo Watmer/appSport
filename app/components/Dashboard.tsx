@@ -7,7 +7,7 @@ import { getAsyncInfo } from "./AsyncStorageCRUD";
 const { width, height } = Dimensions.get("window");
 const daysOfWeek = ["L", "M", "X", "J", "V", "S", "D"];
 
-export default function Dashboard() {
+export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }) {
   const navigation = useNavigation();
   const today = new Date();
   const currentDay = today.getDate();
@@ -38,8 +38,9 @@ export default function Dashboard() {
 
       setStreakDays(results);
     };
+
     fetchDayInfo();
-  }, [currentDay]);
+  }, [refreshTrigger]); // ← TRIGGER REFRESH WHEN PROP CHANGES
 
   const dayIsStrike = (saved: any): boolean => {
     if (!Array.isArray(saved)) return false;
