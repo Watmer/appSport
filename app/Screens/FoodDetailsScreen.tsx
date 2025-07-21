@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { useEffect, useLayoutEffect, useState } from "react";
-import { getAsyncInfo, removeAsyncInfo } from "../components/AsyncStorageCRUD";
+import { getAsyncInfo, removeAsyncInfo, setAsyncInfo } from "../components/AsyncStorageCRUD";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 
@@ -25,21 +25,47 @@ export default function FoodDetailScreen({ route }: { route: any }) {
     });
   }, [navigation, dayInfoKey, editing]);
 
-  useEffect(() => {
-    const fetchMealData = async () => {
-      const allMeals = await getAsyncInfo({ keyPath: dayInfoKey });
-      console.log("Fetched meals:", allMeals);
-      if (allMeals && Array.isArray(allMeals)) {
-        const filtered = allMeals.filter((item) => item.meal === meal);
-        setMealData(filtered);
-      }
-    };
+  const fetchMealData = async () => {
+    const allMeals = await getAsyncInfo({ keyPath: dayInfoKey });
+    console.log("Fetched meals:", allMeals);
+    if (allMeals && Array.isArray(allMeals)) {
+      const filtered = allMeals.filter((item) => item.meal === meal);
+      setMealData(filtered);
+    }
+  };
 
+  useEffect(() => {
     fetchMealData();
   }, [dayInfoKey, meal]);
 
-  const deleteMeal = async (item: any) => {
-    await removeAsyncInfo({ keyPath: (dayInfoKey + "") })
+  const deleteMeal = async (itemToDelete: any) => {
+    try {
+      const allMeals = await getAsyncInfo({ keyPath: dayInfoKey });
+      if (!allMeals || !Array.isArray(allMeals)) return;
+
+      const updatedMeals = allMeals.filter(
+        (meal: any) =>
+          !(
+            meal.foodName === itemToDelete.foodName &&
+            meal.meal === itemToDelete.meal &&
+            meal.time === itemToDelete.time
+          )
+      );
+      await setAsyncInfo({ keyPath: dayInfoKey, info: updatedMeals });
+
+      const newMealData = mealData.filter(
+        (m) =>
+          !(
+            m.foodName === itemToDelete.foodName &&
+            m.meal === itemToDelete.meal &&
+            m.time === itemToDelete.time
+          )
+      );
+      setMealData(newMealData);
+
+    } catch (err) {
+      console.error("Error deleting meal:", err);
+    }
   };
 
   return (
@@ -54,12 +80,22 @@ export default function FoodDetailScreen({ route }: { route: any }) {
                 <Text style={styles.name}>🍽 {item.foodName}</Text>
                 <Text style={styles.text}>⏱ Tiempo: {item.time} min</Text>
               </View>
-              {editing && (<TouchableOpacity
-                style={{ marginRight: 20 }}
-                onPress={() => (navigation as any).navigate("EditFoodScreen", { dayInfoKey: dayInfoKey })}
-              >
-                <MaterialCommunityIcons name="pencil-box-outline" size={30} color="rgba(255, 170, 0, 1)" />
-              </TouchableOpacity>)}
+              {editing && (
+                <View style={{ flexDirection: "row" }}>
+                  <TouchableOpacity
+                    style={{ marginRight: 20 }}
+                    onPress={() => (navigation as any).navigate("EditFoodScreen", { dayInfoKey: dayInfoKey })}
+                  >
+                    <MaterialCommunityIcons name="pencil-box-outline" size={30} color="rgba(255, 170, 0, 1)" />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={{ marginRight: 20 }}
+                    onPress={() => (deleteMeal(item))}
+                  >
+                    <MaterialCommunityIcons name="trash-can-outline" size={30} color="rgba(255, 0, 0, 1)" />
+                  </TouchableOpacity>
+                </View>
+              )}
             </View>
 
             {item.ingredients && (
@@ -88,7 +124,7 @@ export default function FoodDetailScreen({ route }: { route: any }) {
           </View>
         ))}
 
-        {mealData.length === 0 && (
+        {mealData?.length === 0 && (
           <Text style={styles.text}>
             No hay comidas registradas para {meal} en esta fecha.
           </Text>

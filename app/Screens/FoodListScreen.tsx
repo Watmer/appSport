@@ -1,8 +1,8 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useLayoutEffect, useState } from "react";
-import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View } from "react-native";
-import { getAsyncInfo } from "../components/AsyncStorageCRUD";
+import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View, Text } from "react-native";
+import { getAsyncInfo, removeAsyncInfo } from "../components/AsyncStorageCRUD";
 import MealCard from "../components/MealCard";
 import { RefreshControl } from "react-native-gesture-handler";
 
@@ -44,7 +44,11 @@ export default function FoodListScreen({ route }: { route: any }) {
 
   const fetchDayInfo = async () => {
     const data = await getAsyncInfo({ keyPath: keyToUse });
-    setMealInfo(data);
+    if (data?.length === 0) {
+      removeAsyncInfo({ keyPath: keyToUse });
+    } else {
+      setMealInfo(data);
+    }
   };
 
   useEffect(() => {
@@ -52,7 +56,15 @@ export default function FoodListScreen({ route }: { route: any }) {
   }, [keyToUse]);
 
   const renderMealCards = () => {
-    if (!mealInfo) return null;
+    if (!mealInfo) {
+      return (
+        <View style={styles.cardInfo}>
+          <Text style={styles.text}>
+            No hay comidas registradas en esta fecha.
+          </Text>
+        </View>
+      );
+    };
     console.log(mealInfo);
     return (
       <MealCard
@@ -93,59 +105,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
   },
-  dashboardContainer: {
-    flex: 1,
-    width: width - 30,
-    backgroundColor: "rgba(100, 100, 100, 1)",
-    borderRadius: 15,
-    marginBottom: 20,
-    padding: 10,
-    paddingBottom: 0,
-  },
-  dashboardTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "rgba(255, 255, 255, 1)",
-    textAlign: "center",
-    marginBottom: 10,
-  },
-  dashboardInfo: {
-    fontSize: 16,
-    color: "rgba(255, 255, 255, 0.8)",
-    textAlign: "center",
-  },
   cardsContainer: {
     marginTop: 10,
     gap: 10,
     alignItems: "center",
   },
-  cardContainer: {
-    justifyContent: "center",
-    backgroundColor: "rgba(150, 150, 150, 1)",
-    borderRadius: 15,
-    minWidth: 350,
-    maxWidth: 500,
-    minHeight: 100,
-    maxHeight: 400,
-  },
-  groupCard: {
-    margin: 10,
-    gap: 10,
-  },
-  groupCardTitle: {
-    color: "rgba(255, 255, 255, 1)",
-    fontSize: 24,
-    fontWeight: "bold",
-    alignSelf: "center",
-    margin: 5,
-  },
   cardInfo: {
-    width: "100%",
-    minHeight: 100,
-    backgroundColor: "rgba(200, 160, 70, 1)",
-    borderRadius: 10,
     justifyContent: "center",
-    alignItems: "center",
+    padding: 10,
   },
   text: {
     fontSize: 20,

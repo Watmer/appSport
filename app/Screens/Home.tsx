@@ -10,7 +10,7 @@ const { width, height } = Dimensions.get("window");
 export default function Home() {
   const [mealInfo, setMealInfo] = useState<any>();
   const [refreshing, setRefreshing] = useState(false);
-  const [refreshTrigger, setRefreshTrigger] = useState(0); // ← ADD THIS
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const today = new Date();
   const currentDay = today.getDate();
@@ -29,7 +29,7 @@ export default function Home() {
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchDayInfo();
-    setRefreshTrigger(prev => prev + 1); // ← TRIGGER REFRESH FOR DASHBOARD
+    setRefreshTrigger(prev => prev + 1);
     setRefreshing(false);
   };
 

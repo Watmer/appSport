@@ -30,9 +30,9 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
       for (let i = 1; i <= daysInMonth; i++) {
         const dayInfoKey = `dayInfo:${i}-${today.getMonth()}-${today.getFullYear()}`;
         const saved = await getAsyncInfo({ keyPath: dayInfoKey });
-
         if (dayIsStrike(saved)) {
           results.push(i);
+          console.log(results);
         }
       }
 
@@ -40,10 +40,10 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
     };
 
     fetchDayInfo();
-  }, [refreshTrigger]); // ← TRIGGER REFRESH WHEN PROP CHANGES
+  }, [refreshTrigger]);
 
   const dayIsStrike = (saved: any): boolean => {
-    if (!Array.isArray(saved)) return false;
+    if (!Array.isArray(saved) || saved.length === 0) return false;
     return saved.every((item: any) => item.completed === true);
   };
 

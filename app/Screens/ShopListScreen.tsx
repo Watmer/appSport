@@ -1,11 +1,29 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, TextInput, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { getAsyncInfo, setAsyncInfo } from "../components/AsyncStorageCRUD";
 
 const shopKey = "shopList";
 
 export default function ShopListScreen() {
   const [items, setItems] = useState([{ id: "0", text: "", completed: false }]);
+
+  const saveItems = async (newItems:any) => {
+    setAsyncInfo({ keyPath: shopKey, info: newItems });
+    setItems(newItems);
+  };
+
+  const fetchShopData = async () => {
+    const saved = await getAsyncInfo({ keyPath: shopKey });
+    console.log("ShopList:", saved);
+    if (saved) {
+      saveItems(saved);
+    }
+  };
+
+  useEffect(() => {
+    fetchShopData();
+  }, []);
 
   const toggleCompleted = (id: string, text: string) => {
     if (text !== "") {
@@ -15,7 +33,7 @@ export default function ShopListScreen() {
         }
         return item;
       });
-      setItems(newItems);
+      saveItems(newItems);
     }
   };
 
@@ -31,13 +49,12 @@ export default function ShopListScreen() {
     if (lastItem.text !== "") {
       newItems = [...newItems, { id: Date.now().toString(), text: "", completed: false }];
     }
-
-    setItems(newItems);
+    saveItems(newItems);
   };
 
   const deleteItem = (id: string) => {
     const newItems = items.filter(item => item.id !== id);
-    setItems(newItems.length === 0 ? [{ id: Date.now().toString(), text: "", completed: false }] : newItems);
+    saveItems(newItems.length === 0 ? [{ id: Date.now().toString(), text: "", completed: false }] : newItems);
   };
 
   const renderItems = () => {
