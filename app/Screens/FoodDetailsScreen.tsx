@@ -1,8 +1,8 @@
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
-import { useEffect, useLayoutEffect, useState } from "react";
-import { getAsyncInfo, removeAsyncInfo, setAsyncInfo } from "../components/AsyncStorageCRUD";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { useEffect, useLayoutEffect, useState } from "react";
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { getAsyncInfo, setAsyncInfo } from "../components/AsyncStorageCRUD";
 
 export default function FoodDetailScreen({ route }: { route: any }) {
   const { dayInfoKey, meal } = route.params || {};
@@ -45,23 +45,12 @@ export default function FoodDetailScreen({ route }: { route: any }) {
 
       const updatedMeals = allMeals.filter(
         (meal: any) =>
-          !(
-            meal.foodName === itemToDelete.foodName &&
+          !(meal.foodName === itemToDelete.foodName &&
             meal.meal === itemToDelete.meal &&
-            meal.time === itemToDelete.time
-          )
+            meal.time === itemToDelete.time)
       );
       await setAsyncInfo({ keyPath: dayInfoKey, info: updatedMeals });
-
-      const newMealData = mealData.filter(
-        (m) =>
-          !(
-            m.foodName === itemToDelete.foodName &&
-            m.meal === itemToDelete.meal &&
-            m.time === itemToDelete.time
-          )
-      );
-      setMealData(newMealData);
+      setMealData(updatedMeals);
 
     } catch (err) {
       console.error("Error deleting meal:", err);

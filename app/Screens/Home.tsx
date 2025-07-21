@@ -41,7 +41,7 @@ export default function Home() {
     <ScrollView
       style={styles.scrollContainer}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} progressBackgroundColor="rgba(70, 70, 70, 1)" colors={["rgba(255, 170, 0, 1)"]} />
       }
     >
       <View style={styles.container}>

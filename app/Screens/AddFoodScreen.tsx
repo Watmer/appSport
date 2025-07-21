@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
+  Alert,
   Dimensions,
   Keyboard,
   KeyboardAvoidingView,
@@ -52,19 +53,35 @@ export default function AddFoodScreen({ route }: { route: any }) {
     };
 
     try {
-      const saved = await getAsyncInfo({ keyPath: dayInfoKey });
+      if (checkMandatoryFields()) {
+        const saved = await getAsyncInfo({ keyPath: dayInfoKey });
 
-      if (!saved) {
-        await setAsyncInfo({ keyPath: dayInfoKey, info: [newFood] });
-      } else {
-        const updatedArray = Array.isArray(saved) ? [...saved, newFood] : [saved, newFood];
-        await setAsyncInfo({ keyPath: dayInfoKey, info: updatedArray });
+        if (!saved) {
+          await setAsyncInfo({ keyPath: dayInfoKey, info: [newFood] });
+        } else {
+          const updatedArray = Array.isArray(saved) ? [...saved, newFood] : [saved, newFood];
+          await setAsyncInfo({ keyPath: dayInfoKey, info: updatedArray });
+        }
+        alert("Comida guardada correctamente.");
+        navigation.goBack();
       }
-      alert("Comida guardada correctamente.");
     } catch (error) {
       console.error("Error guardando comida:", error);
       alert("Error guardando comida.");
     }
+  };
+
+  const checkMandatoryFields = () => {
+    let isCorrect = true;
+    if (!meal) {
+      Alert.alert("Warning", "Debes seleccionar un tipo de comida")
+      isCorrect = false;
+    }
+    else if (!foodName) {
+      Alert.alert("Warning", "Debes poner un nombre")
+      isCorrect = false;
+    }
+    return isCorrect;
   };
 
   return (
@@ -188,7 +205,7 @@ export default function AddFoodScreen({ route }: { route: any }) {
                 onChangeText={(text) => setComments(text)}
               />
 
-              <TouchableOpacity style={styles.submitButton} onPress={() => [saveFoodInfo(), navigation.goBack()]}>
+              <TouchableOpacity style={styles.submitButton} onPress={() => saveFoodInfo()}>
                 <Text style={styles.buttonText}>Guardar Comida</Text>
               </TouchableOpacity>
             </View>
