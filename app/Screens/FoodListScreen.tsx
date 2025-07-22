@@ -5,6 +5,7 @@ import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View, Text } from
 import { getAsyncInfo, removeAsyncInfo } from "../components/AsyncStorageCRUD";
 import MealCard from "../components/MealCard";
 import { RefreshControl } from "react-native-gesture-handler";
+import { getDayInfo } from "../db/DaySqlLiteCRUD";
 
 const { width, height } = Dimensions.get("window");
 
@@ -15,10 +16,12 @@ export default function FoodListScreen({ route }: { route: any }) {
   const currentDay = today.getDate();
 
   const [refreshing, setRefreshing] = useState(false);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchDayInfo();
+    setRefreshTrigger((prev) => prev + 1);
     setRefreshing(false);
   };
 
@@ -27,7 +30,7 @@ export default function FoodListScreen({ route }: { route: any }) {
   const keyToUse = dayInfoKey || defaultKey;
 
   const navigation = useNavigation();
-  const [mealInfo, setMealInfo] = useState<any>();
+  const [mealInfo, setMealInfo] = useState<any[]>([]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -43,11 +46,16 @@ export default function FoodListScreen({ route }: { route: any }) {
   }, [navigation, keyToUse]);
 
   const fetchDayInfo = async () => {
-    const data = await getAsyncInfo({ keyPath: keyToUse });
-    if (data?.length === 0) {
-      removeAsyncInfo({ keyPath: keyToUse });
-    } else {
-      setMealInfo(data);
+    try {
+      const data = await getDayInfo(keyToUse);
+      if (!data) {
+        setMealInfo([]);
+      } else {
+        setMealInfo(data.meals);
+      }
+    } catch (error) {
+      console.error("Error fetching meals from DB:", error);
+      setMealInfo([]);
     }
   };
 
@@ -56,7 +64,8 @@ export default function FoodListScreen({ route }: { route: any }) {
   }, [keyToUse]);
 
   const renderMealCards = () => {
-    if (!mealInfo) {
+    console.log(mealInfo);
+    if (!mealInfo[0]) {
       return (
         <View style={styles.cardInfo}>
           <Text style={styles.text}>
@@ -65,12 +74,11 @@ export default function FoodListScreen({ route }: { route: any }) {
         </View>
       );
     };
-    console.log(mealInfo);
     return (
       <MealCard
         key={keyToUse}
         dayInfoKey={keyToUse}
-        mealInfo={mealInfo}
+        refreshTrigger={refreshTrigger}
       />
     );
   };
@@ -79,7 +87,7 @@ export default function FoodListScreen({ route }: { route: any }) {
     <ScrollView
       style={styles.scrollContainer}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} progressBackgroundColor="rgba(70, 70, 70, 1)"  colors={["rgba(255, 170, 0, 1)"]}/>
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} progressBackgroundColor="rgba(70, 70, 70, 1)" colors={["rgba(255, 170, 0, 1)"]} />
       }>
       <View style={styles.container}>
         <View style={styles.cardsContainer}>

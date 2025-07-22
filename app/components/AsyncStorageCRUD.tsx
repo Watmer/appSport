@@ -23,5 +23,8 @@ export async function mergeAsyncInfo({ keyPath, info }: { keyPath: string, info:
 export async function removeAsyncInfo({ keyPath }: { keyPath: string }) {
 	await AsyncStorage.removeItem(keyPath);
 	events.emit("dayInfoUpdated", keyPath);
+}
 
+export async function getMealInfo(params:any) {
+		
 }

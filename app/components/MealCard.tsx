@@ -4,29 +4,35 @@ import React, { useEffect, useState } from "react";
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { getAsyncInfo, setAsyncInfo } from "./AsyncStorageCRUD";
 
+import { getDayInfo, setDayInfo } from "../db/DaySqlLiteCRUD";
+
+
 const { width, height } = Dimensions.get("window");
 
 interface Ingredient {
-  name: string;
+  ingName: string;
   quantity: string;
 }
 
-interface MealCardProps {
-  dayInfoKey: string;
-  mealInfo: MealInfo[];
-}
-
 interface MealInfo {
+  id?: number;
   meal: string;
   foodName: string;
   time: number;
   ingredients: Ingredient[];
-  completed: boolean;
+  completed: number;
+  recepy: string;
+  comments: string;
+}
+
+interface MealCardProps {
+  dayInfoKey: string;
+  refreshTrigger?: number
 }
 
 const meals = ["Desayuno", "Almuerzo", "Comida", "Merienda", "Cena"];
 
-function sortMealsByOrder(mealInfo: MealInfo[]) {
+function sortMealsByOrder(mealInfo: any[]) {
   return mealInfo.slice().sort((a, b) => {
     const indexA = meals.indexOf(a.meal);
     const indexB = meals.indexOf(b.meal);
@@ -34,38 +40,31 @@ function sortMealsByOrder(mealInfo: MealInfo[]) {
   });
 }
 
-export default function MealCard({ dayInfoKey, mealInfo }: MealCardProps) {
+export default function MealCard({ dayInfoKey, refreshTrigger }: MealCardProps) {
   const navigation = useNavigation();
-
-  const mealsArray = Array.isArray(mealInfo) ? sortMealsByOrder(mealInfo) : [mealInfo];
-  const [completedStates, setCompletedStates] = useState<boolean[]>([]);
+  const [mealsArray, setMealsArray] = useState<MealInfo[]>([]);
 
   useEffect(() => {
-    const mealsArray = Array.isArray(mealInfo) ? sortMealsByOrder(mealInfo) : [mealInfo];
-    setCompletedStates(mealsArray.map(m => m.completed));
-  }, [mealInfo]);
+    loadData();
+  }, [refreshTrigger]);
 
-  const toggleCompleted = async (index: number) => {
-    try {
-      const saved = await getAsyncInfo({ keyPath: dayInfoKey });
-      if (!saved) {
-        console.warn("No hay comidas guardadas para actualizar.");
-        return;
-      }
-
-      const mealsArray: MealInfo[] = Array.isArray(saved) ? saved : JSON.parse(saved);
-      const sortedMeals = sortMealsByOrder(mealsArray);
-      sortedMeals[index].completed = !sortedMeals[index].completed;
-
-      setCompletedStates(sortedMeals.map(m => m.completed));
-      await setAsyncInfo({ keyPath: dayInfoKey, info: sortedMeals });
-
-    } catch (err) {
-      console.error("Error updating completion status:", err);
+  const loadData = async () => {
+    const dayData = await getDayInfo(dayInfoKey);
+    if (dayData?.meals) {
+      const sorted = sortMealsByOrder(dayData.meals);
+      setMealsArray(sorted);
     }
   };
 
-  const handleCardPress = async (meal: any) => {
+  const toggleCompleted = async (index: number) => {
+    const updatedMeals = [...mealsArray];
+    updatedMeals[index].completed = updatedMeals[index].completed ? 0 : 1;
+
+    await setDayInfo(dayInfoKey, updatedMeals);
+    setMealsArray(updatedMeals);
+  };
+
+  const handleCardPress = (meal: string) => {
     (navigation as any).navigate("FoodDetailScreen", { dayInfoKey, meal });
   };
 
@@ -79,24 +78,12 @@ export default function MealCard({ dayInfoKey, mealInfo }: MealCardProps) {
     (a, b) => meals.indexOf(a) - meals.indexOf(b)
   );
 
-  const findGlobalIndex = (target: MealInfo) => {
-    return mealsArray.findIndex(
-      (meal) =>
-        meal.foodName === target.foodName &&
-        meal.meal === target.meal &&
-        meal.time === target.time
-    );
-  };
-
   return (
     <>
       {mealTypesSorted.map((mealType) => (
         <View key={mealType} style={styles.cardContainer}>
           <View style={styles.groupCard}>
-            <TouchableOpacity
-              key={mealType}
-              onPress={() => handleCardPress(mealType)}
-            >
+            <TouchableOpacity onPress={() => handleCardPress(mealType)}>
               <View style={styles.groupCardTitle}>
                 <Text style={styles.groupCardTitleText}>{mealType}</Text>
               </View>
@@ -104,11 +91,23 @@ export default function MealCard({ dayInfoKey, mealInfo }: MealCardProps) {
               {groupedMeals[mealType].map((mealInf, index) => (
                 <View style={styles.groupCardInfo} key={index}>
                   <View style={styles.cardInfo}>
-                    <View style={{ paddingBottom: 5, borderBottomWidth: 1, borderBottomColor: "rgba(255, 255, 255, 1)" }}>
+                    <View
+                      style={{
+                        paddingBottom: 5,
+                        borderBottomWidth: 1,
+                        borderBottomColor: "rgba(255, 255, 255, 1)",
+                      }}
+                    >
                       <View style={{ flexDirection: "row" }}>
-                        <TouchableOpacity onPress={() => toggleCompleted(findGlobalIndex(mealInf))}>
+                        <TouchableOpacity
+                          onPress={() =>
+                            toggleCompleted(
+                              mealsArray.findIndex((m) => m.id === mealInf.id)
+                            )
+                          }
+                        >
                           <MaterialCommunityIcons
-                            name={completedStates[findGlobalIndex(mealInf)] ? "checkbox-marked" : "checkbox-blank-outline"}
+                            name={mealInf.completed ? "checkbox-marked" : "checkbox-blank-outline"}
                             size={25}
                             color="rgba(255, 200, 0, 1)"
                           />
@@ -120,10 +119,14 @@ export default function MealCard({ dayInfoKey, mealInfo }: MealCardProps) {
                       <Text style={styles.text}>⏱ {mealInf.time} min</Text>
                     </View>
 
-                    <Text style={[styles.text, { marginTop: 10, fontWeight: "600" }]}>Ingredientes:</Text>
+                    <Text
+                      style={[styles.text, { marginTop: 10, fontWeight: "600" }]}
+                    >
+                      Ingredientes:
+                    </Text>
                     {mealInf.ingredients.map((ing, i) => (
                       <Text key={i} style={styles.text}>
-                        • {ing.name} ({ing.quantity})
+                        • {ing.ingName} ({ing.quantity})
                       </Text>
                     ))}
                   </View>

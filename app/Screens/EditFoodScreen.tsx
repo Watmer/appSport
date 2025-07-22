@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
 import {
+  Alert,
   Dimensions,
   Keyboard,
   KeyboardAvoidingView,
@@ -14,24 +15,23 @@ import {
   TouchableWithoutFeedback,
   View,
 } from "react-native";
-import { getAsyncInfo, mergeAsyncInfo, setAsyncInfo } from "../components/AsyncStorageCRUD";
 import { useNavigation } from "@react-navigation/native";
+import { addMealWithIngredients, getDayInfo, setDayInfo } from "../db/DaySqlLiteCRUD";
 
 const { width, height } = Dimensions.get("window");
 
 const meals = ["Desayuno", "Almuerzo", "Comida", "Merienda", "Cena"];
 
 export default function EditFoodScreen({ route }: { route: any }) {
-  const { dayInfoKey, mealData } = route.params || {};
+  const { dayInfoKey } = route.params || {};
   const navigation = useNavigation();
 
-  const [ingredients, setIngredients] = useState([{ name: "", quantity: "" },]);
+  const [ingredients, setIngredients] = useState([{ name: "", quantity: "" }]);
   const [foodName, setFoodName] = useState("");
   const [time, setTime] = useState(0);
   const [meal, setMeal] = useState("");
   const [recepy, setRecepy] = useState("");
   const [comments, setComments] = useState("");
-
   const [showMealType, setShowMealType] = useState(false);
 
   const addIngredient = () =>
@@ -41,30 +41,42 @@ export default function EditFoodScreen({ route }: { route: any }) {
     setIngredients(ingredients.filter((_, index) => index !== i));
 
   const saveFoodInfo = async () => {
-    const newFood = {
-      meal,
-      foodName,
-      time,
-      ingredients,
-      recepy,
-      comments,
-      completed: false,
-    };
+  if (!checkMandatoryFields()) return;
 
-    try {
-      const saved = await getAsyncInfo({ keyPath: dayInfoKey });
+  const newFood = {
+    meal,
+    foodName,
+    time,
+    ingredients: ingredients.map((ing) => ({
+      ingName: ing.name,
+      quantity: ing.quantity,
+    })),
+    recepy,
+    comments,
+    completed: false,
+  };
 
-      if (!saved) {
-        await setAsyncInfo({ keyPath: dayInfoKey, info: [newFood] });
-      } else {
-        const updatedArray = Array.isArray(saved) ? [...saved, newFood] : [saved, newFood];
-        await setAsyncInfo({ keyPath: dayInfoKey, info: updatedArray });
-      }
-      alert("Comida guardada correctamente.");
-    } catch (error) {
-      console.error("Error guardando comida:", error);
-      alert("Error guardando comida.");
+  try {
+    await addMealWithIngredients(dayInfoKey, newFood);
+
+    alert("Comida guardada correctamente.");
+    navigation.goBack();
+  } catch (error) {
+    console.error("Error guardando comida:", error);
+    alert("Error guardando comida.");
+  }
+};
+
+  const checkMandatoryFields = () => {
+    if (!meal) {
+      Alert.alert("Warning", "Debes seleccionar un tipo de comida");
+      return false;
     }
+    if (!foodName) {
+      Alert.alert("Warning", "Debes poner un nombre");
+      return false;
+    }
+    return true;
   };
 
   return (
@@ -75,7 +87,6 @@ export default function EditFoodScreen({ route }: { route: any }) {
     >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <ScrollView style={styles.scrollContainer}>
-
           <Modal
             animationType="fade"
             transparent={true}
@@ -85,22 +96,24 @@ export default function EditFoodScreen({ route }: { route: any }) {
             <View style={styles.modalContainer}>
               <View style={styles.modalView}>
                 <ScrollView style={styles.scrollModalContainer}>
-                  {meals.map((meal) => (
+                  {meals.map((mealOption) => (
                     <TouchableOpacity
-                      key={meal}
+                      key={mealOption}
                       onPress={() => {
-                        setMeal(meal);
+                        setMeal(mealOption);
                         setShowMealType(false);
                       }}
                       style={styles.modalOption}
                     >
-                      <Text style={styles.modalOptionText}>{meal}</Text>
+                      <Text style={styles.modalOptionText}>{mealOption}</Text>
                     </TouchableOpacity>
                   ))}
                 </ScrollView>
 
-                <TouchableOpacity style={styles.modalCancel}
-                  onPress={() => setShowMealType(false)}>
+                <TouchableOpacity
+                  style={styles.modalCancel}
+                  onPress={() => setShowMealType(false)}
+                >
                   <Text style={styles.cancelText}>Cancelar</Text>
                 </TouchableOpacity>
               </View>
@@ -115,6 +128,7 @@ export default function EditFoodScreen({ route }: { route: any }) {
                   {meal ? meal : "Selecciona tipo de comida"}
                 </Text>
               </TouchableOpacity>
+
               <Text style={styles.label}>Nombre de la comida:</Text>
               <TextInput
                 style={styles.input}
@@ -177,18 +191,22 @@ export default function EditFoodScreen({ route }: { route: any }) {
                 placeholder="..."
                 placeholderTextColor="gray"
                 multiline={true}
-                onChangeText={(text) => setRecepy(text)}
+                onChangeText={setRecepy}
               />
+
               <Text style={styles.label}>Comentarios:</Text>
               <TextInput
                 style={styles.input}
                 placeholder="..."
                 placeholderTextColor="gray"
                 multiline={true}
-                onChangeText={(text) => setComments(text)}
+                onChangeText={setComments}
               />
 
-              <TouchableOpacity style={styles.submitButton} onPress={() => [saveFoodInfo(), navigation.goBack()]}>
+              <TouchableOpacity
+                style={styles.submitButton}
+                onPress={() => saveFoodInfo()}
+              >
                 <Text style={styles.buttonText}>Guardar Comida</Text>
               </TouchableOpacity>
             </View>

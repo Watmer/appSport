@@ -3,6 +3,7 @@ import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { getAsyncInfo } from "./AsyncStorageCRUD";
+import { getDayInfo } from "../db/DaySqlLiteCRUD";
 
 const { width, height } = Dimensions.get("window");
 const daysOfWeek = ["L", "M", "X", "J", "V", "S", "D"];
@@ -29,10 +30,10 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
 
       for (let i = 1; i <= daysInMonth; i++) {
         const dayInfoKey = `dayInfo:${i}-${today.getMonth()}-${today.getFullYear()}`;
-        const saved = await getAsyncInfo({ keyPath: dayInfoKey });
-        if (dayIsStrike(saved)) {
+        const dayData = await getDayInfo(dayInfoKey);
+
+        if (dayIsStrike(dayData?.meals)) {
           results.push(i);
-          console.log(results);
         }
       }
 
@@ -42,9 +43,10 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
     fetchDayInfo();
   }, [refreshTrigger]);
 
-  const dayIsStrike = (saved: any): boolean => {
-    if (!Array.isArray(saved) || saved.length === 0) return false;
-    return saved.every((item: any) => item.completed === true);
+  const dayIsStrike = (meals: any[] | undefined): boolean => {
+    if (!meals || meals.length === 0) return false;
+    // completed es number 0(false)|1(true)
+    return meals.every(meal => meal.completed === 1);
   };
 
   return (
@@ -71,18 +73,22 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
                     streakDays.includes(day) && { backgroundColor: "rgba(70, 115, 200, 1)" },
                     day === currentDay && styles.todayCircle,
                   ]}
-                  onPress={() => navigation.getParent()?.navigate("FoodListScreen", { dayInfoKey: `dayInfo:${day}-${today.getMonth()}-${today.getFullYear()}` })}>
+                  onPress={() =>
+                    navigation.getParent()?.navigate("FoodListScreen", {
+                      dayInfoKey: `dayInfo:${day}-${today.getMonth()}-${today.getFullYear()}`,
+                    })
+                  }
+                >
                   <Text style={styles.dayText}>{day}</Text>
                 </TouchableOpacity>
               )}
             </View>
           ))}
         </View>
-      ))
-      }
-    </View >
+      ))}
+    </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
   scrollContainer: {

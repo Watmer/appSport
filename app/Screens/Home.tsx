@@ -4,6 +4,8 @@ import { RefreshControl } from "react-native-gesture-handler";
 import { getAsyncInfo } from "../components/AsyncStorageCRUD";
 import Dashboard from "../components/Dashboard";
 import MealCard from "../components/MealCard";
+import { getDayInfo } from "../db/DaySqlLiteCRUD";
+
 
 const { width, height } = Dimensions.get("window");
 
@@ -17,7 +19,7 @@ export default function Home() {
   const defaultKey = `dayInfo:${currentDay}-${today.getMonth()}-${today.getFullYear()}`;
 
   const fetchDayInfo = async () => {
-    const data = await getAsyncInfo({ keyPath: defaultKey });
+    const data = await getDayInfo(defaultKey);
     console.log("Fetched day info:", data);
     setMealInfo(data);
   };
@@ -29,27 +31,28 @@ export default function Home() {
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchDayInfo();
-    setRefreshTrigger(prev => prev + 1);
+    setRefreshTrigger((prev) => prev + 1);
     setRefreshing(false);
   };
 
   const renderMealCards = () => {
-    return (<MealCard dayInfoKey={defaultKey} mealInfo={mealInfo} />);
+    return <MealCard dayInfoKey={defaultKey} refreshTrigger={refreshTrigger} />;
   };
 
   return (
     <ScrollView
       style={styles.scrollContainer}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} progressBackgroundColor="rgba(70, 70, 70, 1)" colors={["rgba(255, 170, 0, 1)"]} />
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          progressBackgroundColor="rgba(70, 70, 70, 1)"
+          colors={["rgba(255, 170, 0, 1)"]}
+        />
       }
     >
       <View style={styles.container}>
-        <View style={styles.cardsContainer}>
-          {mealInfo && (
-            renderMealCards()
-          )}
-        </View>
+        {mealInfo && <View style={styles.cardsContainer}>{renderMealCards()}</View>}
         <Dashboard refreshTrigger={refreshTrigger} />
       </View>
     </ScrollView>
@@ -69,7 +72,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    gap: 10,
+    rowGap:10,
   },
   dashboardContainer: {
     flex: 1,

@@ -3,11 +3,11 @@ import { useNavigation } from "@react-navigation/native";
 import { useEffect, useLayoutEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { getAsyncInfo, setAsyncInfo } from "../components/AsyncStorageCRUD";
+import { getDayInfo, removeMealById } from "../db/DaySqlLiteCRUD";
 
 export default function FoodDetailScreen({ route }: { route: any }) {
   const { dayInfoKey, meal } = route.params || {};
   const [mealData, setMealData] = useState<any[]>([]);
-
   const [editing, setEditing] = useState(false);
 
   const navigation = useNavigation();
@@ -19,18 +19,36 @@ export default function FoodDetailScreen({ route }: { route: any }) {
           style={{ marginRight: 20 }}
           onPress={() => setEditing(!editing)}
         >
-          {editing ? <MaterialCommunityIcons name="close" size={30} color="rgba(255, 70, 70, 1)" /> : <MaterialCommunityIcons name="pencil-box-outline" size={30} color="rgba(255, 170, 0, 1)" />}
+          {editing ? (
+            <MaterialCommunityIcons
+              name="close"
+              size={30}
+              color="rgba(255, 70, 70, 1)"
+            />
+          ) : (
+            <MaterialCommunityIcons
+              name="pencil-box-outline"
+              size={30}
+              color="rgba(255, 170, 0, 1)"
+            />
+          )}
         </TouchableOpacity>
       ),
     });
   }, [navigation, dayInfoKey, editing]);
 
   const fetchMealData = async () => {
-    const allMeals = await getAsyncInfo({ keyPath: dayInfoKey });
-    console.log("Fetched meals:", allMeals);
-    if (allMeals && Array.isArray(allMeals)) {
-      const filtered = allMeals.filter((item) => item.meal === meal);
-      setMealData(filtered);
+    try {
+      const dayInfo = await getDayInfo(dayInfoKey);
+      if (dayInfo && dayInfo.meals) {
+        const filtered = dayInfo.meals.filter(m => m.meal === meal);
+        setMealData(filtered);
+      } else {
+        setMealData([]);
+      }
+    } catch (error) {
+      console.error("Error fetching meals:", error);
+      setMealData([]);
     }
   };
 
@@ -38,20 +56,15 @@ export default function FoodDetailScreen({ route }: { route: any }) {
     fetchMealData();
   }, [dayInfoKey, meal]);
 
-  const deleteMeal = async (itemToDelete: any) => {
+  const deleteMeal = async (mealToDelete: any) => {
     try {
-      const allMeals = await getAsyncInfo({ keyPath: dayInfoKey });
-      if (!allMeals || !Array.isArray(allMeals)) return;
-
-      const updatedMeals = allMeals.filter(
-        (meal: any) =>
-          !(meal.foodName === itemToDelete.foodName &&
-            meal.meal === itemToDelete.meal &&
-            meal.time === itemToDelete.time)
-      );
-      await setAsyncInfo({ keyPath: dayInfoKey, info: updatedMeals });
-      setMealData(updatedMeals);
-
+      if (!mealToDelete.id) {
+        console.warn("Meal does not have an id, cannot delete.");
+        return;
+      }
+      await removeMealById(mealToDelete.id);
+      // Refrescar lista después de borrar
+      fetchMealData();
     } catch (err) {
       console.error("Error deleting meal:", err);
     }
@@ -63,7 +76,7 @@ export default function FoodDetailScreen({ route }: { route: any }) {
         <Text style={styles.title}>Detalles de {meal}</Text>
 
         {mealData.map((item, index) => (
-          <View key={index} style={styles.card}>
+          <View key={item.id ?? index} style={styles.card}>
             <View style={styles.arson}>
               <View style={styles.arsonText}>
                 <Text style={styles.name}>🍽 {item.foodName}</Text>
@@ -73,15 +86,28 @@ export default function FoodDetailScreen({ route }: { route: any }) {
                 <View style={{ flexDirection: "row" }}>
                   <TouchableOpacity
                     style={{ marginRight: 20 }}
-                    onPress={() => (navigation as any).navigate("EditFoodScreen", { dayInfoKey: dayInfoKey })}
+                    onPress={() =>
+                      (navigation as any).navigate("EditFoodScreen", {
+                        dayInfoKey: dayInfoKey,
+                        mealId: item.id,
+                      })
+                    }
                   >
-                    <MaterialCommunityIcons name="pencil-box-outline" size={30} color="rgba(255, 170, 0, 1)" />
+                    <MaterialCommunityIcons
+                      name="pencil-box-outline"
+                      size={30}
+                      color="rgba(255, 170, 0, 1)"
+                    />
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={{ marginRight: 20 }}
-                    onPress={() => (deleteMeal(item))}
+                    onPress={() => deleteMeal(item)}
                   >
-                    <MaterialCommunityIcons name="trash-can-outline" size={30} color="rgba(255, 0, 0, 1)" />
+                    <MaterialCommunityIcons
+                      name="trash-can-outline"
+                      size={30}
+                      color="rgba(255, 0, 0, 1)"
+                    />
                   </TouchableOpacity>
                 </View>
               )}
@@ -91,7 +117,9 @@ export default function FoodDetailScreen({ route }: { route: any }) {
               <View style={{ marginTop: 8 }}>
                 <Text style={styles.section}>Ingredientes:</Text>
                 {item.ingredients.map((ing: any, i: number) => (
-                  <Text style={styles.text} key={i}> • {ing.name} - {ing.quantity}</Text>
+                  <Text style={styles.text} key={i}>
+                    • {ing.ingName} - {ing.quantity}
+                  </Text>
                 ))}
               </View>
             )}
@@ -109,11 +137,10 @@ export default function FoodDetailScreen({ route }: { route: any }) {
                 <Text style={styles.text}>{item.comments}</Text>
               </View>
             )}
-
           </View>
         ))}
 
-        {mealData?.length === 0 && (
+        {mealData.length === 0 && (
           <Text style={styles.text}>
             No hay comidas registradas para {meal} en esta fecha.
           </Text>
