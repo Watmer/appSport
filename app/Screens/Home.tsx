@@ -4,13 +4,10 @@ import { RefreshControl } from "react-native-gesture-handler";
 import { getAsyncInfo } from "../components/AsyncStorageCRUD";
 import Dashboard from "../components/Dashboard";
 import MealCard from "../components/MealCard";
-import { getDayInfo } from "../db/DaySqlLiteCRUD";
-
 
 const { width, height } = Dimensions.get("window");
 
 export default function Home() {
-  const [mealInfo, setMealInfo] = useState<any>();
   const [refreshing, setRefreshing] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -18,19 +15,9 @@ export default function Home() {
   const currentDay = today.getDate();
   const defaultKey = `dayInfo:${currentDay}-${today.getMonth()}-${today.getFullYear()}`;
 
-  const fetchDayInfo = async () => {
-    const data = await getDayInfo(defaultKey);
-    console.log("Fetched day info:", data);
-    setMealInfo(data);
-  };
-
-  useEffect(() => {
-    fetchDayInfo();
-  }, [defaultKey]);
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchDayInfo();
     setRefreshTrigger((prev) => prev + 1);
     setRefreshing(false);
   };
@@ -52,7 +39,7 @@ export default function Home() {
       }
     >
       <View style={styles.container}>
-        {mealInfo && <View style={styles.cardsContainer}>{renderMealCards()}</View>}
+        <View style={styles.cardsContainer}>{renderMealCards()}</View>
         <Dashboard refreshTrigger={refreshTrigger} />
       </View>
     </ScrollView>
@@ -72,111 +59,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "center",
     alignItems: "center",
-    rowGap:10,
-  },
-  dashboardContainer: {
-    flex: 1,
-    maxWidth: height / 1.5,
-    maxHeight: height / 1,
-    backgroundColor: "rgba(100, 100, 100, 1)",
-    borderRadius: 15,
-    marginBottom: 20,
-    padding: 10,
-    alignSelf: "flex-end",
-  },
-  dashboardTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "rgba(255, 255, 255, 1)",
-    textAlign: "center",
-    marginBottom: 10,
-  },
-  dashboardInfo: {
-    fontSize: 16,
-    color: "rgba(255, 255, 255, 0.8)",
-    textAlign: "center",
+    rowGap: 10,
   },
   cardsContainer: {
     marginTop: 10,
     gap: 10,
     alignItems: "center",
-  },
-  cardContainer: {
-    justifyContent: "center",
-    backgroundColor: "rgba(150, 150, 150, 1)",
-    borderRadius: 15,
-    minWidth: 350,
-    maxWidth: 500,
-    minHeight: 100,
-    maxHeight: 400,
-  },
-  groupCard: {
-    margin: 10,
-    gap: 10,
-  },
-  groupCardTitle: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  groupCardTitleText: {
-    color: "rgba(255, 255, 255, 1)",
-    fontSize: 24,
-    fontWeight: "bold",
-    alignSelf: "center",
-    margin: 5,
-  },
-  cardInfo: {
-    width: "100%",
-    minHeight: 100,
-    backgroundColor: "rgba(60, 80, 145, 1)",
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  titleText: {
-    fontSize: 20,
-    color: "rgba(255, 255, 255, 1)",
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  text: {
-    fontSize: 20,
-    color: "rgb(255, 255, 255)",
-  },
-
-
-  calendarGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-  weekRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  dayCell: {
-    flex: 1,
-    aspectRatio: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  dayLabel: {
-    color: "white",
-    fontWeight: "bold",
-  },
-  dayCircle: {
-    width: "90%",
-    height: "90%",
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(70, 70, 70, 1)",
-  },
-  todayCircle: {
-    backgroundColor: "orange",
-  },
-  dayText: {
-    color: "white",
-    fontWeight: "bold",
   },
 });

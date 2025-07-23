@@ -1,6 +1,5 @@
 import { createStackNavigator } from "@react-navigation/stack";
 import AddFoodScreen from "../Screens/AddFoodScreen";
-import DayInfoScreen from "../Screens/DayInfoScreen";
 import FoodDetailScreen from "../Screens/FoodDetailsScreen";
 import FoodListScreen from "../Screens/FoodListScreen";
 import Home from "../Screens/Home";
@@ -9,6 +8,7 @@ import TabsNavigator from "./TabsNavigator";
 import { TouchableOpacity } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import EditFoodScreen from "../Screens/EditFoodScreen";
 
 
 const RootStack = createStackNavigator();
@@ -30,18 +30,16 @@ export default function RootNavigator() {
         options={{ headerShown: false }}
       />
       <RootStack.Screen name="Home" component={Home} />
-      <RootStack.Screen name="DayInfoScreen" component={DayInfoScreen} 
-      options={{ title: "Day Info" }} />
-      <RootStack.Screen name="FoodDetailScreen" component={FoodDetailScreen} 
-      options={{ title: "Food Detail" }} />
-      <RootStack.Screen name="FoodListScreen" component={FoodListScreen} 
-      options={{ title: "Food List" }} />
-      <RootStack.Screen name="AddFoodScreen" component={AddFoodScreen} 
-      options={{ title: "Add Food" }} />
-      <RootStack.Screen name="ShopListScreen" component={ShopListScreen} 
-      options={{ title: "Shop List" }} />
-      <RootStack.Screen name="EditFoodScreen" component={AddFoodScreen} 
-      options={{ title: "Edit Food" }} />
+      <RootStack.Screen name="FoodDetailScreen" component={FoodDetailScreen}
+        options={{ title: "Food Detail" }} />
+      <RootStack.Screen name="FoodListScreen" component={FoodListScreen}
+        options={{ title: "Food List" }} />
+      <RootStack.Screen name="AddFoodScreen" component={AddFoodScreen}
+        options={{ title: "Add Food" }} />
+      <RootStack.Screen name="ShopListScreen" component={ShopListScreen}
+        options={{ title: "Shop List" }} />
+      <RootStack.Screen name="EditFoodScreen" component={EditFoodScreen}
+        options={{ title: "Edit Food" }} />
     </RootStack.Navigator>
   );
 }

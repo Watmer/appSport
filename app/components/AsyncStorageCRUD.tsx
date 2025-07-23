@@ -24,7 +24,3 @@ export async function removeAsyncInfo({ keyPath }: { keyPath: string }) {
 	await AsyncStorage.removeItem(keyPath);
 	events.emit("dayInfoUpdated", keyPath);
 }
-
-export async function getMealInfo(params:any) {
-		
-}

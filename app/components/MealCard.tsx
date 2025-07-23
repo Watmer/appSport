@@ -64,8 +64,8 @@ export default function MealCard({ dayInfoKey, refreshTrigger }: MealCardProps) 
     setMealsArray(updatedMeals);
   };
 
-  const handleCardPress = (meal: string) => {
-    (navigation as any).navigate("FoodDetailScreen", { dayInfoKey, meal });
+  const handleCardPress = (mealType: string) => {
+    (navigation as any).navigate("FoodDetailScreen", { dayInfoKey, mealType });
   };
 
   const groupedMeals: { [mealType: string]: MealInfo[] } = {};
@@ -102,13 +102,13 @@ export default function MealCard({ dayInfoKey, refreshTrigger }: MealCardProps) 
                         <TouchableOpacity
                           onPress={() =>
                             toggleCompleted(
-                              mealsArray.findIndex((m) => m.id === mealInf.id)
+                              mealsArray.findIndex((meal) => meal.id === mealInf.id)
                             )
                           }
                         >
                           <MaterialCommunityIcons
                             name={mealInf.completed ? "checkbox-marked" : "checkbox-blank-outline"}
-                            size={25}
+                            size={28}
                             color="rgba(255, 200, 0, 1)"
                           />
                         </TouchableOpacity>
@@ -154,28 +154,6 @@ const styles = StyleSheet.create({
     justifyContent: "flex-start",
     alignItems: "center",
     gap: 10,
-  },
-  dashboardContainer: {
-    flex: 1,
-    maxWidth: height / 1.5,
-    maxHeight: height / 1,
-    backgroundColor: "rgba(100, 100, 100, 1)",
-    borderRadius: 15,
-    marginBottom: 20,
-    padding: 10,
-    alignSelf: "flex-end",
-  },
-  dashboardTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "rgba(255, 255, 255, 1)",
-    textAlign: "center",
-    marginBottom: 10,
-  },
-  dashboardInfo: {
-    fontSize: 16,
-    color: "rgba(255, 255, 255, 0.8)",
-    textAlign: "center",
   },
   cardsContainer: {
     marginTop: 10,
@@ -226,38 +204,5 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 18,
     color: "rgb(255, 255, 255)",
-  },
-  calendarGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-  weekRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  dayCell: {
-    flex: 1,
-    aspectRatio: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  dayLabel: {
-    color: "white",
-    fontWeight: "bold",
-  },
-  dayCircle: {
-    width: "90%",
-    height: "90%",
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(70, 70, 70, 1)",
-  },
-  todayCircle: {
-    backgroundColor: "orange",
-  },
-  dayText: {
-    color: "white",
-    fontWeight: "bold",
   },
 });

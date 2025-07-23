@@ -1,22 +1,21 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useNavigation } from "@react-navigation/native";
+import { useState } from "react";
 import {
   Alert,
   Dimensions,
   Keyboard,
   KeyboardAvoidingView,
   Modal,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  View,
+  View
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { addMealWithIngredients, getDayInfo, setDayInfo } from "../db/DaySqlLiteCRUD";
+import { addMealWithIngredients } from "../db/DaySqlLiteCRUD";
 
 const { width, height } = Dimensions.get("window");
 
@@ -26,7 +25,7 @@ export default function AddFoodScreen({ route }: { route: any }) {
   const { dayInfoKey } = route.params || {};
   const navigation = useNavigation();
 
-  const [ingredients, setIngredients] = useState([{ name: "", quantity: "" }]);
+  const [ingredients, setIngredients] = useState([{ ingName: "", quantity: "" }]);
   const [foodName, setFoodName] = useState("");
   const [time, setTime] = useState(0);
   const [meal, setMeal] = useState("");
@@ -35,37 +34,34 @@ export default function AddFoodScreen({ route }: { route: any }) {
   const [showMealType, setShowMealType] = useState(false);
 
   const addIngredient = () =>
-    setIngredients([...ingredients, { name: "", quantity: "" }]);
+    setIngredients([...ingredients, { ingName: "", quantity: "" }]);
 
   const deleteIngredient = (i: number) =>
     setIngredients(ingredients.filter((_, index) => index !== i));
 
   const saveFoodInfo = async () => {
-  if (!checkMandatoryFields()) return;
+    if (!checkMandatoryFields()) return;
 
-  const newFood = {
-    meal,
-    foodName,
-    time,
-    ingredients: ingredients.map((ing) => ({
-      ingName: ing.name,
-      quantity: ing.quantity,
-    })),
-    recepy,
-    comments,
-    completed: false,
+    const newFood = {
+      meal,
+      foodName,
+      time,
+      ingredients: ingredients,
+      recepy,
+      comments,
+      completed: false,
+    };
+
+    try {
+      await addMealWithIngredients(dayInfoKey, newFood);
+
+      Alert.alert("Comida guardada correctamente.");
+      navigation.goBack();
+    } catch (error) {
+      console.error("Error guardando comida:", error);
+      Alert.alert("Error guardando comida.");
+    }
   };
-
-  try {
-    await addMealWithIngredients(dayInfoKey, newFood);
-
-    alert("Comida guardada correctamente.");
-    navigation.goBack();
-  } catch (error) {
-    console.error("Error guardando comida:", error);
-    alert("Error guardando comida.");
-  }
-};
 
   const checkMandatoryFields = () => {
     if (!meal) {
@@ -152,10 +148,10 @@ export default function AddFoodScreen({ route }: { route: any }) {
                   <TextInput
                     style={[styles.input, { flex: 1 }]}
                     placeholder="Ingrediente"
-                    value={item.name}
+                    value={item.ingName}
                     onChangeText={(text) => {
                       const copy = [...ingredients];
-                      copy[i].name = text;
+                      copy[i].ingName = text;
                       setIngredients(copy);
                     }}
                     placeholderTextColor="gray"

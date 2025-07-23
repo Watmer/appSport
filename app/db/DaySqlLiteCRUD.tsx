@@ -1,3 +1,4 @@
+import { get } from "http";
 import { db } from "./db";
 import { dayTable, mealTable, ingredientsTable } from "./schema";
 import { eq } from "drizzle-orm";
@@ -5,15 +6,7 @@ import { eq } from "drizzle-orm";
 // Obtener info de un día (día + comidas + ingredientes)
 export async function getDayInfo(dayId: string) {
   const [day] = await db.select().from(dayTable).where(eq(dayTable.id, dayId)).limit(1);
-  const meals = await db.select().from(mealTable).where(eq(mealTable.dayId, dayId));
-
-  for (const meal of meals) {
-    const ingredients = await db
-      .select()
-      .from(ingredientsTable)
-      .where(eq(ingredientsTable.mealId, meal.id));
-    (meal as any).ingredients = ingredients;
-  }
+  const meals = await getMealsDayInfo(dayId);
 
   return {
     day: day || null,
@@ -21,7 +14,37 @@ export async function getDayInfo(dayId: string) {
   };
 }
 
-// Guardar o actualizar info de un día con comidas e ingredientes
+export async function getMealWithIngredients(mealId: number) {
+  const [meal] = await db.select().from(mealTable).where(eq(mealTable.id, mealId)).limit(1);
+  const ingredients = await getMealIngredients(meal.id);
+  (meal as any).ingredients = ingredients;
+
+  return meal || null;
+}
+
+export async function getMealsDayInfo(dayId: string) {
+  const meals = await db.select().from(mealTable).where(eq(mealTable.dayId, dayId));
+  for (const meal of meals) {
+    const ingredients = await getMealIngredients(meal.id);
+    (meal as any).ingredients = ingredients;
+  }
+  return meals || null;
+}
+
+export async function getMealIngredients(mealId: number) {
+  const ingredients = await db
+    .select()
+    .from(ingredientsTable)
+    .where(eq(ingredientsTable.mealId, mealId));
+  return ingredients || [];
+}
+
+export async function getAllDays() {
+  const days = await db.select().from(dayTable);
+  return days || [];
+}
+
+// Guardar info de un día con comidas e ingredientes
 export async function setDayInfo(dayId: string, meals: any[]) {
   await db.insert(dayTable).values({ id: dayId }).onConflictDoNothing();
 
@@ -84,6 +107,39 @@ export async function removeMealById(mealId: number) {
   await db.delete(mealTable).where(eq(mealTable.id, mealId));
 }
 
+export async function updateMealById(mealId: number, mealData: {
+  meal: string;
+  foodName: string;
+  time: number;
+  completed: boolean;
+  recepy: string;
+  comments: string;
+  ingredients: { ingName: string; quantity: string }[];
+}) {
+  await db.update(mealTable)
+    .set({
+      meal: mealData.meal,
+      foodName: mealData.foodName,
+      time: mealData.time,
+      completed: mealData.completed ? 1 : 0,
+      recepy: mealData.recepy,
+      comments: mealData.comments,
+    })
+    .where(eq(mealTable.id, mealId));
+
+  // Borrar ingredientes anteriores y agregar los nuevos
+  await db.delete(ingredientsTable).where(eq(ingredientsTable.mealId, mealId));
+
+  for (const ing of mealData.ingredients || []) {
+    await db.insert(ingredientsTable).values({
+      mealId,
+      ingName: ing.ingName,
+      quantity: ing.quantity,
+    });
+  }
+  return mealId;
+}
+
 export async function addMealWithIngredients(dayId: string, mealData: {
   meal: string;
   foodName: string;
@@ -100,7 +156,7 @@ export async function addMealWithIngredients(dayId: string, mealData: {
       meal: mealData.meal,
       foodName: mealData.foodName,
       time: mealData.time,
-      completed: mealData.completed ? 1 : 0, 
+      completed: mealData.completed ? 1 : 0,
       recepy: mealData.recepy,
       comments: mealData.comments,
     })

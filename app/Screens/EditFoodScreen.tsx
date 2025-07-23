@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
 import { useEffect, useState } from "react";
 import {
   Alert,
@@ -6,27 +7,25 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Modal,
-  Platform,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   TouchableWithoutFeedback,
-  View,
+  View
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import { addMealWithIngredients, getDayInfo, setDayInfo } from "../db/DaySqlLiteCRUD";
+import { getMealWithIngredients, updateMealById } from "../db/DaySqlLiteCRUD";
 
 const { width, height } = Dimensions.get("window");
 
 const meals = ["Desayuno", "Almuerzo", "Comida", "Merienda", "Cena"];
 
 export default function EditFoodScreen({ route }: { route: any }) {
-  const { dayInfoKey } = route.params || {};
+  const { mealId } = route.params || {};
   const navigation = useNavigation();
 
-  const [ingredients, setIngredients] = useState([{ name: "", quantity: "" }]);
+  const [ingredients, setIngredients] = useState([{ ingName: "", quantity: "" }]);
   const [foodName, setFoodName] = useState("");
   const [time, setTime] = useState(0);
   const [meal, setMeal] = useState("");
@@ -34,38 +33,54 @@ export default function EditFoodScreen({ route }: { route: any }) {
   const [comments, setComments] = useState("");
   const [showMealType, setShowMealType] = useState(false);
 
+  const fetchMealData = async () => {
+    try {
+      const mealInfo = await getMealWithIngredients(mealId) as any;
+      if (mealInfo) {
+        setFoodName(mealInfo.foodName || "");
+        setTime(mealInfo.time || 0);
+        setMeal(mealInfo.meal || "");
+        setRecepy(mealInfo.recepy || "");
+        setComments(mealInfo.comments || "");
+        setIngredients(mealInfo.ingredients || []);
+      }
+    } catch (error) {
+      console.error("Error fetching meals:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchMealData();
+  }, [mealId]);
+
   const addIngredient = () =>
-    setIngredients([...ingredients, { name: "", quantity: "" }]);
+    setIngredients([...ingredients, { ingName: "", quantity: "" }]);
 
   const deleteIngredient = (i: number) =>
     setIngredients(ingredients.filter((_, index) => index !== i));
 
   const saveFoodInfo = async () => {
-  if (!checkMandatoryFields()) return;
+    if (!checkMandatoryFields()) return;
 
-  const newFood = {
-    meal,
-    foodName,
-    time,
-    ingredients: ingredients.map((ing) => ({
-      ingName: ing.name,
-      quantity: ing.quantity,
-    })),
-    recepy,
-    comments,
-    completed: false,
+    const newFood = {
+      meal,
+      foodName,
+      time,
+      ingredients: ingredients,
+      recepy,
+      comments,
+      completed: false,
+    };
+
+    try {
+      await updateMealById(mealId, newFood);
+      Alert.alert("Comida guardada correctamente.");
+      navigation.goBack();
+    } catch (error) {
+      console.error("Error guardando comida:", error);
+      Alert.alert("Error guardando comida.");
+    }
   };
-
-  try {
-    await addMealWithIngredients(dayInfoKey, newFood);
-
-    alert("Comida guardada correctamente.");
-    navigation.goBack();
-  } catch (error) {
-    console.error("Error guardando comida:", error);
-    alert("Error guardando comida.");
-  }
-};
 
   const checkMandatoryFields = () => {
     if (!meal) {
@@ -134,6 +149,7 @@ export default function EditFoodScreen({ route }: { route: any }) {
                 style={styles.input}
                 placeholder="Ej: Tostada con Aguacate"
                 placeholderTextColor="gray"
+                value={foodName}
                 onChangeText={setFoodName}
               />
 
@@ -143,6 +159,7 @@ export default function EditFoodScreen({ route }: { route: any }) {
                 placeholder="Ej: 10"
                 keyboardType="numeric"
                 placeholderTextColor="gray"
+                value={time.toString()}
                 onChangeText={(text) => setTime(parseInt(text) || 0)}
               />
 
@@ -152,10 +169,10 @@ export default function EditFoodScreen({ route }: { route: any }) {
                   <TextInput
                     style={[styles.input, { flex: 1 }]}
                     placeholder="Ingrediente"
-                    value={item.name}
+                    value={item.ingName}
                     onChangeText={(text) => {
                       const copy = [...ingredients];
-                      copy[i].name = text;
+                      copy[i].ingName = text;
                       setIngredients(copy);
                     }}
                     placeholderTextColor="gray"
@@ -191,6 +208,7 @@ export default function EditFoodScreen({ route }: { route: any }) {
                 placeholder="..."
                 placeholderTextColor="gray"
                 multiline={true}
+                value={recepy}
                 onChangeText={setRecepy}
               />
 
@@ -200,6 +218,7 @@ export default function EditFoodScreen({ route }: { route: any }) {
                 placeholder="..."
                 placeholderTextColor="gray"
                 multiline={true}
+                value={comments}
                 onChangeText={setComments}
               />
 

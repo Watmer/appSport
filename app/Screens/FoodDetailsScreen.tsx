@@ -6,7 +6,7 @@ import { getAsyncInfo, setAsyncInfo } from "../components/AsyncStorageCRUD";
 import { getDayInfo, removeMealById } from "../db/DaySqlLiteCRUD";
 
 export default function FoodDetailScreen({ route }: { route: any }) {
-  const { dayInfoKey, meal } = route.params || {};
+  const { dayInfoKey, mealType } = route.params || {};
   const [mealData, setMealData] = useState<any[]>([]);
   const [editing, setEditing] = useState(false);
 
@@ -41,8 +41,9 @@ export default function FoodDetailScreen({ route }: { route: any }) {
     try {
       const dayInfo = await getDayInfo(dayInfoKey);
       if (dayInfo && dayInfo.meals) {
-        const filtered = dayInfo.meals.filter(m => m.meal === meal);
+        const filtered = dayInfo.meals.filter(day => day.meal === mealType);
         setMealData(filtered);
+        console.log("mealIds:", filtered.map(m => m.id));
       } else {
         setMealData([]);
       }
@@ -54,14 +55,10 @@ export default function FoodDetailScreen({ route }: { route: any }) {
 
   useEffect(() => {
     fetchMealData();
-  }, [dayInfoKey, meal]);
+  }, [dayInfoKey, mealType]);
 
   const deleteMeal = async (mealToDelete: any) => {
     try {
-      if (!mealToDelete.id) {
-        console.warn("Meal does not have an id, cannot delete.");
-        return;
-      }
       await removeMealById(mealToDelete.id);
       // Refrescar lista después de borrar
       fetchMealData();
@@ -73,7 +70,7 @@ export default function FoodDetailScreen({ route }: { route: any }) {
   return (
     <ScrollView style={styles.scrollContainer}>
       <View style={styles.container}>
-        <Text style={styles.title}>Detalles de {meal}</Text>
+        <Text style={styles.title}>Detalles de {mealType}</Text>
 
         {mealData.map((item, index) => (
           <View key={item.id ?? index} style={styles.card}>
@@ -88,7 +85,6 @@ export default function FoodDetailScreen({ route }: { route: any }) {
                     style={{ marginRight: 20 }}
                     onPress={() =>
                       (navigation as any).navigate("EditFoodScreen", {
-                        dayInfoKey: dayInfoKey,
                         mealId: item.id,
                       })
                     }
@@ -142,7 +138,7 @@ export default function FoodDetailScreen({ route }: { route: any }) {
 
         {mealData.length === 0 && (
           <Text style={styles.text}>
-            No hay comidas registradas para {meal} en esta fecha.
+            No hay comidas registradas para {mealType} en esta fecha.
           </Text>
         )}
       </View>
