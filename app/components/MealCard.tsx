@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { getAsyncInfo, setAsyncInfo } from "./AsyncStorageCRUD";
 
-import { getDayInfo, setDayInfo } from "../db/DaySqlLiteCRUD";
+import { getDayInfo, setDayInfo, updateMealById } from "../db/DaySqlLiteCRUD";
 
 
 const { width, height } = Dimensions.get("window");
@@ -15,7 +15,7 @@ interface Ingredient {
 }
 
 interface MealInfo {
-  id?: number;
+  id: number;
   meal: string;
   foodName: string;
   time: number;
@@ -58,9 +58,18 @@ export default function MealCard({ dayInfoKey, refreshTrigger }: MealCardProps) 
 
   const toggleCompleted = async (index: number) => {
     const updatedMeals = [...mealsArray];
-    updatedMeals[index].completed = updatedMeals[index].completed ? 0 : 1;
+    const mealToUpdate = updatedMeals[index];
 
-    await setDayInfo(dayInfoKey, updatedMeals);
+    if (mealToUpdate.id === undefined) {
+      console.error("Error: El ID de la comida es undefined.");
+      return;
+    }
+    mealToUpdate.completed = mealToUpdate.completed ? 0 : 1;
+
+    await updateMealById(mealToUpdate.id, {
+      ...mealToUpdate,
+      completed: mealToUpdate.completed === 1,
+    });
     setMealsArray(updatedMeals);
   };
 
