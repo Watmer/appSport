@@ -1,12 +1,10 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 
-import FoodListScreen from "../Screens/FoodListScreen";
+import { useNavigation } from "@react-navigation/native";
 import Home from "../Screens/Home";
 import ShopListScreen from "../Screens/ShopListScreen";
-import AddFoodScreen from "../Screens/AddFoodScreen";
-import { useNavigation } from "@react-navigation/native";
-import { TouchableOpacity } from "react-native";
+import TimerComponent from "../components/TimerComponent";
 
 const Tab = createBottomTabNavigator();
 
@@ -31,7 +29,12 @@ export default function TabsNavigator() {
         title: "Home", tabBarIcon: ({ color, focused }) => (
           <MaterialCommunityIcons name={focused ? 'home' : 'home-outline'} color={color} size={24} />
         ),
-      }}/>
+      }} />
+      <Tab.Screen name="TimerComponent" component={TimerComponent} options={{
+        title: "Timer", tabBarIcon: ({ color, focused }) => (
+          <MaterialCommunityIcons name={focused ? 'timer' : 'timer-outline'} color={color} size={24} />
+        ),
+      }} />
       <Tab.Screen name="ShopListScreen" component={ShopListScreen} options={{
         title: "Shop List", tabBarIcon: ({ color, focused }) => (
           <MaterialCommunityIcons name={focused ? 'cart' : 'cart-outline'} color={color} size={24} />

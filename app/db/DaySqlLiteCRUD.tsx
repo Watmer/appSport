@@ -46,49 +46,36 @@ export async function getAllDays() {
 
 // Guardar info de un día con comidas e ingredientes
 export async function setDayInfo(dayId: string, meals: any[]) {
+  // Asegura que el día exista en la tabla de días (no lo sobrescribe si ya existe)
   await db.insert(dayTable).values({ id: dayId }).onConflictDoNothing();
 
   for (const meal of meals) {
-    let mealId = meal.id;
+    // Inserta siempre una nueva comida con el dayId correcto
+    const [inserted] = await db.insert(mealTable)
+      .values({
+        dayId,
+        meal: meal.meal,
+        foodName: meal.foodName,
+        time: meal.time,
+        completed: meal.completed,
+        recepy: meal.recepy,
+        comments: meal.comments,
+      })
+      .returning();
 
-    if (mealId) {
-      await db.update(mealTable)
-        .set({
-          meal: meal.meal,
-          foodName: meal.foodName,
-          time: meal.time,
-          completed: meal.completed,
-          recepy: meal.recepy,
-          comments: meal.comments,
-        })
-        .where(eq(mealTable.id, mealId));
-    } else {
-      const [inserted] = await db.insert(mealTable)
-        .values({
-          dayId,
-          meal: meal.meal,
-          foodName: meal.foodName,
-          time: meal.time,
-          completed: meal.completed,
-          recepy: meal.recepy,
-          comments: meal.comments,
-        })
-        .returning();
-      mealId = inserted.id;
-    }
+    const newMealId = inserted.id;
 
-    // Borrar ingredientes anteriores y agregar los nuevos
-    await db.delete(ingredientsTable).where(eq(ingredientsTable.mealId, mealId));
-
+    // Inserta los ingredientes asociados a la nueva comida
     for (const ing of meal.ingredients || []) {
       await db.insert(ingredientsTable).values({
-        mealId,
+        mealId: newMealId,
         ingName: ing.ingName,
         quantity: ing.quantity,
       });
     }
   }
 }
+
 
 // Eliminar info completa de un día
 export async function removeDayInfo(dayId: string) {

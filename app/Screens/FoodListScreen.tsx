@@ -1,11 +1,11 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useLayoutEffect, useState } from "react";
-import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View, Text } from "react-native";
+import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View, Text, Alert, Modal } from "react-native";
 import { getAsyncInfo, removeAsyncInfo } from "../components/AsyncStorageCRUD";
 import MealCard from "../components/MealCard";
-import { RefreshControl } from "react-native-gesture-handler";
-import { getDayInfo } from "../db/DaySqlLiteCRUD";
+import { RefreshControl, TextInput } from "react-native-gesture-handler";
+import { getDayInfo, setDayInfo } from "../db/DaySqlLiteCRUD";
 
 const { width, height } = Dimensions.get("window");
 
@@ -14,6 +14,9 @@ const meals = ["Desayuno", "Almuerzo", "Comida", "Merienda", "Cena"];
 export default function FoodListScreen({ route }: { route: any }) {
   const today = new Date();
   const currentDay = today.getDate();
+
+  const [selectedDaysToRepeat, setSelectedDaysToRepeat] = useState<string[]>([]);
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   const [refreshing, setRefreshing] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -34,13 +37,29 @@ export default function FoodListScreen({ route }: { route: any }) {
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerRight: () => (
+      headerLeft: () => (
         <TouchableOpacity
-          style={{ marginRight: 20 }}
-          onPress={() => (navigation as any).navigate("AddFoodScreen", { dayInfoKey: keyToUse })}
+          style={{ marginLeft: 20 }}
+          onPress={() => navigation.goBack()}
         >
-          <MaterialCommunityIcons name="plus" size={30} color="rgba(255, 170, 0, 1)" />
+          <MaterialCommunityIcons name="arrow-left" size={30} color="rgba(255, 170, 0, 1)" />
         </TouchableOpacity>
+      ),
+      headerRight: () => (
+        <View style={{ flexDirection: "row", gap: 10 }}>
+          <TouchableOpacity
+            style={{ marginRight: 20 }}
+            onPress={() => setIsModalVisible(true)}
+          >
+            <MaterialCommunityIcons name="repeat-variant" size={30} color="rgba(255, 170, 0, 1)" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{ marginRight: 20 }}
+            onPress={() => (navigation as any).navigate("AddFoodScreen", { dayInfoKey: keyToUse })}
+          >
+            <MaterialCommunityIcons name="plus" size={30} color="rgba(255, 170, 0, 1)" />
+          </TouchableOpacity>
+        </View>
       ),
     });
   }, [navigation, keyToUse]);
@@ -83,12 +102,141 @@ export default function FoodListScreen({ route }: { route: any }) {
     );
   };
 
+  const repeatMeals = async (selectedDateKeys: string[]) => {
+    try {
+      const data = await getDayInfo(keyToUse);
+      console.log("Data to repeat:", selectedDateKeys);
+
+      for (const dateKey of selectedDateKeys) {
+        await setDayInfo(`dayInfo:${dateKey}`, data.meals);
+        console.log(`Meals repeated for ${dateKey}, data:`, data.meals);
+      }
+
+      Alert.alert("Comidas repetidas correctamente.");
+    } catch (error) {
+      console.error("Error repitiendo comidas:", error);
+      Alert.alert("Error repitiendo comidas.");
+    }
+  };
+
+  const renderRepeatMealsModal = () => {
+    const [day, month, year] = keyToUse.replace("dayInfo:", "").split("-").map(Number);
+    const startDate = new Date(year, month, day + 1);
+
+    // Generar 31 fechas desde mañana
+    const dates = Array.from({ length: 31 }, (_, i) => {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
+      const day = date.getDate();
+      const month = date.getMonth();
+      const year = date.getFullYear();
+      return {
+        day,
+        month,
+        year,
+        weekday: (date.getDay() + 6) % 7, // Lunes = 0
+        key: `${day}-${month}-${year}`,
+      };
+    });
+
+    // Alinear la primera semana con null al inicio
+    const firstWeekday = dates[0].weekday;
+    const paddedDates = [...Array(firstWeekday).fill(null), ...dates];
+
+    // Rellenar al final con nulls para completar la última fila de 7
+    while (paddedDates.length % 7 !== 0) {
+      paddedDates.push(null);
+    }
+
+    // Dividir en semanas
+    const weeks = Array.from({ length: paddedDates.length / 7 }, (_, i) =>
+      paddedDates.slice(i * 7, i * 7 + 7)
+    );
+
+    return (
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={isModalVisible}
+        onRequestClose={() => setIsModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalView}>
+            <Text style={styles.modalText}>Selecciona los días:</Text>
+
+            {/* Cabecera de días */}
+            <View style={styles.weekRow}>
+              {["L", "M", "X", "J", "V", "S", "D"].map((d, i) => (
+                <View key={i} style={styles.dayCell}>
+                  <Text style={styles.dayLabel}>{d}</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* Días en cuadrícula */}
+            {weeks.map((week, i) => (
+              <View key={i} style={styles.weekRow}>
+                {week.map((date, j) => {
+                  if (!date) return <View key={j} style={styles.dayCell} />;
+                  const { day, key } = date;
+                  const selected = selectedDaysToRepeat.includes(key);
+                  return (
+                    <View key={j} style={styles.dayCell}>
+                      <TouchableOpacity
+                        style={[
+                          styles.dayCircle,
+                          selected && { borderWidth: 4,borderColor: "rgba(0, 195, 255, 1)" },
+                        ]}
+                        onPress={() => {
+                          setSelectedDaysToRepeat(prev =>
+                            selected
+                              ? prev.filter(k => k !== key)
+                              : [...prev, key]
+                          );
+                        }}
+                      >
+                        <Text style={styles.dayText}>{day}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
+              </View>
+            ))}
+
+            {/* Botones */}
+            <TouchableOpacity
+              style={styles.modalButton}
+              onPress={async () => {
+                await repeatMeals(selectedDaysToRepeat);
+                setIsModalVisible(false);
+                setSelectedDaysToRepeat([]);
+              }}
+            >
+              <Text style={styles.buttonText}>Repetir Comidas</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.modalCancelButton}
+              onPress={() => {
+                setIsModalVisible(false);
+                setSelectedDaysToRepeat([]);
+              }}
+            >
+              <Text style={styles.modalCancelButtonText}>Cancelar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
   return (
     <ScrollView
       style={styles.scrollContainer}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} progressBackgroundColor="rgba(70, 70, 70, 1)" colors={["rgba(255, 170, 0, 1)"]} />
       }>
+      {renderRepeatMealsModal()}
       <View style={styles.container}>
         <View style={styles.cardsContainer}>
           {renderMealCards()}
@@ -126,4 +274,111 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: "rgb(255, 255, 255)",
   },
+  input: {
+    borderColor: "rgba(200, 200, 200, 1)",
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingHorizontal: 10,
+    marginBottom: 10,
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    color: "black",
+    height: 40,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalView: {
+    backgroundColor: "rgba(0, 0, 0, 1)",
+    borderRadius: 15,
+    padding: 10,
+    alignItems: "center",
+    overflow: "hidden",
+    width: "85%",
+  },
+  modalButton: {
+    backgroundColor: "rgba(255, 170, 0, 1)",
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 10,
+    width: "100%",
+  },
+  buttonText: {
+    color: "white",
+    textAlign: "center",
+    fontSize: 16,
+  },
+  modalCancelButton: {
+    backgroundColor: "rgba(255, 0, 0, 1)",
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 10,
+    width: "100%",
+  },
+  modalCancelButtonText: {
+    color: "white",
+    textAlign: "center",
+    fontSize: 16,
+  },
+  scrollModalContainer: {
+    width: "100%",
+  },
+  modalText: {
+    color: "rgba(255, 255, 255, 1)",
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  modalButtonText: {
+    color: "white",
+    textAlign: "center",
+    fontSize: 16,
+  },
+  modalButtonButton: {
+    backgroundColor: "rgba(200, 200, 200, 1)",
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 10,
+    width: "100%",
+  },
+  modalButtonButtonText: {
+    color: "black",
+    textAlign: "center",
+    fontSize: 16,
+  },
+  calendarGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+  },
+  weekRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  dayCell: {
+    flex: 1,
+    aspectRatio: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  dayLabel: {
+    color: "white",
+    fontWeight: "bold",
+  },
+  dayCircle: {
+    width: "90%",
+    height: "90%",
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(70, 70, 70, 1)",
+  },
+  todayCircle: {
+    backgroundColor: "orange",
+  },
+  dayText: {
+    color: "white",
+    fontWeight: "bold",
+  },
+
 });

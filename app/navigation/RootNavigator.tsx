@@ -1,20 +1,17 @@
+import { useNavigation } from "@react-navigation/native";
 import { createStackNavigator } from "@react-navigation/stack";
 import AddFoodScreen from "../Screens/AddFoodScreen";
+import EditFoodScreen from "../Screens/EditFoodScreen";
 import FoodDetailScreen from "../Screens/FoodDetailsScreen";
 import FoodListScreen from "../Screens/FoodListScreen";
 import Home from "../Screens/Home";
 import ShopListScreen from "../Screens/ShopListScreen";
 import TabsNavigator from "./TabsNavigator";
-import { TouchableOpacity } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-import EditFoodScreen from "../Screens/EditFoodScreen";
-
+import TimerComponent from "../components/TimerComponent";
 
 const RootStack = createStackNavigator();
 
 export default function RootNavigator() {
-  const navigation = useNavigation();
   return (
     <RootStack.Navigator screenOptions={
       {
@@ -40,6 +37,8 @@ export default function RootNavigator() {
         options={{ title: "Shop List" }} />
       <RootStack.Screen name="EditFoodScreen" component={EditFoodScreen}
         options={{ title: "Edit Food" }} />
+      <RootStack.Screen name="TimerComponent" component={TimerComponent}
+        options={{ title: "Timer" }} />
     </RootStack.Navigator>
   );
 }
