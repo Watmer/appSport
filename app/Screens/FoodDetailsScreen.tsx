@@ -14,6 +14,14 @@ export default function FoodDetailScreen({ route }: { route: any }) {
 
   useLayoutEffect(() => {
     navigation.setOptions({
+      headerLeft: () => (
+        <TouchableOpacity
+          style={{ marginLeft: 20 }}
+          onPress={() => navigation.goBack()}
+        >
+          <MaterialCommunityIcons name="arrow-left" size={30} color="rgba(255, 170, 0, 1)" />
+        </TouchableOpacity>
+      ),
       headerRight: () => (
         <TouchableOpacity
           style={{ marginRight: 20 }}
