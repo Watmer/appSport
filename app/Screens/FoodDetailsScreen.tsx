@@ -2,7 +2,6 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useEffect, useLayoutEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { getAsyncInfo, setAsyncInfo } from "../components/AsyncStorageCRUD";
 import { getDayInfo, removeMealById } from "../db/DaySqlLiteCRUD";
 
 export default function FoodDetailScreen({ route }: { route: any }) {
@@ -88,7 +87,7 @@ export default function FoodDetailScreen({ route }: { route: any }) {
                 <Text style={styles.text}>⏱ Tiempo: {item.time} min</Text>
               </View>
               {editing && (
-                <View style={{ flexDirection: "row" }}>
+                <View style={{ flexDirection: "row", flex: 1, }}>
                   <TouchableOpacity
                     style={{ marginRight: 20 }}
                     onPress={() =>
@@ -175,6 +174,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   arson: {
+    flex: 1,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -183,6 +183,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 1)"
   },
   arsonText: {
+    flex: 3,
   },
   name: {
     fontSize: 23,

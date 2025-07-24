@@ -121,7 +121,7 @@ export default function MealCard({ dayInfoKey, refreshTrigger }: MealCardProps) 
                             color="rgba(255, 200, 0, 1)"
                           />
                         </TouchableOpacity>
-                        <Text style={[styles.titleText, { marginLeft: 10 }]}>
+                        <Text style={styles.titleText}>
                           {mealInf.foodName}
                         </Text>
                       </View>
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(150, 150, 150, 1)",
     borderRadius: 15,
     minWidth: 350,
-    maxWidth: 500,
+    maxWidth: 350,
     minHeight: 100,
   },
   groupCard: {
@@ -208,7 +208,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: "rgba(255, 255, 255, 1)",
     fontWeight: "800",
-    textAlign: "center",
+    width: "85%",
+    marginLeft: 10,
   },
   text: {
     fontSize: 18,

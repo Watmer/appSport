@@ -121,10 +121,9 @@ export default function FoodListScreen({ route }: { route: any }) {
 
   const renderRepeatMealsModal = () => {
     const [day, month, year] = keyToUse.replace("dayInfo:", "").split("-").map(Number);
-    const startDate = new Date(year, month, day + 1);
+    const startDate = new Date(year, month, day - 7);
 
-    // Generar 31 fechas desde mañana
-    const dates = Array.from({ length: 31 }, (_, i) => {
+    const dates = Array.from({ length: 38 }, (_, i) => {
       const date = new Date(startDate);
       date.setDate(startDate.getDate() + i);
       const day = date.getDate();
@@ -173,29 +172,41 @@ export default function FoodListScreen({ route }: { route: any }) {
               ))}
             </View>
 
-            {/* Días en cuadrícula */}
-            {weeks.map((week, i) => (
-              <View key={i} style={styles.weekRow}>
-                {week.map((date, j) => {
-                  if (!date) return <View key={j} style={styles.dayCell} />;
-                  const { day, key } = date;
-                  const selected = selectedDaysToRepeat.includes(key);
+            {/* Cuadrícula de días */}
+            {weeks.map((week, weekIndex) => (
+              <View key={weekIndex} style={styles.weekRow}>
+                {week.map((diaObj, colIndex) => {
+                  if (!diaObj) return <View key={colIndex} style={[styles.dayCell]} />;
+                  const isSelected = selectedDaysToRepeat.includes(diaObj.key);
+                  const isToday = diaObj.day === day && diaObj.month === month && diaObj.year === year;
+                  if (isToday) {
+                    return (
+                      <View key={colIndex} style={styles.dayCell}>
+                        <View key={colIndex} style={[styles.dayCircle, styles.todayCircle]}>
+                          <Text style={styles.dayLabel}>{day}</Text>
+                        </View>
+                      </View>);
+                  }
+
                   return (
-                    <View key={j} style={styles.dayCell}>
+                    <View key={colIndex} style={styles.dayCell}>
                       <TouchableOpacity
                         style={[
                           styles.dayCircle,
-                          selected && { borderWidth: 4,borderColor: "rgba(0, 195, 255, 1)" },
+                          (diaObj.month !== month || diaObj.year !== year) && styles.otherMonthCircle,
+                          isSelected && {
+                            borderWidth: 4,
+                            borderColor: "rgba(0, 195, 255, 1)",
+                          },
                         ]}
                         onPress={() => {
                           setSelectedDaysToRepeat(prev =>
-                            selected
-                              ? prev.filter(k => k !== key)
-                              : [...prev, key]
+                            isSelected ? prev.filter(k => k !== diaObj.key)
+                              : [...prev, diaObj.key]
                           );
                         }}
                       >
-                        <Text style={styles.dayText}>{day}</Text>
+                        <Text style={styles.dayText}>{diaObj.day}</Text>
                       </TouchableOpacity>
                     </View>
                   );
@@ -204,26 +215,28 @@ export default function FoodListScreen({ route }: { route: any }) {
             ))}
 
             {/* Botones */}
-            <TouchableOpacity
-              style={styles.modalButton}
-              onPress={async () => {
-                await repeatMeals(selectedDaysToRepeat);
-                setIsModalVisible(false);
-                setSelectedDaysToRepeat([]);
-              }}
-            >
-              <Text style={styles.buttonText}>Repetir Comidas</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={async () => {
+                  await repeatMeals(selectedDaysToRepeat);
+                  setIsModalVisible(false);
+                  setSelectedDaysToRepeat([]);
+                }}
+              >
+                <Text style={styles.buttonText}>Repetir Comidas</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.modalCancelButton}
-              onPress={() => {
-                setIsModalVisible(false);
-                setSelectedDaysToRepeat([]);
-              }}
-            >
-              <Text style={styles.modalCancelButtonText}>Cancelar</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => {
+                  setIsModalVisible(false);
+                  setSelectedDaysToRepeat([]);
+                }}
+              >
+                <Text style={styles.modalCancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -299,11 +312,11 @@ const styles = StyleSheet.create({
     width: "85%",
   },
   modalButton: {
-    backgroundColor: "rgba(255, 170, 0, 1)",
+    backgroundColor: "rgba(60, 80, 145, 1)",
     padding: 10,
     borderRadius: 5,
     marginTop: 10,
-    width: "100%",
+    width: "47%",
   },
   buttonText: {
     color: "white",
@@ -311,11 +324,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   modalCancelButton: {
-    backgroundColor: "rgba(255, 0, 0, 1)",
+    backgroundColor: "rgba(250, 50, 50, 1)",
     padding: 10,
     borderRadius: 5,
     marginTop: 10,
-    width: "100%",
+    width: "47%",
   },
   modalCancelButtonText: {
     color: "white",
@@ -340,7 +353,6 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 5,
     marginTop: 10,
-    width: "100%",
   },
   modalButtonButtonText: {
     color: "black",
@@ -374,7 +386,10 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(70, 70, 70, 1)",
   },
   todayCircle: {
-    backgroundColor: "orange",
+    backgroundColor: "rgba(255, 170, 0, 1)",
+  },
+  otherMonthCircle: {
+    backgroundColor: "rgba(35, 35, 35, 1)",
   },
   dayText: {
     color: "white",
