@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
+
+import { useAudioPlayer } from 'expo-audio';
 
 type TimerWheelProps = {
   startTime: number;
@@ -10,6 +12,15 @@ type TimerWheelProps = {
 };
 
 export default function TimerWheel({ startTime, currentTime, up }: TimerWheelProps) {
+  const player = useAudioPlayer(require('../../assets/sounds/TimerSound.mp3'));
+
+  useEffect(() => {
+    if (!up && currentTime <= 0) {
+      player.loop = true;
+      player.play();
+    }
+  }, [currentTime, up, player]);
+
   const radius = 50;
   const stroke = 3;
   const circumference = 2 * Math.PI * radius;

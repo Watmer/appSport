@@ -7,6 +7,7 @@ import CircleTimeComponent from "../components/CircleTimeComponent";
 
 export default function TimerScreen() {
   const navigation = useNavigation();
+
   const [inputSeconds, setInputSeconds] = useState(0);
   const [inputMinutes, setInputMinutes] = useState(0);
   const [inputHours, setInputHours] = useState(0);
@@ -16,7 +17,7 @@ export default function TimerScreen() {
   const [addingCrono, setAddingCrono] = useState(false);
   const [addingTimer, setAddingTimer] = useState(false);
   const [timers, setTimers] = useState<{ id: string; title: string; remaining: number; startTime: number; up: boolean, paused: boolean }[]>([]);
-
+ 
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
@@ -41,6 +42,9 @@ export default function TimerScreen() {
     setTimers((prev) => [...prev, newTimer]);
     await AsyncStorage.setItem(id, JSON.stringify(newTimer));
     setInputSeconds(0);
+    setInputMinutes(0);
+    setInputHours(0);
+    setInputTitle("");
   };
 
   const addCrono = async () => {
