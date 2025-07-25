@@ -8,7 +8,7 @@ const shopKey = "shopList";
 export default function ShopListScreen() {
   const [items, setItems] = useState([{ id: "0", text: "", completed: false }]);
 
-  const saveItems = async (newItems:any) => {
+  const saveItems = async (newItems: any) => {
     setAsyncInfo({ keyPath: shopKey, info: newItems });
     setItems(newItems);
   };
@@ -78,7 +78,7 @@ export default function ShopListScreen() {
           />
           {item.text !== "" &&
             <TouchableOpacity onPress={() => deleteItem(item.id)}>
-              <MaterialCommunityIcons name="delete" size={25} color="red" />
+              <MaterialCommunityIcons name="trash-can-outline" size={25} color="rgba(255, 50,  50, 1)" />
             </TouchableOpacity>
           }
         </View>

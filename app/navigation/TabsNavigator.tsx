@@ -4,7 +4,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 import Home from "../Screens/Home";
 import ShopListScreen from "../Screens/ShopListScreen";
-import TimerComponent from "../components/TimerComponent";
+import TimerScreen from "../Screens/TimerScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -30,7 +30,7 @@ export default function TabsNavigator() {
           <MaterialCommunityIcons name={focused ? 'home' : 'home-outline'} color={color} size={24} />
         ),
       }} />
-      <Tab.Screen name="TimerComponent" component={TimerComponent} options={{
+      <Tab.Screen name="TimerComponent" component={TimerScreen} options={{
         title: "Timer", tabBarIcon: ({ color, focused }) => (
           <MaterialCommunityIcons name={focused ? 'timer' : 'timer-outline'} color={color} size={24} />
         ),
