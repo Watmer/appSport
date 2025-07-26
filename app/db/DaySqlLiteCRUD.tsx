@@ -162,3 +162,65 @@ export async function addMealWithIngredients(dayId: string, mealData: {
 
   return mealId;
 }
+
+export async function exportAllInfoString() {
+  const days = await db.select().from(dayTable);
+  const allData = [];
+
+  for (const day of days) {
+    const meals = await getMealsDayInfo(day.id);
+    allData.push({
+      day,
+      meals,
+    });
+  }
+
+  return JSON.stringify(allData);
+}
+
+export async function importAllInfoString(dataString: string) {
+  try {
+    const parsed = JSON.parse(dataString);
+
+    for (const entry of parsed) {
+      const day = entry.day;
+      const meals = entry.meals || [];
+
+      await db.insert(dayTable).values(day).onConflictDoNothing();
+
+      for (const meal of meals) {
+        const ingredients = meal.ingredients || [];
+
+        if (meal.id) {
+          await db.delete(ingredientsTable).where(eq(ingredientsTable.mealId, meal.id));
+        }
+
+        await db.insert(mealTable)
+          .values({
+            id: meal.id,
+            dayId: meal.dayId,
+            meal: meal.meal,
+            foodName: meal.foodName,
+            time: meal.time,
+            completed: meal.completed,
+            recepy: meal.recepy,
+            comments: meal.comments,
+          })
+          .onConflictDoNothing();
+
+        for (const ing of ingredients) {
+          await db.insert(ingredientsTable).values({
+            mealId: meal.id,
+            ingName: ing.ingName,
+            quantity: ing.quantity,
+          }).onConflictDoNothing();
+        }
+      }
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error al importar datos:", error);
+    return false;
+  }
+}
