@@ -1,16 +1,14 @@
-import { useEffect, useLayoutEffect, useState } from "react";
-import { Alert, Dimensions, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { RefreshControl } from "react-native-gesture-handler";
-import { getAsyncInfo } from "../components/AsyncStorageCRUD";
-import Dashboard from "../components/Dashboard";
-import MealCard from "../components/MealCard";
-import { useNavigation } from "@react-navigation/native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { exportAllInfoString, importAllInfoString } from "../db/DaySqlLiteCRUD";
-import * as Clipboard from 'expo-clipboard';
+import { useNavigation } from "@react-navigation/native";
+import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import * as DocumentPicker from 'expo-document-picker';
+import { useLayoutEffect, useState } from "react";
+import { Alert, Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { RefreshControl } from "react-native-gesture-handler";
+import Dashboard from "../components/Dashboard";
+import MealCard from "../components/MealCard";
+import { exportAllInfoString, importAllInfoString } from "../db/DaySqlLiteCRUD";
 
 const { width, height } = Dimensions.get("window");
 
