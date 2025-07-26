@@ -4,8 +4,32 @@ import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useLayoutEffect, useState } from "react";
 import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import CircleTimeComponent from "../components/CircleTimeComponent";
+import * as Notifications from 'expo-notifications';
+
 
 export default function TimerScreen() {
+
+
+  // First, set the handler that will cause the notification
+  // to show the alert
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowBanner: true,
+      shouldShowList: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
+
+  // Second, call scheduleNotificationAsync()
+  Notifications.scheduleNotificationAsync({
+    content: {
+      title: 'Look at that notification',
+      body: "I'm so proud of myself!",
+    },
+    trigger: null,
+  });
+
   const navigation = useNavigation();
 
   const [inputSeconds, setInputSeconds] = useState(0);
@@ -17,7 +41,7 @@ export default function TimerScreen() {
   const [addingCrono, setAddingCrono] = useState(false);
   const [addingTimer, setAddingTimer] = useState(false);
   const [timers, setTimers] = useState<{ id: string; title: string; remaining: number; startTime: number; up: boolean, paused: boolean }[]>([]);
- 
+
   useLayoutEffect(() => {
     navigation.setOptions({
       headerRight: () => (
@@ -69,6 +93,25 @@ export default function TimerScreen() {
 
   useEffect(() => {
     loadTimers();
+    // First, set the handler that will cause the notification
+    // to show the alert
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+      }),
+    });
+
+    // Second, call scheduleNotificationAsync()
+    Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Look at that notification',
+        body: "I'm so proud of myself!",
+      },
+      trigger: null,
+    });
   }, []);
 
   useEffect(() => {
