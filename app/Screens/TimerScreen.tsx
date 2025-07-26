@@ -5,31 +5,9 @@ import React, { useEffect, useLayoutEffect, useState } from "react";
 import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import CircleTimeComponent from "../components/CircleTimeComponent";
 import * as Notifications from 'expo-notifications';
-
+import { handleTimerNotifResponse, scheduleNotifAsync } from '../utils/Notification';
 
 export default function TimerScreen() {
-
-
-  // First, set the handler that will cause the notification
-  // to show the alert
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-    }),
-  });
-
-  // Second, call scheduleNotificationAsync()
-  Notifications.scheduleNotificationAsync({
-    content: {
-      title: 'Look at that notification',
-      body: "I'm so proud of myself!",
-    },
-    trigger: null,
-  });
-
   const navigation = useNavigation();
 
   const [inputSeconds, setInputSeconds] = useState(0);
@@ -40,7 +18,16 @@ export default function TimerScreen() {
 
   const [addingCrono, setAddingCrono] = useState(false);
   const [addingTimer, setAddingTimer] = useState(false);
-  const [timers, setTimers] = useState<{ id: string; title: string; remaining: number; startTime: number; up: boolean, paused: boolean }[]>([]);
+  const [timers, setTimers] =
+    useState<{
+      id: string;
+      title: string;
+      remaining: number;
+      startTime: number;
+      up: boolean,
+      paused: boolean,
+      sentNotif: boolean
+    }[]>([]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -61,7 +48,7 @@ export default function TimerScreen() {
     const id = `timer_${Date.now()}`;
     const inputTotalSeconds = inputHours * 3600 + inputMinutes * 60 + inputSeconds;
 
-    const newTimer = { id, remaining: inputSeconds, title: inputTitle, startTime: inputTotalSeconds, up: false, paused: false };
+    const newTimer = { id, remaining: inputTotalSeconds, title: inputTitle, startTime: inputTotalSeconds, up: false, paused: false, sentNotif: false };
 
     setTimers((prev) => [...prev, newTimer]);
     await AsyncStorage.setItem(id, JSON.stringify(newTimer));
@@ -73,7 +60,7 @@ export default function TimerScreen() {
 
   const addCrono = async () => {
     const id = `timer_${Date.now()}`;
-    const newTimer = { id, remaining: 0, title: inputTitle, startTime: 0, up: true, paused: false };
+    const newTimer = { id, remaining: 0, title: inputTitle, startTime: 0, up: true, paused: false, sentNotif: false };
 
     setTimers((prev) => [...prev, newTimer]);
     await AsyncStorage.setItem(id, JSON.stringify(newTimer));
@@ -93,25 +80,6 @@ export default function TimerScreen() {
 
   useEffect(() => {
     loadTimers();
-    // First, set the handler that will cause the notification
-    // to show the alert
-    Notifications.setNotificationHandler({
-      handleNotification: async () => ({
-        shouldShowBanner: true,
-        shouldShowList: true,
-        shouldPlaySound: true,
-        shouldSetBadge: false,
-      }),
-    });
-
-    // Second, call scheduleNotificationAsync()
-    Notifications.scheduleNotificationAsync({
-      content: {
-        title: 'Look at that notification',
-        body: "I'm so proud of myself!",
-      },
-      trigger: null,
-    });
   }, []);
 
   useEffect(() => {
@@ -119,15 +87,66 @@ export default function TimerScreen() {
       setTimers((prev) =>
         prev.map((timer) => {
           if (timer.paused) return timer;
+
           const nextTime = timer.up ? timer.remaining + 1 : timer.remaining - 1;
+
+          if (nextTime <= 0 && !timer.up && !timer.sentNotif) {
+            scheduleNotifAsync(
+              timer.title,
+              "El temporizador ha terminado",
+              { timer: { id: timer.id } },
+              'default',
+              'timer-actions'
+            );
+            return {
+              ...timer,
+              remaining: nextTime,
+              sentNotif: true,
+            };
+          }
+
           return {
             ...timer,
-            remaining: Math.max(nextTime, 0),
+            remaining: nextTime,
           };
         })
       );
     }, 1000);
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = handleTimerNotifResponse(async (action, timerData, notificationId) => {
+      if (!timerData?.id) return;
+
+      await Notifications.dismissNotificationAsync(notificationId);
+
+      setTimers((prev) =>
+        prev.map((timer) => {
+          if (timer.id !== timerData.id) return timer;
+
+          if (action === 'DISMISS_TIMER') {
+            return {
+              ...timer,
+              startTime: 300,
+              remaining: 300,
+              sentNotif: false,
+            };
+          }
+
+          if (action === 'STOP_TIMER') {
+            return {
+              ...timer,
+              paused: true,
+            };
+          }
+
+          return timer;
+        })
+      );
+    });
+
+    return unsubscribe;
   }, []);
 
   useEffect(() => {
@@ -149,23 +168,27 @@ export default function TimerScreen() {
           <TextInput
             style={styles.inputTitle}
             placeholder="Titulo del temporizador"
+            placeholderTextColor={"rgba(0, 0, 0, 0.5)"}
             onChangeText={setInputTitle}
           /><View style={{ flexDirection: "row", gap: 10 }}>
             <TextInput
               style={styles.inputTime}
               placeholder="horas"
+              placeholderTextColor={"rgba(0, 0, 0, 0.5)"}
               keyboardType="numeric"
               onChangeText={(text) => setInputHours(parseInt(text) || 0)}
             />
             <TextInput
               style={styles.inputTime}
               placeholder="minutos"
+              placeholderTextColor={"rgba(0, 0, 0, 0.5)"}
               keyboardType="numeric"
               onChangeText={(text) => setInputMinutes(parseInt(text) || 0)}
             />
             <TextInput
               style={styles.inputTime}
               placeholder="segundos"
+              placeholderTextColor={"rgba(0, 0, 0, 0.5)"}
               keyboardType="numeric"
               onChangeText={(text) => setInputSeconds(parseInt(text) || 0)}
             />
