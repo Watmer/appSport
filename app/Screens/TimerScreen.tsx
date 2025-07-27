@@ -24,9 +24,10 @@ export default function TimerScreen() {
       title: string;
       remaining: number;
       startTime: number;
-      up: boolean,
-      paused: boolean,
-      sentNotif: boolean
+      up: boolean;
+      paused: boolean;
+      sentNotif: boolean;
+      addedTime: number;
     }[]>([]);
 
   useLayoutEffect(() => {
@@ -48,7 +49,16 @@ export default function TimerScreen() {
     const id = `timer_${Date.now()}`;
     const inputTotalSeconds = inputHours * 3600 + inputMinutes * 60 + inputSeconds;
 
-    const newTimer = { id, remaining: inputTotalSeconds, title: inputTitle, startTime: inputTotalSeconds, up: false, paused: false, sentNotif: false };
+    const newTimer = {
+      id,
+      remaining: inputTotalSeconds,
+      title: inputTitle,
+      startTime: inputTotalSeconds,
+      up: false,
+      paused: false,
+      sentNotif: false,
+      addedTime: 0
+    };
 
     setTimers((prev) => [...prev, newTimer]);
     await AsyncStorage.setItem(id, JSON.stringify(newTimer));
@@ -60,7 +70,16 @@ export default function TimerScreen() {
 
   const addCrono = async () => {
     const id = `timer_${Date.now()}`;
-    const newTimer = { id, remaining: -1, title: inputTitle, startTime: 0, up: true, paused: false, sentNotif: false };
+    const newTimer = {
+      id,
+      remaining: -1,
+      title: inputTitle,
+      startTime: 0,
+      up: true,
+      paused: false,
+      sentNotif: false,
+      addedTime: 0
+    };
 
     setTimers((prev) => [...prev, newTimer]);
     await AsyncStorage.setItem(id, JSON.stringify(newTimer));
@@ -125,11 +144,20 @@ export default function TimerScreen() {
         prev.map((timer) => {
           if (timer.id !== timerData.id) return timer;
 
-          if (action === 'DISMISS_TIMER') {
+          if (action === 'DISMISS_ONE_TIMER') {
             return {
               ...timer,
-              startTime: 300,
+              remaining: 60,
+              addedTime: 60,
+              sentNotif: false,
+            };
+          }
+
+          if (action === 'DISMISS_FIVE_TIMER') {
+            return {
+              ...timer,
               remaining: 300,
+              addedTime: 300,
               sentNotif: false,
             };
           }
@@ -282,6 +310,7 @@ export default function TimerScreen() {
               currentTime={timer.remaining}
               up={timer.up}
               paused={timer.paused}
+              addedTime={timer.addedTime}
             />
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
               <TouchableOpacity
@@ -323,7 +352,12 @@ export default function TimerScreen() {
   const handleRestartTime = (id: string) => {
     setTimers((prev) =>
       prev.map((timer) =>
-        timer.id === id ? { ...timer, remaining: timer.startTime, sentNotif: false } : timer
+        timer.id === id ? {
+          ...timer,
+          remaining: timer.startTime,
+          addedTime: 0,
+          sentNotif: false
+        } : timer
       )
     );
   };

@@ -39,6 +39,15 @@ export async function getMealIngredients(mealId: number) {
   return ingredients || [];
 }
 
+export async function getAllMeals() {
+  const meals = await db.select().from(mealTable);
+  for (const meal of meals) {
+    const ing = await getMealIngredients(meal.id);
+    (meal as any).ingredients = ing;
+  }
+  return meals || null;
+}
+
 export async function getAllDays() {
   const days = await db.select().from(dayTable);
   return days || [];

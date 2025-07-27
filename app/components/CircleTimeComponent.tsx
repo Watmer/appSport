@@ -8,9 +8,10 @@ type TimerWheelProps = {
   currentTime: number;
   up: boolean;
   paused: boolean;
+  addedTime: number;
 };
 
-export default function TimerWheel({ startTime, currentTime, up, paused }: TimerWheelProps) {
+export default function TimerWheel({ startTime, currentTime, up, paused, addedTime }: TimerWheelProps) {
   const player = useAudioPlayer(require('../../assets/sounds/TimerSound.mp3'));
 
   const opacity = useRef(new Animated.Value(1)).current;
@@ -18,9 +19,11 @@ export default function TimerWheel({ startTime, currentTime, up, paused }: Timer
   const stroke = 3;
   const circumference = 2 * Math.PI * radius;
 
+  const totalTime = startTime + addedTime;
+
   const progress = up
-    ? Math.min(currentTime / startTime, 1)
-    : Math.max((startTime - currentTime) / startTime, 0);
+    ? Math.min(currentTime / totalTime, 1)
+    : Math.max((totalTime - currentTime) / totalTime, 0);
 
   const strokeDashoffset = currentTime >= 0 ? circumference * (1 - progress) : 0;
 

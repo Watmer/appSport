@@ -30,7 +30,7 @@ export default function TabsNavigator() {
           <MaterialCommunityIcons name={focused ? 'home' : 'home-outline'} color={color} size={24} />
         ),
       }} />
-      <Tab.Screen name="TimerComponent" component={TimerScreen} options={{
+      <Tab.Screen name="TimerScreen" component={TimerScreen} options={{
         title: "Timer", tabBarIcon: ({ color, focused }) => (
           <MaterialCommunityIcons name={focused ? 'timer' : 'timer-outline'} color={color} size={24} />
         ),

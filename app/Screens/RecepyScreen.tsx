@@ -2,10 +2,9 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useEffect, useLayoutEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { getDayInfo, removeMealById } from "../db/DaySqlLiteCRUD";
+import { getAllMeals, getDayInfo, removeMealById } from "../db/DaySqlLiteCRUD";
 
-export default function FoodDetailScreen({ route }: { route: any }) {
-  const { dayInfoKey, mealType } = route.params || {};
+export default function RecepyScreen({ route }: { route: any }) {
   const [mealData, setMealData] = useState<any[]>([]);
   const [editing, setEditing] = useState(false);
 
@@ -42,15 +41,13 @@ export default function FoodDetailScreen({ route }: { route: any }) {
         </TouchableOpacity>
       ),
     });
-  }, [navigation, dayInfoKey, editing]);
+  }, [navigation, editing]);
 
   const fetchMealData = async () => {
     try {
-      const dayInfo = await getDayInfo(dayInfoKey);
-      if (dayInfo && dayInfo.meals) {
-        const filtered = dayInfo.meals.filter(day => day.meal === mealType);
-        setMealData(filtered);
-        console.log("mealIds:", filtered.map(m => m.id));
+      const allMeals = await getAllMeals();
+      if (allMeals) {
+        setMealData(allMeals);
       } else {
         setMealData([]);
       }
@@ -62,7 +59,7 @@ export default function FoodDetailScreen({ route }: { route: any }) {
 
   useEffect(() => {
     fetchMealData();
-  }, [dayInfoKey, mealType]);
+  }, []);
 
   const deleteMeal = async (mealToDelete: any) => {
     try {
@@ -76,7 +73,7 @@ export default function FoodDetailScreen({ route }: { route: any }) {
   return (
     <ScrollView style={styles.scrollContainer}>
       <View style={styles.container}>
-        <Text style={styles.title}>Detalles de {mealType}</Text>
+        <Text style={styles.title}>Recetas guardadas:</Text>
 
         {mealData.map((item, index) => (
           <View key={item.id ?? index} style={styles.card}>
@@ -144,7 +141,7 @@ export default function FoodDetailScreen({ route }: { route: any }) {
 
         {mealData.length === 0 && (
           <Text style={styles.text}>
-            No hay comidas registradas para {mealType} en esta fecha.
+            Todavia no hay recetas guardadas.
           </Text>
         )}
       </View>

@@ -26,15 +26,20 @@ export default function Home() {
 
   useLayoutEffect(() => {
     navigation.setOptions({
-      headerRight: () => (
-        <View style={{ flexDirection: "row", alignItems: "center", marginRight: 20 }}>
-          <TouchableOpacity style={{ marginRight: 20 }} onPress={() => setImporting(true)}>
+      headerLeft: () => (
+        <View style={{ flexDirection: "row", alignItems: "center", marginLeft: 20 }}>
+          <TouchableOpacity onPress={() => setImporting(true)}>
             <MaterialCommunityIcons name="file-download-outline" size={30} color="rgba(255, 170, 0, 1)" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => handelExport()}>
+          <TouchableOpacity style={{ marginLeft: 20 }} onPress={() => handelExport()}>
             <MaterialCommunityIcons name="file-upload-outline" size={30} color="rgba(255, 170, 0, 1)" />
           </TouchableOpacity>
         </View>
+      ),
+      headerRight: () => (
+        <TouchableOpacity onPress={() => (navigation as any).navigate("RecepyScreen")}>
+          <MaterialCommunityIcons style={{ marginRight: 20 }} name="book-open-variant" size={30} color="rgba(255, 170, 0, 1)" />
+        </TouchableOpacity>
       ),
     });
   }, [navigation]);
@@ -129,7 +134,7 @@ export default function Home() {
       console.error("Error exportando archivo:", error);
       Alert.alert("Error", "No se pudo exportar el archivo.");
     }
-  }
+  };
 
   return (
     <ScrollView
@@ -176,10 +181,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(100, 100, 100, 0.9)",
   },
   modalView: {
-    backgroundColor: "rgba(0, 0, 0, 1)",
+    backgroundColor: "rgba(55, 55, 55, 1)",
     borderRadius: 15,
     padding: 10,
     alignItems: "center",

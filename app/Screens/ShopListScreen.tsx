@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { View, TextInput, TouchableOpacity, ScrollView, StyleSheet } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import React, { useEffect, useState } from "react";
+import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 import { getAsyncInfo, setAsyncInfo } from "../components/AsyncStorageCRUD";
 
 const shopKey = "shopList";
@@ -76,7 +76,7 @@ export default function ShopListScreen() {
             placeholder="Escribe un ítem"
             placeholderTextColor="rgba(255, 255, 255, 0.4)"
           />
-          {item.text !== "" &&
+          {item.id !== items.at(-1)?.id &&
             <TouchableOpacity onPress={() => deleteItem(item.id)}>
               <MaterialCommunityIcons name="trash-can-outline" size={25} color="rgba(255, 50,  50, 1)" />
             </TouchableOpacity>

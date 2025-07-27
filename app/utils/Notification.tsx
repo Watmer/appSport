@@ -25,7 +25,14 @@ export async function configureNotificationHandler() {
       },
     },
     {
-      identifier: 'DISMISS_TIMER',
+      identifier: 'DISMISS_ONE_TIMER',
+      buttonTitle: '+1 min',
+      options: {
+        isDestructive: false,
+      },
+    },
+    {
+      identifier: 'DISMISS_FIVE_TIMER',
       buttonTitle: '+5 min',
       options: {
         isDestructive: false,
@@ -60,7 +67,7 @@ export async function scheduleNotifAsync(title: string, body: string, data: any 
 
 export function handleTimerNotifResponse(
   onAction: (
-    action: 'STOP_TIMER' | 'DISMISS_TIMER',
+    action: 'STOP_TIMER' | 'DISMISS_ONE_TIMER' | 'DISMISS_FIVE_TIMER',
     timerData: any,
     notificationId: string
   ) => void
@@ -70,11 +77,13 @@ export function handleTimerNotifResponse(
     const timer = response.notification.request.content.data?.timer;
     const notificationId = response.notification.request.identifier;
 
-    if (action === 'DISMISS_TIMER') {
-      onAction('DISMISS_TIMER', timer, notificationId);
+    if (action === 'DISMISS_ONE_TIMER') {
+      onAction('DISMISS_ONE_TIMER', timer, notificationId);
+    } else if (action === 'DISMISS_FIVE_TIMER') {
+      onAction('DISMISS_FIVE_TIMER', timer, notificationId);
     } else if (action === 'STOP_TIMER') {
       onAction('STOP_TIMER', timer, notificationId);
-    }
+    } 
   });
 
   return () => subscription.remove();

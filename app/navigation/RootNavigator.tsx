@@ -7,6 +7,7 @@ import Home from "../Screens/Home";
 import ShopListScreen from "../Screens/ShopListScreen";
 import TimerScreen from "../Screens/TimerScreen";
 import TabsNavigator from "./TabsNavigator";
+import RecepyScreen from "../Screens/RecepyScreen";
 
 const RootStack = createStackNavigator();
 
@@ -36,8 +37,10 @@ export default function RootNavigator() {
         options={{ title: "Shop List" }} />
       <RootStack.Screen name="EditFoodScreen" component={EditFoodScreen}
         options={{ title: "Edit Food" }} />
-      <RootStack.Screen name="TimerComponent" component={TimerScreen}
+      <RootStack.Screen name="TimerScreen" component={TimerScreen}
         options={{ title: "Timer" }} />
+      <RootStack.Screen name="RecepyScreen" component={RecepyScreen}
+        options={{ title: "Recetas" }} />
     </RootStack.Navigator>
   );
 }
