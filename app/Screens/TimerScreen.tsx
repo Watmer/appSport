@@ -60,7 +60,7 @@ export default function TimerScreen() {
 
   const addCrono = async () => {
     const id = `timer_${Date.now()}`;
-    const newTimer = { id, remaining: 0, title: inputTitle, startTime: 0, up: true, paused: false, sentNotif: false };
+    const newTimer = { id, remaining: -1, title: inputTitle, startTime: 0, up: true, paused: false, sentNotif: false };
 
     setTimers((prev) => [...prev, newTimer]);
     await AsyncStorage.setItem(id, JSON.stringify(newTimer));
@@ -168,27 +168,29 @@ export default function TimerScreen() {
           <TextInput
             style={styles.inputTitle}
             placeholder="Titulo del temporizador"
-            placeholderTextColor={"rgba(0, 0, 0, 0.5)"}
-            onChangeText={setInputTitle}
-          /><View style={{ flexDirection: "row", gap: 10 }}>
+            placeholderTextColor={"rgba(255, 255, 255, 0.7)"}
+            onChangeText={setInputTitle} />
+          <View style={{ flexDirection: "row", }}>
             <TextInput
               style={styles.inputTime}
-              placeholder="horas"
-              placeholderTextColor={"rgba(0, 0, 0, 0.5)"}
+              placeholder="00"
+              placeholderTextColor={"rgba(255, 255, 255, 0.7)"}
               keyboardType="numeric"
               onChangeText={(text) => setInputHours(parseInt(text) || 0)}
             />
+            <Text style={styles.inputSep}>:</Text>
             <TextInput
               style={styles.inputTime}
-              placeholder="minutos"
-              placeholderTextColor={"rgba(0, 0, 0, 0.5)"}
+              placeholder="00"
+              placeholderTextColor={"rgba(255, 255, 255, 0.7)"}
               keyboardType="numeric"
               onChangeText={(text) => setInputMinutes(parseInt(text) || 0)}
             />
+            <Text style={styles.inputSep}>:</Text>
             <TextInput
               style={styles.inputTime}
-              placeholder="segundos"
-              placeholderTextColor={"rgba(0, 0, 0, 0.5)"}
+              placeholder="00"
+              placeholderTextColor={"rgba(255, 255, 255, 0.7)"}
               keyboardType="numeric"
               onChangeText={(text) => setInputSeconds(parseInt(text) || 0)}
             />
@@ -232,6 +234,8 @@ export default function TimerScreen() {
           <TextInput
             style={styles.inputTitle}
             placeholder="Titulo del cronometro"
+            placeholderTextColor={"rgba(255, 255, 255, 0.7)"}
+
             onChangeText={setInputTitle}
           />
           <View style={{ flexDirection: "row", gap: 10 }}>
@@ -288,9 +292,9 @@ export default function TimerScreen() {
                 />
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => handleDeleteTimer(timer.id)}
+                onPress={() => timer.paused ? handleDeleteTimer(timer.id) : handleRestartTime(timer.id)}
               >
-                <MaterialCommunityIcons name="trash-can-outline" size={30} color="rgba(255, 50, 50, 1)" />
+                <MaterialCommunityIcons name={timer.paused ? "trash-can-outline" : "restart"} size={30} color={timer.paused ? "rgba(255, 50, 50, 1)" : "rgba(255, 255, 255, 1)"} />
               </TouchableOpacity>
             </View>
           </View >
@@ -312,6 +316,14 @@ export default function TimerScreen() {
     setTimers((prev) =>
       prev.map((timer) =>
         timer.id === id ? { ...timer, paused: !timer.paused } : timer
+      )
+    );
+  };
+
+  const handleRestartTime = (id: string) => {
+    setTimers((prev) =>
+      prev.map((timer) =>
+        timer.id === id ? { ...timer, remaining: timer.startTime, sentNotif: false } : timer
       )
     );
   };
@@ -343,26 +355,28 @@ const styles = StyleSheet.create({
     gap: 15,
   },
   inputTitle: {
-    borderColor: "rgba(200, 200, 200, 1)",
-    borderWidth: 1,
-    borderRadius: 5,
     paddingHorizontal: 10,
-    marginBottom: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    color: "rgba(0, 0, 0, 1)",
+    color: "rgba(255, 255, 255, 1)",
+    fontWeight: "bold",
+    fontSize: 16,
     height: 40,
     width: 290,
   },
   inputTime: {
-    borderColor: "rgba(200, 200, 200, 1)",
-    borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    marginBottom: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    color: "rgba(0, 0, 0, 1)",
-    height: 40,
-    width: 90,
+    color: "rgba(255, 255, 255, 1)",
+    textAlign: "center",
+    fontWeight: "bold",
+    fontSize: 20,
+    alignSelf: "center",
+    width: 75,
+    marginHorizontal: 10,
+  },
+  inputSep: {
+    color: "rgba(255, 255, 255, 1)",
+    textAlign: "center",
+    fontWeight: "bold",
+    fontSize: 20,
+    alignSelf: "center",
   },
   timerContainer: {
     backgroundColor: "rgba(0, 85, 160, 1)",
@@ -381,10 +395,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(100, 100, 100, 0.9)",
   },
   modalView: {
-    backgroundColor: "rgba(0, 0, 0, 1)",
+    backgroundColor: "rgba(55, 55, 55, 1)",
     borderRadius: 15,
     padding: 10,
     alignItems: "center",
@@ -399,7 +413,7 @@ const styles = StyleSheet.create({
     width: "47%",
   },
   buttonText: {
-    color: "white",
+    color: "rgba(255, 255, 255, 1)",
     textAlign: "center",
     fontSize: 16,
   },
@@ -411,7 +425,7 @@ const styles = StyleSheet.create({
     width: "47%",
   },
   modalCancelButtonText: {
-    color: "white",
+    color: "rgba(255, 255, 255, 1)",
     textAlign: "center",
     fontSize: 16,
   },
@@ -422,6 +436,11 @@ const styles = StyleSheet.create({
     color: "rgba(255, 255, 255, 1)",
     fontSize: 18,
     marginBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "rgba(255, 255, 255, 1)",
+    paddingVertical: 10,
+    textAlign: "center",
+    width: "100%"
   },
   modalButtonText: {
     color: "white",

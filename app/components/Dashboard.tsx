@@ -23,36 +23,61 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
   const weeks = Array.from({ length: Math.ceil(days.length / 7) }, (_, i) => days.slice(i * 7, i * 7 + 7));
 
   const [streakDays, setStreakDays] = useState<any[]>([]);
+  const [failedDays, setFailedDays] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchDayInfo = async () => {
-      const results = [];
+      const daysStreak = [];
+      const daysFailed = [];
 
       for (let i = 1; i <= daysInMonth; i++) {
         const dayInfoKey = `dayInfo:${i}-${today.getMonth()}-${today.getFullYear()}`;
         const dayData = await getDayInfo(dayInfoKey);
 
-        if (dayIsStrike(dayData?.meals)) {
-          results.push(i);
+        if (dayIsStreak(dayData?.meals)) {
+          daysStreak.push(i);
+        } else if (dayIsFailed(dayData?.meals)) {
+          daysFailed.push(i)
         }
       }
-
-      setStreakDays(results);
+      setStreakDays(daysStreak);
+      setFailedDays(daysFailed);
     };
 
     fetchDayInfo();
   }, [refreshTrigger]);
 
-  const dayIsStrike = (meals: any[] | undefined): boolean => {
+  const dayIsStreak = (meals: any[] | undefined): boolean => {
     if (!meals || meals.length === 0) return false;
-    // completed es number 0(false)|1(true)
     return meals.every(meal => meal.completed === 1);
+  };
+
+  const dayIsFailed = (meals: any[] | undefined): boolean => {
+    if (!meals || meals.length === 0) return false;
+    return meals?.some(meal => meal.completed === 1) && meals?.some(meal => meal.completed === 0);
+  };
+
+  const nContinuousStreak = () => {
+    if (streakDays.length === 0 || currentDay - streakDays[streakDays.length - 1] !== 1) return 0;
+
+    let nDays = 1;
+
+    for (let i = 0; i < streakDays.length - 1; i++) {
+      const diff = streakDays[i + 1] - streakDays[i];
+      if (diff === 1) {
+        nDays++;
+      } else {
+        nDays = 1;
+      }
+    }
+
+    return nDays;
   };
 
   return (
     <View style={styles.dashboardContainer}>
       <Text style={styles.dashboardTitle}>Calendario</Text>
-      <Text style={styles.dashboardInfo}>Información general de la semana</Text>
+      <Text style={styles.dashboardInfo}>{today.toDateString()}{nContinuousStreak() > 1 ? " - Dias de racha " + nContinuousStreak() : null}</Text>
 
       <View style={styles.weekRow}>
         {daysOfWeek.map((d, i) => (
@@ -71,6 +96,7 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
                   style={[
                     styles.dayCircle,
                     streakDays.includes(day) && { backgroundColor: "rgba(70, 115, 200, 1)" },
+                    failedDays.includes(day) && { backgroundColor: "rgba(255, 50, 50, 1)" },
                     day === currentDay && styles.todayCircle,
                   ]}
                   onPress={() =>
@@ -123,7 +149,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   dashboardInfo: {
-    fontSize: 16,
+    fontSize: 17,
     color: "rgba(255, 255, 255, 0.8)",
     textAlign: "center",
   },
@@ -204,7 +230,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(70, 70, 70, 1)",
   },
   todayCircle: {
-    backgroundColor: "orange",
+    backgroundColor: "rgba(255, 170, 0, 1)",
   },
   dayText: {
     color: "white",

@@ -24,7 +24,6 @@ export default function TimerWheel({ startTime, currentTime, up, paused }: Timer
 
   const strokeDashoffset = currentTime >= 0 ? circumference * (1 - progress) : 0;
 
-  // Efecto para controlar audio
   useEffect(() => {
     if (!up && currentTime === 0 && !paused && !player.playing) {
       player.loop = true;
@@ -105,6 +104,7 @@ export default function TimerWheel({ startTime, currentTime, up, paused }: Timer
         style={{
           color: 'rgba(255, 255, 255, 1)',
           fontSize: 16,
+          fontWeight: "bold",
           position: 'absolute',
         }}
       >

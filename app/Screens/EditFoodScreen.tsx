@@ -295,15 +295,15 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(100, 100, 100, 0.9)",
   },
   modalView: {
-    backgroundColor: "rgba(0, 0, 0, 1)",
+    backgroundColor: "rgba(55, 55, 55, 1)",
     borderRadius: 15,
     padding: 10,
     alignItems: "center",
-    width: width * 0.8,
     overflow: "hidden",
+    width: "85%",
   },
   modalOption: {
     width: "100%",
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
   cancelText: {
     fontSize: 20,
     textAlign: "center",
-    color: "rgba(180, 0, 0, 1)",
+    color: "rgba(255, 0, 0, 1)",
     fontWeight: "bold",
   },
 });
