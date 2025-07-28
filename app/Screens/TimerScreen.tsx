@@ -175,18 +175,22 @@ export default function TimerScreen() {
           if (action === 'DISMISS_ONE_TIMER') {
             return {
               ...timer,
-              remaining: 60,
-              addedTime: 60,
+              startTime: new Date(),
+              addedTime: 59,
+              totalDuration: 59,
               sentNotif: false,
+              paused: false,
             };
           }
 
           if (action === 'DISMISS_FIVE_TIMER') {
             return {
               ...timer,
-              remaining: 300,
-              addedTime: 300,
+              startTime: new Date(),
+              addedTime: 299,
+              totalDuration: 299,
               sentNotif: false,
+              paused: false,
             };
           }
 
