@@ -1,12 +1,45 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import React, { useEffect, useState } from "react";
-import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
+import React, { useEffect, useLayoutEffect, useState } from "react";
+import { Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 import { getAsyncInfo, setAsyncInfo } from "../components/AsyncStorageCRUD";
+import { useNavigation } from "@react-navigation/native";
+import * as Clipboard from 'expo-clipboard';
 
 const shopKey = "shopList";
 
 export default function ShopListScreen() {
+  const navigation = useNavigation();
   const [items, setItems] = useState([{ id: "0", text: "", completed: false }]);
+
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <TouchableOpacity style={{ marginRight: 20 }} onPress={() => handleCopyToClipboard()}>
+          <MaterialCommunityIcons name="clipboard-text-outline" size={30} color="rgba(255, 170, 0, 1)" />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation]);
+
+  const handleCopyToClipboard = async () => {
+    let result = "";
+    const saved = await getAsyncInfo({ keyPath: shopKey });
+    const filteredItems = (saved as any[] || []).slice()
+      .reverse()
+      .filter((item) => item.text !== "");
+      
+    for (const item of filteredItems) {
+      result += item.text;
+      if (filteredItems[filteredItems.length - 1].id !== item.id) {
+        result += "\n";
+      }
+      console.log(result);
+    }
+    if (filteredItems.length > 0) {
+      await Clipboard.setStringAsync(result);
+      Alert.alert("Copiado al portapapeles");
+    }
+  };
 
   const saveItems = async (newItems: any) => {
     setAsyncInfo({ keyPath: shopKey, info: newItems });
