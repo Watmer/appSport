@@ -1,10 +1,10 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
+import * as Notifications from 'expo-notifications';
 import React, { useEffect, useLayoutEffect, useState } from "react";
 import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import CircleTimeComponent from "../components/CircleTimeComponent";
-import * as Notifications from 'expo-notifications';
 import { handleTimerNotifResponse, scheduleNotifAsync } from '../utils/Notification';
 
 export default function TimerScreen() {
