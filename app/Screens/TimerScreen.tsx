@@ -23,11 +23,13 @@ export default function TimerScreen() {
       id: string;
       title: string;
       remaining: number;
-      startTime: number;
+      totalDuration: number;
+      startTime: Date;
       up: boolean;
       paused: boolean;
       sentNotif: boolean;
       addedTime: number;
+      initialDuration: number,
     }[]>([]);
 
   useLayoutEffect(() => {
@@ -47,13 +49,17 @@ export default function TimerScreen() {
 
   const addTimer = async () => {
     const id = `timer_${Date.now()}`;
+
     const inputTotalSeconds = inputHours * 3600 + inputMinutes * 60 + inputSeconds;
+    const startTime = new Date();
 
     const newTimer = {
       id,
       remaining: inputTotalSeconds,
+      totalDuration: inputTotalSeconds,
+      initialDuration: inputTotalSeconds,
       title: inputTitle,
-      startTime: inputTotalSeconds,
+      startTime: startTime,
       up: false,
       paused: false,
       sentNotif: false,
@@ -61,7 +67,10 @@ export default function TimerScreen() {
     };
 
     setTimers((prev) => [...prev, newTimer]);
-    await AsyncStorage.setItem(id, JSON.stringify(newTimer));
+    await AsyncStorage.setItem(id, JSON.stringify({
+      ...newTimer,
+      startTime: newTimer.startTime.toISOString()
+    }));
     setInputSeconds(0);
     setInputMinutes(0);
     setInputHours(0);
@@ -70,19 +79,27 @@ export default function TimerScreen() {
 
   const addCrono = async () => {
     const id = `timer_${Date.now()}`;
-    const newTimer = {
+
+    const startTime = new Date();
+
+    const newCrono = {
       id,
-      remaining: -1,
+      remaining: 0,
+      totalDuration: 0,
+      initialDuration: 0,
       title: inputTitle,
-      startTime: 0,
+      startTime: startTime,
       up: true,
       paused: false,
       sentNotif: false,
       addedTime: 0
     };
 
-    setTimers((prev) => [...prev, newTimer]);
-    await AsyncStorage.setItem(id, JSON.stringify(newTimer));
+    setTimers((prev) => [...prev, newCrono]);
+    await AsyncStorage.setItem(id, JSON.stringify({
+      ...newCrono,
+      startTime: newCrono.startTime.toISOString()
+    }));
     setInputTitle("");
   };
 
@@ -92,8 +109,14 @@ export default function TimerScreen() {
     const data = await AsyncStorage.multiGet(timerKeys);
 
     const loaded = data
-      .map(([, value]) => (value ? JSON.parse(value) : null))
-      .filter(Boolean);
+      .map(([, value]) => {
+        if (!value) return null;
+        const parsed = JSON.parse(value);
+        return {
+          ...parsed,
+          startTime: new Date(parsed.startTime),
+        };
+      });
     setTimers(loaded);
   };
 
@@ -107,9 +130,14 @@ export default function TimerScreen() {
         prev.map((timer) => {
           if (timer.paused) return timer;
 
-          const nextTime = timer.up ? timer.remaining + 1 : timer.remaining - 1;
+          const now = new Date();
+          const elapsed = Math.floor((now.getTime() - new Date(timer.startTime).getTime()) / 1000);
 
-          if (nextTime <= 0 && !timer.up && !timer.sentNotif) {
+          const currentRemaining = timer.up
+            ? elapsed + timer.addedTime
+            : Math.max((timer.initialDuration ?? timer.remaining) - elapsed + timer.addedTime, 0);
+
+          if (currentRemaining <= 0 && !timer.up && !timer.sentNotif) {
             scheduleNotifAsync(
               timer.title,
               "El temporizador ha terminado",
@@ -119,18 +147,18 @@ export default function TimerScreen() {
             );
             return {
               ...timer,
-              remaining: nextTime,
               sentNotif: true,
             };
           }
 
           return {
             ...timer,
-            remaining: nextTime,
+            remaining: currentRemaining,
           };
         })
       );
     }, 1000);
+
     return () => clearInterval(interval);
   }, []);
 
@@ -178,8 +206,8 @@ export default function TimerScreen() {
   }, []);
 
   useEffect(() => {
-    timers.forEach((timer) => {
-      AsyncStorage.setItem(timer.id, JSON.stringify(timer));
+    timers.forEach(async (timer) => {
+      await AsyncStorage.setItem(timer.id, JSON.stringify(timer));
     });
   }, [timers]);
 
@@ -311,8 +339,9 @@ export default function TimerScreen() {
               up={timer.up}
               paused={timer.paused}
               addedTime={timer.addedTime}
+              totalDuration={timer.totalDuration}
             />
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
               <TouchableOpacity
                 onPress={() => handlePauseTimer(timer.id)}
               >
@@ -321,9 +350,14 @@ export default function TimerScreen() {
                 />
               </TouchableOpacity>
               <TouchableOpacity
-                onPress={() => timer.paused ? handleDeleteTimer(timer.id) : handleRestartTime(timer.id)}
+                onPress={() => handleDeleteTimer(timer.id)}
               >
-                <MaterialCommunityIcons name={timer.paused ? "trash-can-outline" : "restart"} size={30} color={timer.paused ? "rgba(255, 50, 50, 1)" : "rgba(255, 255, 255, 1)"} />
+                <MaterialCommunityIcons name={"trash-can-outline"} size={27} color={"rgba(255, 50, 50, 1)"} />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleRestartTime(timer.id)}
+              >
+                <MaterialCommunityIcons name={"restart"} size={30} color={"rgba(255, 255, 255, 1)"} />
               </TouchableOpacity>
             </View>
           </View >
@@ -343,21 +377,52 @@ export default function TimerScreen() {
 
   const handlePauseTimer = (id: string) => {
     setTimers((prev) =>
-      prev.map((timer) =>
-        timer.id === id ? { ...timer, paused: !timer.paused } : timer
-      )
+      prev.map((timer) => {
+        if (timer.id !== id) return timer;
+
+        const now = Date.now();
+
+        if (timer.paused) {
+          if (timer.up) {
+            return {
+              ...timer,
+              startTime: new Date(now - timer.remaining * 1000),
+              paused: false,
+              addedTime: 0,
+            };
+          } else {
+            const elapsedSoFar = timer.totalDuration - timer.remaining;
+            return {
+              ...timer,
+              startTime: new Date(now - elapsedSoFar * 1000),
+              paused: false,
+              addedTime: 0,
+            };
+          }
+        } else {
+          const elapsed = Math.floor((now - new Date(timer.startTime).getTime()) / 1000);
+          return {
+            ...timer,
+            paused: true,
+            addedTime: elapsed,
+          };
+        }
+      })
     );
   };
 
   const handleRestartTime = (id: string) => {
     setTimers((prev) =>
       prev.map((timer) =>
-        timer.id === id ? {
-          ...timer,
-          remaining: timer.startTime,
-          addedTime: 0,
-          sentNotif: false
-        } : timer
+        timer.id === id
+          ? {
+            ...timer,
+            startTime: new Date(),
+            remaining: timer.totalDuration,
+            addedTime: 0,
+            sentNotif: false,
+          }
+          : timer
       )
     );
   };

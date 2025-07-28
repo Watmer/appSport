@@ -4,14 +4,15 @@ import { Animated, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
 type TimerWheelProps = {
-  startTime: number;
-  currentTime: number;
+  startTime: Date;
+  currentTime: number; 
+  totalDuration: number;
   up: boolean;
   paused: boolean;
   addedTime: number;
 };
 
-export default function TimerWheel({ startTime, currentTime, up, paused, addedTime }: TimerWheelProps) {
+export default function TimerWheel({ startTime, currentTime, up, paused, addedTime, totalDuration }: TimerWheelProps) {
   const player = useAudioPlayer(require('../../assets/sounds/TimerSound.mp3'));
 
   const opacity = useRef(new Animated.Value(1)).current;
@@ -19,11 +20,9 @@ export default function TimerWheel({ startTime, currentTime, up, paused, addedTi
   const stroke = 3;
   const circumference = 2 * Math.PI * radius;
 
-  const totalTime = startTime + addedTime;
-
   const progress = up
-    ? Math.min(currentTime / totalTime, 1)
-    : Math.max((totalTime - currentTime) / totalTime, 0);
+  ? Math.min(currentTime / totalDuration, 1)
+  : Math.max((totalDuration - currentTime) / totalDuration, 0);
 
   const strokeDashoffset = currentTime >= 0 ? circumference * (1 - progress) : 0;
 

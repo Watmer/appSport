@@ -4,12 +4,14 @@ import { Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from
 import { getAsyncInfo, setAsyncInfo } from "../components/AsyncStorageCRUD";
 import { useNavigation } from "@react-navigation/native";
 import * as Clipboard from 'expo-clipboard';
+import { RefreshControl } from "react-native-gesture-handler";
 
 const shopKey = "shopList";
 
 export default function ShopListScreen() {
   const navigation = useNavigation();
   const [items, setItems] = useState([{ id: "0", text: "", completed: false }]);
+  const [refreshing, setRefreshing] = useState(false);
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -27,7 +29,7 @@ export default function ShopListScreen() {
     const filteredItems = (saved as any[] || []).slice()
       .reverse()
       .filter((item) => item.text !== "");
-      
+
     for (const item of filteredItems) {
       result += item.text;
       if (filteredItems[filteredItems.length - 1].id !== item.id) {
@@ -47,9 +49,13 @@ export default function ShopListScreen() {
   };
 
   const fetchShopData = async () => {
-    const saved = await getAsyncInfo({ keyPath: shopKey });
+    let saved = await getAsyncInfo({ keyPath: shopKey });
     console.log("ShopList:", saved);
     if (saved) {
+      (saved as any[]).filter((item) => item.text !== "")
+      if (saved[saved.length - 1].text !== "") {
+        saved = [...saved, { id: Date.now().toString(), text: "", completed: false }];
+      }
       saveItems(saved);
     }
   };
@@ -70,7 +76,7 @@ export default function ShopListScreen() {
     }
   };
 
-  const updateText = (id: string, text: string) => {
+  const updateText = async (id: string, text: string) => {
     let newItems = items.map(item => {
       if (item.id === id) {
         return { ...item, text: text };
@@ -88,6 +94,12 @@ export default function ShopListScreen() {
   const deleteItem = (id: string) => {
     const newItems = items.filter(item => item.id !== id);
     saveItems(newItems.length === 0 ? [{ id: Date.now().toString(), text: "", completed: false }] : newItems);
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchShopData();
+    setRefreshing(false);
   };
 
   const renderItems = () => {
@@ -120,18 +132,25 @@ export default function ShopListScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <ScrollView style={styles.container}>
-        {renderItems()}
-      </ScrollView>
-    </View>
+    <ScrollView
+      style={styles.container}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          progressBackgroundColor="rgba(70, 70, 70, 1)"
+          colors={["rgba(255, 170, 0, 1)"]}
+        />
+      }>
+      {renderItems()}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: 35,
     backgroundColor: "rgba(120,120,120,1)"
   },
   row: {
