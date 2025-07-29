@@ -8,20 +8,25 @@
     "scheme": "sportapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ff00aa"
+    },
     "ios": {
       "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon/foreground.png",
-        "backgroundColor": "#00b00c"
+        "backgroundColor": "#ffaa00"
       },
       "edgeToEdgeEnabled": true,
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
-      "package": "com.anonymous.SportAppDev"
+      "package": "com.anonymous.SportApp"
     },
     "web": {
       "bundler": "metro",
@@ -33,7 +38,8 @@
         {
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
-          "resizeMode": "contain"
+          "resizeMode": "contain",
+          "backgroundColor": "#ffaa00"
         }
       ],
       "expo-sqlite",

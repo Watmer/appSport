@@ -107,7 +107,7 @@ export default function MealCard({ dayInfoKey, refreshTrigger }: MealCardProps) 
                         borderBottomColor: "rgba(255, 255, 255, 1)",
                       }}
                     >
-                      <View style={{ flexDirection: "row" }}>
+                      <View style={{ flexDirection: "row", marginRight: 25 }}>
                         <TouchableOpacity
                           onPress={() =>
                             toggleCompleted(
@@ -124,6 +124,19 @@ export default function MealCard({ dayInfoKey, refreshTrigger }: MealCardProps) 
                         <Text style={styles.titleText}>
                           {mealInf.foodName}
                         </Text>
+                        <TouchableOpacity
+                          onPress={() =>
+                            toggleCompleted(
+                              mealsArray.findIndex((meal) => meal.id === mealInf.id)
+                            )
+                          }
+                        >
+                          <MaterialCommunityIcons
+                            name={mealInf.completed ? "bookmark" : "bookmark-outline"}
+                            size={30}
+                            color={mealInf.completed ? "rgba(220, 50, 50, 1)" : "rgba(255, 255, 255, 0.6)"}
+                          />
+                        </TouchableOpacity>
                       </View>
                       <Text style={styles.text}>⏱ {mealInf.time} min</Text>
                     </View>

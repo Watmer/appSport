@@ -28,7 +28,6 @@ export default function TimerScreen() {
       up: boolean;
       paused: boolean;
       sentNotif: boolean;
-      addedTime: number;
       initialDuration: number,
     }[]>([]);
 
@@ -63,7 +62,6 @@ export default function TimerScreen() {
       up: false,
       paused: false,
       sentNotif: false,
-      addedTime: 0
     };
 
     setTimers((prev) => [...prev, newTimer]);
@@ -92,7 +90,6 @@ export default function TimerScreen() {
       up: true,
       paused: false,
       sentNotif: false,
-      addedTime: 0
     };
 
     setTimers((prev) => [...prev, newCrono]);
@@ -134,8 +131,8 @@ export default function TimerScreen() {
           const elapsed = Math.floor((now.getTime() - new Date(timer.startTime).getTime()) / 1000);
 
           const currentRemaining = timer.up
-            ? elapsed + timer.addedTime
-            : Math.max((timer.initialDuration ?? timer.remaining) - elapsed + timer.addedTime, 0);
+            ? elapsed
+            : Math.max((timer.totalDuration) - elapsed, 0);
 
           if (currentRemaining <= 0 && !timer.up && !timer.sentNotif) {
             scheduleNotifAsync(
@@ -147,6 +144,7 @@ export default function TimerScreen() {
             );
             return {
               ...timer,
+              remaining: 0,
               sentNotif: true,
             };
           }
@@ -176,8 +174,7 @@ export default function TimerScreen() {
             return {
               ...timer,
               startTime: new Date(),
-              addedTime: 59,
-              totalDuration: 59,
+              totalDuration: 60,
               sentNotif: false,
               paused: false,
             };
@@ -187,8 +184,7 @@ export default function TimerScreen() {
             return {
               ...timer,
               startTime: new Date(),
-              addedTime: 299,
-              totalDuration: 299,
+              totalDuration: 300,
               sentNotif: false,
               paused: false,
             };
@@ -338,11 +334,9 @@ export default function TimerScreen() {
               <Text style={styles.timerText}>{timer.title}</Text>
             </View>
             <CircleTimeComponent
-              startTime={timer.startTime}
               currentTime={timer.remaining}
               up={timer.up}
               paused={timer.paused}
-              addedTime={timer.addedTime}
               totalDuration={timer.totalDuration}
             />
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
@@ -392,7 +386,6 @@ export default function TimerScreen() {
               ...timer,
               startTime: new Date(now - timer.remaining * 1000),
               paused: false,
-              addedTime: 0,
             };
           } else {
             const elapsedSoFar = timer.totalDuration - timer.remaining;
@@ -400,7 +393,6 @@ export default function TimerScreen() {
               ...timer,
               startTime: new Date(now - elapsedSoFar * 1000),
               paused: false,
-              addedTime: 0,
             };
           }
         } else {
@@ -408,7 +400,6 @@ export default function TimerScreen() {
           return {
             ...timer,
             paused: true,
-            addedTime: elapsed,
           };
         }
       })
@@ -422,8 +413,8 @@ export default function TimerScreen() {
           ? {
             ...timer,
             startTime: new Date(),
-            remaining: timer.totalDuration,
-            addedTime: 0,
+            remaining: timer.initialDuration,
+            totalDuration: timer.initialDuration,
             sentNotif: false,
           }
           : timer
