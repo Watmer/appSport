@@ -2,72 +2,69 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useEffect, useLayoutEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { getAllMealsInRecepys, removeMealById } from "../db/DaySqlLiteCRUD";
+import { addRecepy, getAllMealsInRecepys, getAllRecepys, removeRecepy } from "../db/DaySqlLiteCRUD";
+
+interface Ingredient {
+  ingName: string;
+  quantity: string;
+}
 
 export default function RecepyScreen({ route }: { route: any }) {
   const [mealData, setMealData] = useState<any[]>([]);
-  const [editing, setEditing] = useState(false);
+  const [recepysArray, setRecepysArray] = useState<any[]>([]);
 
   const navigation = useNavigation();
 
   useLayoutEffect(() => {
     navigation.setOptions({
       headerLeft: () => (
-        <TouchableOpacity
-          style={{ marginLeft: 20 }}
-          onPress={() => navigation.goBack()}
-        >
+        <TouchableOpacity style={{ marginLeft: 20 }} onPress={() => navigation.goBack()}>
           <MaterialCommunityIcons name="arrow-left" size={30} color="rgba(255, 170, 0, 1)" />
         </TouchableOpacity>
       ),
-      headerRight: () => (
-        <TouchableOpacity
-          style={{ marginRight: 20 }}
-          onPress={() => setEditing(!editing)}
-        >
-          {editing ? (
-            <MaterialCommunityIcons
-              name="close"
-              size={30}
-              color="rgba(255, 70, 70, 1)"
-            />
-          ) : (
-            <MaterialCommunityIcons
-              name="pencil-box-outline"
-              size={30}
-              color="rgba(255, 170, 0, 1)"
-            />
-          )}
-        </TouchableOpacity>
-      ),
     });
-  }, [navigation, editing]);
+  }, [navigation]);
 
-  const fetchMealData = async () => {
+  const fetchData = async () => {
     try {
-      const recepyMeals = await getAllMealsInRecepys();
-      if (recepyMeals) {
-        setMealData(recepyMeals);
-      } else {
-        setMealData([]);
-      }
+      const [meals, recepys] = await Promise.all([
+        getAllMealsInRecepys(),
+        getAllRecepys(),
+      ]);
+      setMealData(meals || []);
+      setRecepysArray(recepys || []);
     } catch (error) {
-      console.error("Error fetching meals:", error);
+      console.error("Error fetching data:", error);
       setMealData([]);
+      setRecepysArray([]);
     }
   };
 
   useEffect(() => {
-    fetchMealData();
+    fetchData();
   }, []);
 
-  const deleteMeal = async (mealToDelete: any) => {
+  const isInRecepys = (mealId: number) => {
+    return recepysArray.some((recepy) => recepy.mealId === mealId);
+  };
+
+  const toggleInRecepys = async (mealId: number) => {
     try {
-      await removeMealById(mealToDelete.id);
-      fetchMealData();
+      if (isInRecepys(mealId)) {
+        await removeRecepy(mealId);
+      } else {
+        await addRecepy(mealId);
+      }
+      const updated = await getAllRecepys();
+      setRecepysArray(updated || []);
     } catch (err) {
-      console.error("Error deleting meal:", err);
+      console.error("Error toggling recepy:", err);
     }
+  };
+
+  const handleCardPress = (mealId: number) => {
+    // Aquí puedes navegar a otra pantalla con detalles, si es necesario.
+    // navigation.navigate("MealDetails", { id: mealId });
   };
 
   return (
@@ -75,74 +72,52 @@ export default function RecepyScreen({ route }: { route: any }) {
       <View style={styles.container}>
         <Text style={styles.title}>Recetas guardadas:</Text>
 
-        {mealData.map((item, index) => (
-          <View key={item.id ?? index} style={styles.card}>
-            <View style={styles.arson}>
-              <View style={styles.arsonText}>
-                <Text style={styles.name}>🍽 {item.foodName}</Text>
-                <Text style={styles.text}>⏱ Tiempo: {item.time} min</Text>
-              </View>
-              {editing && (
-                <View style={{ flexDirection: "row", flex: 1, }}>
-                  <TouchableOpacity
-                    style={{ marginRight: 20 }}
-                    onPress={() =>
-                      (navigation as any).navigate("EditFoodScreen", {
-                        mealId: item.id,
-                      })
-                    }
+        {mealData.map((mealInf, index) => {
+          const isSaved = isInRecepys(mealInf.id);
+          return (
+            <TouchableOpacity key={index} onPress={() => handleCardPress(mealInf.id)}>
+              <View style={styles.groupCardInfo}>
+                <View style={styles.cardInfo}>
+                  <View
+                    style={{
+                      paddingBottom: 5,
+                      borderBottomWidth: 1,
+                      borderBottomColor: "rgba(255, 255, 255, 1)",
+                    }}
                   >
-                    <MaterialCommunityIcons
-                      name="pencil-box-outline"
-                      size={30}
-                      color="rgba(255, 170, 0, 1)"
-                    />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={{ marginRight: 20 }}
-                    onPress={() => deleteMeal(item)}
-                  >
-                    <MaterialCommunityIcons
-                      name="trash-can-outline"
-                      size={30}
-                      color="rgba(255, 0, 0, 1)"
-                    />
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
+                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                      <TouchableOpacity
+                        onPress={() => {
+                          toggleInRecepys(mealInf.id);
+                        }}
+                      >
+                        <MaterialCommunityIcons
+                          name={isSaved ? "bookmark" : "bookmark-outline"}
+                          size={30}
+                          color={isSaved ? "rgba(220, 50, 50, 1)" : "rgba(255, 255, 255, 0.6)"}
+                        />
+                      </TouchableOpacity>
+                      <Text style={styles.titleText}>{mealInf.foodName}</Text>
+                    </View>
+                    <Text style={styles.text}>⏱ {mealInf.time} min</Text>
+                  </View>
 
-            {item.ingredients && (
-              <View style={{ marginTop: 8 }}>
-                <Text style={styles.section}>Ingredientes:</Text>
-                {item.ingredients.map((ing: any, i: number) => (
-                  <Text style={styles.text} key={i}>
-                    • {ing.ingName} - {ing.quantity}
+                  <Text style={[styles.text, { marginTop: 10, fontWeight: "600" }]}>
+                    Ingredientes:
                   </Text>
-                ))}
+                  {mealInf.ingredients.map((ing: Ingredient, i: number) => (
+                    <Text key={i} style={styles.text}>
+                      • {ing.ingName} ({ing.quantity})
+                    </Text>
+                  ))}
+                </View>
               </View>
-            )}
-
-            {item.recepy && (
-              <View style={{ marginTop: 8 }}>
-                <Text style={styles.section}>📋 Receta:</Text>
-                <Text style={styles.text}>{item.recepy}</Text>
-              </View>
-            )}
-
-            {item.comments && (
-              <View style={{ marginTop: 8 }}>
-                <Text style={styles.section}>💬 Comentarios:</Text>
-                <Text style={styles.text}>{item.comments}</Text>
-              </View>
-            )}
-          </View>
-        ))}
+            </TouchableOpacity>
+          );
+        })}
 
         {mealData.length === 0 && (
-          <Text style={styles.text}>
-            Todavia no hay recetas guardadas.
-          </Text>
+          <Text style={styles.text}>Todavía no hay recetas guardadas.</Text>
         )}
       </View>
     </ScrollView>
@@ -161,39 +136,28 @@ const styles = StyleSheet.create({
     fontSize: 30,
     fontWeight: "bold",
     marginBottom: 16,
-    color: "rgba(255, 255, 255, 1)"
+    color: "rgba(255, 255, 255, 1)",
   },
-  card: {
+  groupCardInfo: {
+    padding: 5,
+  },
+  cardInfo: {
+    width: "100%",
+    minHeight: 100,
     backgroundColor: "rgba(35, 80, 120, 1)",
     borderRadius: 10,
-    padding: 12,
-    marginBottom: 16,
+    justifyContent: "center",
+    padding: 15,
   },
-  arson: {
-    flex: 1,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingBottom: 5,
-    borderBottomWidth: 1,
-    borderColor: "rgba(255, 255, 255, 1)"
-  },
-  arsonText: {
-    flex: 3,
-  },
-  name: {
-    fontSize: 23,
-    fontWeight: "900",
+  titleText: {
+    fontSize: 20,
     color: "rgba(255, 255, 255, 1)",
+    fontWeight: "800",
+    width: "85%",
+    marginLeft: 10,
   },
   text: {
-    fontSize: 17,
-    color: "rgba(255, 255, 255, 1)",
-  },
-  section: {
-    fontSize: 17,
-    fontWeight: "700",
-    marginBottom: 4,
-    color: "rgba(255, 255, 255, 1)",
+    fontSize: 18,
+    color: "rgb(255, 255, 255)",
   },
 });
