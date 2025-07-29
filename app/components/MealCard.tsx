@@ -1,10 +1,9 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { getAsyncInfo, setAsyncInfo } from "./AsyncStorageCRUD";
 
-import { getDayInfo, setDayInfo, updateMealById } from "../db/DaySqlLiteCRUD";
+import { addRecepy, getAllRecepys, getDayInfo, removeRecepy, updateMealById } from "../db/DaySqlLiteCRUD";
 
 
 const { width, height } = Dimensions.get("window");
@@ -43,6 +42,7 @@ function sortMealsByOrder(mealInfo: any[]) {
 export default function MealCard({ dayInfoKey, refreshTrigger }: MealCardProps) {
   const navigation = useNavigation();
   const [mealsArray, setMealsArray] = useState<MealInfo[]>([]);
+  const [recepysArray, setRecepysArray] = useState<any[]>([])
 
   useEffect(() => {
     loadData();
@@ -54,6 +54,7 @@ export default function MealCard({ dayInfoKey, refreshTrigger }: MealCardProps) 
       const sorted = sortMealsByOrder(dayData.meals);
       setMealsArray(sorted);
     }
+    setRecepysArray(await getAllRecepys());
   };
 
   const toggleCompleted = async (index: number) => {
@@ -86,6 +87,19 @@ export default function MealCard({ dayInfoKey, refreshTrigger }: MealCardProps) 
   const mealTypesSorted = Object.keys(groupedMeals).sort(
     (a, b) => meals.indexOf(a) - meals.indexOf(b)
   );
+
+  const isInRecepys = (mealId: number) => {
+    return recepysArray.find((recepy) => recepy.mealId === mealId);
+  };
+
+  const toggleInRecepys = async (mealId: number) => {
+    if (isInRecepys(mealId)) {
+      await removeRecepy(mealId);
+    } else {
+      await addRecepy(mealId);
+    }
+    loadData();
+  };
 
   return (
     <>
@@ -125,16 +139,12 @@ export default function MealCard({ dayInfoKey, refreshTrigger }: MealCardProps) 
                           {mealInf.foodName}
                         </Text>
                         <TouchableOpacity
-                          onPress={() =>
-                            toggleCompleted(
-                              mealsArray.findIndex((meal) => meal.id === mealInf.id)
-                            )
-                          }
+                          onPress={() => toggleInRecepys(mealInf.id)}
                         >
                           <MaterialCommunityIcons
-                            name={mealInf.completed ? "bookmark" : "bookmark-outline"}
+                            name={isInRecepys(mealInf.id) ? "bookmark" : "bookmark-outline"}
                             size={30}
-                            color={mealInf.completed ? "rgba(220, 50, 50, 1)" : "rgba(255, 255, 255, 0.6)"}
+                            color={isInRecepys(mealInf.id) ? "rgba(220, 50, 50, 1)" : "rgba(255, 255, 255, 0.6)"}
                           />
                         </TouchableOpacity>
                       </View>

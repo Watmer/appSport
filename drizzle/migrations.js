@@ -2,11 +2,12 @@
 
 import journal from './meta/_journal.json';
 import m0000 from './0000_old_tyger_tiger.sql';
+import m0001 from './0001_high_preak.sql';
 
-  export default {
-    journal,
-    migrations: {
-      m0000
-    }
+export default {
+  journal,
+  migrations: {
+    m0000,
+    m0001
   }
-  
+}

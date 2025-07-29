@@ -22,6 +22,11 @@ export const ingredientsTable = sqliteTable("ingredients_table", {
   quantity: text(),
 });
 
+export const savedRecepyTable = sqliteTable("savedRecepy_table", {
+  id: int().primaryKey({ autoIncrement: true }),
+  mealId: int().references(() => mealTable.id),
+});
+
 export const shopListTable = sqliteTable("shopList_table", {
   id: int().primaryKey({ autoIncrement: true }),
 });

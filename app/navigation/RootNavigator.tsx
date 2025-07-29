@@ -4,10 +4,10 @@ import EditFoodScreen from "../Screens/EditFoodScreen";
 import FoodDetailScreen from "../Screens/FoodDetailsScreen";
 import FoodListScreen from "../Screens/FoodListScreen";
 import Home from "../Screens/Home";
+import RecepyScreen from "../Screens/RecepyScreen";
 import ShopListScreen from "../Screens/ShopListScreen";
 import TimerScreen from "../Screens/TimerScreen";
 import TabsNavigator from "./TabsNavigator";
-import RecepyScreen from "../Screens/RecepyScreen";
 
 const RootStack = createStackNavigator();
 

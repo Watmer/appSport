@@ -1,8 +1,6 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { getAsyncInfo } from "./AsyncStorageCRUD";
 import { getDayInfo } from "../db/DaySqlLiteCRUD";
 
 const { width, height } = Dimensions.get("window");

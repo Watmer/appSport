@@ -1,7 +1,6 @@
-import { get } from "http";
-import { db } from "./db";
-import { dayTable, mealTable, ingredientsTable } from "./schema";
 import { eq } from "drizzle-orm";
+import { db } from "./db";
+import { dayTable, ingredientsTable, mealTable, savedRecepyTable } from "./schema";
 
 // Obtener info de un día (día + comidas + ingredientes)
 export async function getDayInfo(dayId: string) {
@@ -232,4 +231,31 @@ export async function importAllInfoString(dataString: string) {
     console.error("Error al importar datos:", error);
     return false;
   }
+}
+
+export async function getAllRecepys() {
+  const recepys = await db.select().from(savedRecepyTable);
+  return recepys || [];
+}
+
+export async function getAllMealsInRecepys() {
+  const recepys = await getAllRecepys();
+  let meals = [];
+  for (const recepy of recepys) {
+    const meal = await getMealWithIngredients(recepy.mealId || 0);
+    meals.push(meal);
+  }
+  return meals;
+}
+
+export async function addRecepy(mealId: number) {
+  await db.insert(savedRecepyTable)
+    .values({
+      mealId: mealId,
+    });
+}
+
+export async function removeRecepy(mealId: number) {
+  await db.delete(savedRecepyTable)
+    .where(eq(savedRecepyTable.mealId, mealId));
 }

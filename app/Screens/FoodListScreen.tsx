@@ -1,10 +1,9 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useLayoutEffect, useState } from "react";
-import { Dimensions, ScrollView, StyleSheet, TouchableOpacity, View, Text, Alert, Modal } from "react-native";
-import { getAsyncInfo, removeAsyncInfo } from "../components/AsyncStorageCRUD";
+import { Alert, Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { RefreshControl } from "react-native-gesture-handler";
 import MealCard from "../components/MealCard";
-import { RefreshControl, TextInput } from "react-native-gesture-handler";
 import { getDayInfo, setDayInfo } from "../db/DaySqlLiteCRUD";
 
 const { width, height } = Dimensions.get("window");
