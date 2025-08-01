@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import { db } from "./db";
 import { dayTable, ingredientsTable, mealTable, savedRecepyTable } from "./schema";
 
@@ -258,4 +258,12 @@ export async function addRecepy(mealId: number) {
 export async function removeRecepy(mealId: number) {
   await db.delete(savedRecepyTable)
     .where(eq(savedRecepyTable.mealId, mealId));
+}
+
+export async function getLastFailedDay() {
+  return await db.select({ id: dayTable.id })
+    .from(dayTable)
+    .where(eq(dayTable.isFailed, 1))
+    .orderBy(desc(dayTable.id))
+    .limit(1) || null;
 }

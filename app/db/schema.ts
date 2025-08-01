@@ -2,6 +2,7 @@ import { int, sqliteTable, text } from "drizzle-orm/sqlite-core";
 
 export const dayTable = sqliteTable("day_table", {
   id: text().primaryKey(),
+  isFailed: int().default(0),
 });
 
 export const mealTable = sqliteTable("meal_table", {

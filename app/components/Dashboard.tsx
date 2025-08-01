@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -9,41 +10,70 @@ const daysOfWeek = ["L", "M", "X", "J", "V", "S", "D"];
 export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }) {
   const navigation = useNavigation();
   const today = new Date();
+  const [visibleMonth, setVisibleMonth] = useState(today.getMonth());
+  const [visibleYear, setVisibleYear] = useState(today.getFullYear());
   const currentDay = today.getDate();
-  const startWeekday = (new Date(today.getFullYear(), today.getMonth(), 1).getDay() + 6) % 7;
-  const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
 
-  const days = [
-    ...Array(startWeekday).fill(null),
-    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
-  ];
-  while (days.length % 7 !== 0) days.push(null);
-  const weeks = Array.from({ length: Math.ceil(days.length / 7) }, (_, i) => days.slice(i * 7, i * 7 + 7));
+  const startDate = new Date(visibleYear, visibleMonth, 1);
+  startDate.setDate(startDate.getDate() - ((startDate.getDay() + 6) % 7));
 
+  const dates = Array.from({ length: 35 }, (_, i) => {
+    const date = new Date(startDate);
+    date.setDate(startDate.getDate() + i);
+    const day = date.getDate();
+    const month = date.getMonth();
+    const year = date.getFullYear();
+    return {
+      day,
+      month,
+      year,
+      key: `${day}-${month}-${year}`,
+      isCurrentMonth: month === visibleMonth && year === visibleYear,
+      isToday: day === currentDay && month === today.getMonth() && year === today.getFullYear(),
+    };
+  });
+
+  const weeks = Array.from({ length: 6 }, (_, i) => dates.slice(i * 7, i * 7 + 7));
   const [streakDays, setStreakDays] = useState<any[]>([]);
   const [failedDays, setFailedDays] = useState<any[]>([]);
+  const [frozenDays, setFrozenDays] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchDayInfo = async () => {
       const daysStreak = [];
       const daysFailed = [];
+      const frozen = [];
 
-      for (let i = 1; i <= daysInMonth; i++) {
-        const dayInfoKey = `dayInfo:${i}-${today.getMonth()}-${today.getFullYear()}`;
-        const dayData = await getDayInfo(dayInfoKey);
+      for (const week of weeks) {
+        let frozenAdded = false;
 
-        if (dayIsStreak(dayData?.meals)) {
-          daysStreak.push(i);
-        } else if (dayIsFailed(dayData?.meals)) {
-          daysFailed.push(i)
+        for (const { day, month, year, key } of week) {
+          const dayInfoKey = `dayInfo:${day}-${month}-${year}`;
+          const dayData = await getDayInfo(dayInfoKey);
+
+          const isStreak = dayIsStreak(dayData?.meals);
+          const isFailed = dayIsFailed(dayData?.meals);
+
+          if (isStreak) {
+            daysStreak.push(key);
+          } else if (isFailed) {
+            if (!frozenAdded) {
+              frozen.push(key);
+              frozenAdded = true;
+            } else {
+              daysFailed.push(key);
+            }
+          }
         }
       }
+
       setStreakDays(daysStreak);
       setFailedDays(daysFailed);
+      setFrozenDays(frozen);
     };
 
     fetchDayInfo();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, visibleMonth, visibleYear]);
 
   const dayIsStreak = (meals: any[] | undefined): boolean => {
     if (!meals || meals.length === 0) return false;
@@ -52,30 +82,70 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
 
   const dayIsFailed = (meals: any[] | undefined): boolean => {
     if (!meals || meals.length === 0) return false;
-    return meals?.some(meal => meal.completed === 1) && meals?.some(meal => meal.completed === 0);
+    return meals.some(meal => meal.completed === 1) && meals.some(meal => meal.completed === 0);
   };
 
   const nContinuousStreak = () => {
-    if (streakDays.length === 0 || currentDay - streakDays[streakDays.length - 1] !== 1) return 0;
+    let count = 0;
+    const today = new Date();
+    const formatKey = (date: Date) => `${date.getDate()}-${date.getMonth()}-${date.getFullYear()}`;
 
-    let nDays = 1;
+    for (let i = 1; i <= 365; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() - i);
+      const key = formatKey(date);
 
-    for (let i = 0; i < streakDays.length - 1; i++) {
-      const diff = streakDays[i + 1] - streakDays[i];
-      if (diff === 1) {
-        nDays++;
+      if (frozenDays.includes(key)) {
+        continue;
+      } else if (streakDays.includes(key)) {
+        count++;
       } else {
-        nDays = 1;
+        break;
       }
     }
 
-    return nDays;
+    return count;
   };
 
   return (
     <View style={styles.dashboardContainer}>
-      <Text style={styles.dashboardTitle}>Calendario</Text>
-      <Text style={styles.dashboardInfo}>{today.toDateString()}{nContinuousStreak() > 1 ? " - Dias de racha " + nContinuousStreak() : null}</Text>
+      <View style={styles.monthHeader}>
+        <TouchableOpacity onPress={() => {
+          if (visibleMonth === 0) {
+            setVisibleMonth(11);
+            setVisibleYear(visibleYear - 1);
+          } else {
+            setVisibleMonth(visibleMonth - 1);
+          }
+        }}>
+          <MaterialCommunityIcons name="arrow-left" size={30} color={"rgba(255, 255, 255, 1)"} />
+        </TouchableOpacity>
+
+        <Text style={styles.monthTitle}>
+          {new Date(visibleYear, visibleMonth).toLocaleString("default", {
+            month: "long",
+            year: "numeric",
+          })}
+        </Text>
+
+        <TouchableOpacity onPress={() => {
+          if (visibleMonth === 11) {
+            setVisibleMonth(0);
+            setVisibleYear(visibleYear + 1);
+          } else {
+            setVisibleMonth(visibleMonth + 1);
+          }
+        }}>
+          <MaterialCommunityIcons name="arrow-right" size={30} color={"rgba(255, 255, 255, 1)"} />
+        </TouchableOpacity>
+      </View>
+      <Text style={styles.dashboardInfo}>{today.toLocaleString("default", {
+        weekday: "long",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })}</Text>
+      <Text style={styles.dashboardInfo}>{nContinuousStreak() > 1 ? "Dias de racha " + nContinuousStreak() : null}</Text>
 
       <View style={styles.weekRow}>
         {daysOfWeek.map((d, i) => (
@@ -87,27 +157,33 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
 
       {weeks.map((week, i) => (
         <View key={i} style={styles.weekRow}>
-          {week.map((day, j) => (
-            <View key={j} style={styles.dayCell}>
-              {day && (
+          {week.map((dateObj, j) => {
+            const isStreak = streakDays.includes(dateObj.key);
+            const isFailed = failedDays.includes(dateObj.key);
+            const isFrozen = frozenDays.includes(dateObj.key);
+
+            return (
+              <View key={j} style={styles.dayCell}>
                 <TouchableOpacity
                   style={[
                     styles.dayCircle,
-                    streakDays.includes(day) && { backgroundColor: "rgba(70, 115, 200, 1)" },
-                    failedDays.includes(day) && { backgroundColor: "rgba(255, 50, 50, 1)" },
-                    day === currentDay && styles.todayCircle,
+                    isStreak && { backgroundColor: "rgba(70, 115, 200, 1)" },
+                    isFailed && { backgroundColor: "rgba(255, 50, 50, 1)" },
+                    isFrozen && { backgroundColor: "rgba(80, 185, 255, 1)" },
+                    !dateObj.isCurrentMonth && { opacity: 0.4 },
+                    dateObj.isToday && styles.todayCircle,
                   ]}
                   onPress={() =>
                     navigation.getParent()?.navigate("FoodListScreen", {
-                      dayInfoKey: `dayInfo:${day}-${today.getMonth()}-${today.getFullYear()}`,
+                      dayInfoKey: `dayInfo:${dateObj.day}-${dateObj.month}-${dateObj.year}`,
                     })
                   }
                 >
-                  <Text style={styles.dayText}>{day}</Text>
+                  <Text style={styles.dayText}>{dateObj.day}</Text>
                 </TouchableOpacity>
-              )}
-            </View>
-          ))}
+              </View>
+            );
+          })}
         </View>
       ))}
     </View>
@@ -233,5 +309,20 @@ const styles = StyleSheet.create({
   dayText: {
     color: "white",
     fontWeight: "bold",
+  },
+
+  monthHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: 10,
+    marginBottom: 10,
+    paddingHorizontal: 20,
+  },
+  monthTitle: {
+    fontSize: 18,
+    color: "white",
+    fontWeight: "bold",
+    textTransform: "capitalize",
   },
 });

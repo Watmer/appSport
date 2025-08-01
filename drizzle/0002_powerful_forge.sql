@@ -1,0 +1,1 @@
+ALTER TABLE `day_table` ADD `isFailed` integer DEFAULT 0;
