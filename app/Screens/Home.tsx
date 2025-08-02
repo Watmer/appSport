@@ -22,7 +22,7 @@ export default function Home() {
 
   const today = new Date();
   const currentDay = today.getDate();
-  const defaultKey = `dayInfo:${currentDay}-${today.getMonth()}-${today.getFullYear()}`;
+  const defaultKey = `dayInfo:${currentDay}-${today.getMonth()+1}-${today.getFullYear()}`;
 
   useLayoutEffect(() => {
     navigation.setOptions({

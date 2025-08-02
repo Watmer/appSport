@@ -28,7 +28,7 @@ export default function FoodListScreen({ route }: { route: any }) {
   };
 
   const { dayInfoKey } = route.params || {};
-  const defaultKey = `dayInfo:${currentDay}-${today.getMonth()}-${today.getFullYear()}`;
+  const defaultKey = `dayInfo:${currentDay}-${today.getMonth() + 1}-${today.getFullYear()}`;
   const keyToUse = dayInfoKey || defaultKey;
 
   const navigation = useNavigation();
@@ -120,13 +120,13 @@ export default function FoodListScreen({ route }: { route: any }) {
 
   const renderRepeatMealsModal = () => {
     const [day, month, year] = keyToUse.replace("dayInfo:", "").split("-").map(Number);
-    const startDate = new Date(year, month, day - 7);
+    const startDate = new Date(year, month - 1, day - 7);
 
     const dates = Array.from({ length: 38 }, (_, i) => {
       const date = new Date(startDate);
       date.setDate(startDate.getDate() + i);
       const day = date.getDate();
-      const month = date.getMonth();
+      const month = date.getMonth() + 1;
       const year = date.getFullYear();
       return {
         day,
@@ -192,7 +192,7 @@ export default function FoodListScreen({ route }: { route: any }) {
                       <TouchableOpacity
                         style={[
                           styles.dayCircle,
-                          (diaObj.month !== month || diaObj.year !== year) && styles.otherMonthCircle,
+                          (diaObj.month !== month || diaObj.year !== year) && [styles.otherMonthCircle, {opacity:0.4}],
                           isSelected && {
                             borderWidth: 4,
                             borderColor: "rgba(0, 195, 255, 1)",
@@ -300,10 +300,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(100, 100, 100, 0.9)",
   },
   modalView: {
-    backgroundColor: "rgba(0, 0, 0, 1)",
+    backgroundColor: "rgba(55, 55, 55, 1)",
     borderRadius: 15,
     padding: 10,
     alignItems: "center",
@@ -382,13 +382,13 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(70, 70, 70, 1)",
+    backgroundColor: "rgba(80, 80, 80, 1)",
   },
   todayCircle: {
     backgroundColor: "rgba(255, 170, 0, 1)",
   },
   otherMonthCircle: {
-    backgroundColor: "rgba(35, 35, 35, 1)",
+    backgroundColor: "rgba(20, 20, 20, 1)",
   },
   dayText: {
     color: "white",

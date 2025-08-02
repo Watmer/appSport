@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { getDayInfo } from "../db/DaySqlLiteCRUD";
+import { addFailedDay, getAllFailedDays, getDayInfo, getLastFailedDay, getOrderedDays, removeFailedDay } from "../db/DaySqlLiteCRUD";
 
 const { width, height } = Dimensions.get("window");
 const daysOfWeek = ["L", "M", "X", "J", "V", "S", "D"];
@@ -13,23 +13,24 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
   const [visibleMonth, setVisibleMonth] = useState(today.getMonth());
   const [visibleYear, setVisibleYear] = useState(today.getFullYear());
   const currentDay = today.getDate();
+  const [streak, setStreak] = useState(0);
 
   const startDate = new Date(visibleYear, visibleMonth, 1);
   startDate.setDate(startDate.getDate() - ((startDate.getDay() + 6) % 7));
 
-  const dates = Array.from({ length: 35 }, (_, i) => {
+  const dates = Array.from({ length: 42 }, (_, i) => {
     const date = new Date(startDate);
     date.setDate(startDate.getDate() + i);
     const day = date.getDate();
-    const month = date.getMonth();
+    const month = date.getMonth() + 1;
     const year = date.getFullYear();
     return {
       day,
       month,
       year,
       key: `${day}-${month}-${year}`,
-      isCurrentMonth: month === visibleMonth && year === visibleYear,
-      isToday: day === currentDay && month === today.getMonth() && year === today.getFullYear(),
+      isCurrentMonth: month === visibleMonth + 1 && year === visibleYear,
+      isToday: day === currentDay && month === today.getMonth() + 1 && year === today.getFullYear(),
     };
   });
 
@@ -47,7 +48,7 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
       for (const week of weeks) {
         let frozenAdded = false;
 
-        for (const { day, month, year, key } of week) {
+        for (const { day, month, year, key, isToday } of week) {
           const dayInfoKey = `dayInfo:${day}-${month}-${year}`;
           const dayData = await getDayInfo(dayInfoKey);
 
@@ -56,12 +57,21 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
 
           if (isStreak) {
             daysStreak.push(key);
+            await removeFailedDay(`dayInfo:${key}`);
           } else if (isFailed) {
             if (!frozenAdded) {
               frozen.push(key);
               frozenAdded = true;
+              await removeFailedDay(`dayInfo:${key}`);
             } else {
-              daysFailed.push(key);
+              if (!isToday) {
+                daysFailed.push(key);
+                await addFailedDay(`dayInfo:${key}`);
+                console.log(await getLastFailedDay(), " ", key);
+                console.log(await getAllFailedDays());
+              } else {
+                await removeFailedDay(`dayInfo:${key}`);
+              }
             }
           }
         }
@@ -75,6 +85,10 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
     fetchDayInfo();
   }, [refreshTrigger, visibleMonth, visibleYear]);
 
+  useEffect(() => {
+    fetchContinuousStreak();
+  }, [refreshTrigger]);
+
   const dayIsStreak = (meals: any[] | undefined): boolean => {
     if (!meals || meals.length === 0) return false;
     return meals.every(meal => meal.completed === 1);
@@ -85,27 +99,70 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
     return meals.some(meal => meal.completed === 1) && meals.some(meal => meal.completed === 0);
   };
 
-  const nContinuousStreak = () => {
-    let count = 0;
-    const today = new Date();
-    const formatKey = (date: Date) => `${date.getDate()}-${date.getMonth()}-${date.getFullYear()}`;
+  const fetchContinuousStreak = async () => {
+    const lastFailed = await getLastFailedDay();
+    const orderedDays = await getOrderedDays();
+    const firstDay = orderedDays[0];
 
-    for (let i = 1; i <= 365; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() - i);
-      const key = formatKey(date);
+    const referenceId = lastFailed?.id || firstDay?.id;
+    console.log(referenceId);
 
-      if (frozenDays.includes(key)) {
-        continue;
-      } else if (streakDays.includes(key)) {
-        count++;
-      } else {
-        break;
-      }
+    if (!referenceId) {
+      setStreak(0);
+      return;
     }
 
-    return count;
+    const [refDay, refMonth, refYear] = referenceId.replace("dayInfo:", "").split("-").map(Number);
+    const referenceDate = new Date(refYear, refMonth - 1, refDay);
+
+    const today = new Date();
+    today.setDate(today.getDate() - 1); // ayer
+
+    let count = 0;
+    let current = new Date(today);
+    let exit = false;
+
+    while (!exit && referenceDate <= current) {
+      const dayKey = `dayInfo:${current.getDate()}-${current.getMonth() + 1}-${current.getFullYear()}`;
+      const dayInfo = await getDayInfo(dayKey);
+
+      if (dayIsStreak(dayInfo.meals)) {
+        count++;
+      } else if (dayIsFailed(dayInfo.meals)) {
+        let nFailed = 0;
+
+        const startOfWeek = new Date(current);
+        const dayOfWeek = (startOfWeek.getDay() + 6) % 7; // lunes = 0, domingo = 6
+        startOfWeek.setDate(startOfWeek.getDate() - dayOfWeek); // Ir al lunes
+
+        const checkDate = new Date(startOfWeek);
+        while (checkDate <= current) {
+          const checkKey = `dayInfo:${checkDate.getDate()}-${checkDate.getMonth() + 1}-${checkDate.getFullYear()}`;
+          const checkInfo = await getDayInfo(checkKey);
+
+          if (checkInfo && dayIsFailed(checkInfo.meals)) {
+            nFailed++;
+          }
+
+          checkDate.setDate(checkDate.getDate() + 1);
+        }
+
+        if (nFailed > 1) {
+          exit = true;
+        }
+        // Si hay solo 1 failed, no sumamos ni salimos, simplemente seguimos con el while
+      } else {
+        // Día sin info o no streak/failed
+        exit = true;
+      }
+
+      current.setDate(current.getDate() - 1);
+    }
+
+    setStreak(count);
   };
+
+
 
   return (
     <View style={styles.dashboardContainer}>
@@ -139,13 +196,15 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
           <MaterialCommunityIcons name="arrow-right" size={30} color={"rgba(255, 255, 255, 1)"} />
         </TouchableOpacity>
       </View>
-      <Text style={styles.dashboardInfo}>{today.toLocaleString("default", {
-        weekday: "long",
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      })}</Text>
-      <Text style={styles.dashboardInfo}>{nContinuousStreak() > 1 ? "Dias de racha " + nContinuousStreak() : null}</Text>
+      <TouchableOpacity >
+        <Text style={styles.dashboardInfo}>{today.toLocaleString("default", {
+          weekday: "long",
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+        })}</Text>
+        <Text style={styles.dashboardInfo}>{streak > 1 ? "Dias de racha " + streak : null}</Text>
+      </TouchableOpacity>
 
       <View style={styles.weekRow}>
         {daysOfWeek.map((d, i) => (
@@ -157,7 +216,7 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
 
       {weeks.map((week, i) => (
         <View key={i} style={styles.weekRow}>
-          {week.map((dateObj, j) => {
+          {week.find((day) => day.isCurrentMonth) && week.map((dateObj, j) => {
             const isStreak = streakDays.includes(dateObj.key);
             const isFailed = failedDays.includes(dateObj.key);
             const isFrozen = frozenDays.includes(dateObj.key);
