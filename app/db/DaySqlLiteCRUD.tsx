@@ -31,11 +31,19 @@ export async function getMealsDayInfo(dayId: string) {
 }
 
 export async function getMealIngredients(mealId: number) {
-  const ingredients = await db
-    .select()
+  const ingredients = await db.select()
     .from(ingredientsTable)
     .where(eq(ingredientsTable.mealId, mealId));
   return ingredients || [];
+}
+
+export async function getMealById(mealId: number) {
+  const [meal] = await db.select()
+    .from(mealTable)
+    .where(eq(mealTable.id, mealId));
+  const ing = await getMealIngredients(mealId);
+  (meal as any).ingredients = ing;
+  return meal || null;
 }
 
 export async function getAllMeals() {
@@ -95,6 +103,15 @@ export async function removeDayInfo(dayId: string) {
 
   await db.delete(mealTable).where(eq(mealTable.dayId, dayId));
   await db.delete(dayTable).where(eq(dayTable.id, dayId));
+}
+
+export async function removeAllDaysInfo() {
+  const meals = await db.select().from(mealTable);
+  for (const meal of meals) {
+    await db.delete(ingredientsTable).where(eq(ingredientsTable.mealId, meal.id));
+  }
+  await db.delete(mealTable);
+  await db.delete(dayTable);
 }
 
 export async function removeMealById(mealId: number) {

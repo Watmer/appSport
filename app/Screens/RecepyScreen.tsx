@@ -63,8 +63,7 @@ export default function RecepyScreen({ route }: { route: any }) {
   };
 
   const handleCardPress = (mealId: number) => {
-    // Aquí puedes navegar a otra pantalla con detalles, si es necesario.
-    // navigation.navigate("MealDetails", { id: mealId });
+    (navigation as any).navigate("MealDetailsScreen", { mealInfoKey: mealId });
   };
 
   return (

@@ -8,6 +8,7 @@ import RecepyScreen from "../Screens/RecepyScreen";
 import ShopListScreen from "../Screens/ShopListScreen";
 import TimerScreen from "../Screens/TimerScreen";
 import TabsNavigator from "./TabsNavigator";
+import MealDetailScreen from "../Screens/MealDetailsScreen";
 
 const RootStack = createStackNavigator();
 
@@ -41,6 +42,8 @@ export default function RootNavigator() {
         options={{ title: "Timer" }} />
       <RootStack.Screen name="RecepyScreen" component={RecepyScreen}
         options={{ title: "Recetas" }} />
+      <RootStack.Screen name="MealDetailsScreen" component={MealDetailScreen}
+        options={{ title: "Meal Detail" }} />
     </RootStack.Navigator>
   );
 }

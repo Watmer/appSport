@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { addFailedDay, getAllFailedDays, getDayInfo, getLastFailedDay, getOrderedDays, removeFailedDay } from "../db/DaySqlLiteCRUD";
+import { addFailedDay, getDayInfo, getLastFailedDay, getOrderedDays, removeFailedDay } from "../db/DaySqlLiteCRUD";
 
 const { width, height } = Dimensions.get("window");
 const daysOfWeek = ["L", "M", "X", "J", "V", "S", "D"];
