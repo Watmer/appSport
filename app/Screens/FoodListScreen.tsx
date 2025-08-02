@@ -82,7 +82,6 @@ export default function FoodListScreen({ route }: { route: any }) {
   }, [keyToUse]);
 
   const renderMealCards = () => {
-    console.log(mealInfo);
     if (!mealInfo[0]) {
       return (
         <View style={styles.cardInfo}>
@@ -104,11 +103,9 @@ export default function FoodListScreen({ route }: { route: any }) {
   const repeatMeals = async (selectedDateKeys: string[]) => {
     try {
       const data = await getDayInfo(keyToUse);
-      console.log("Data to repeat:", selectedDateKeys);
 
       for (const dateKey of selectedDateKeys) {
         await setDayInfo(`dayInfo:${dateKey}`, data.meals);
-        console.log(`Meals repeated for ${dateKey}, data:`, data.meals);
       }
 
       Alert.alert("Comidas repetidas correctamente.");

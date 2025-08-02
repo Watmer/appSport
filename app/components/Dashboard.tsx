@@ -40,54 +40,52 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
   const [frozenDays, setFrozenDays] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchDayInfo = async () => {
-      const daysStreak = [];
-      const daysFailed = [];
-      const frozen = [];
-
-      for (const week of weeks) {
-        let frozenAdded = false;
-
-        for (const { day, month, year, key, isToday } of week) {
-          const dayInfoKey = `dayInfo:${day}-${month}-${year}`;
-          const dayData = await getDayInfo(dayInfoKey);
-
-          const isStreak = dayIsStreak(dayData?.meals);
-          const isFailed = dayIsFailed(dayData?.meals);
-
-          if (isStreak) {
-            daysStreak.push(key);
-            await removeFailedDay(`dayInfo:${key}`);
-          } else if (isFailed) {
-            if (!frozenAdded) {
-              frozen.push(key);
-              frozenAdded = true;
-              await removeFailedDay(`dayInfo:${key}`);
-            } else {
-              if (!isToday) {
-                daysFailed.push(key);
-                await addFailedDay(`dayInfo:${key}`);
-                console.log(await getLastFailedDay(), " ", key);
-                console.log(await getAllFailedDays());
-              } else {
-                await removeFailedDay(`dayInfo:${key}`);
-              }
-            }
-          }
-        }
-      }
-
-      setStreakDays(daysStreak);
-      setFailedDays(daysFailed);
-      setFrozenDays(frozen);
-    };
-
     fetchDayInfo();
   }, [refreshTrigger, visibleMonth, visibleYear]);
 
   useEffect(() => {
     fetchContinuousStreak();
   }, [refreshTrigger]);
+
+  const fetchDayInfo = async () => {
+    const daysStreak = [];
+    const daysFailed = [];
+    const frozen = [];
+
+    for (const week of weeks) {
+      let frozenAdded = false;
+
+      for (const { day, month, year, key, isToday } of week) {
+        const dayInfoKey = `dayInfo:${day}-${month}-${year}`;
+        const dayData = await getDayInfo(dayInfoKey);
+
+        const isStreak = dayIsStreak(dayData?.meals);
+        const isFailed = dayIsFailed(dayData?.meals);
+
+        if (isStreak) {
+          daysStreak.push(key);
+          await removeFailedDay(`dayInfo:${key}`);
+        } else if (isFailed) {
+          if (!frozenAdded) {
+            frozen.push(key);
+            frozenAdded = true;
+            await removeFailedDay(`dayInfo:${key}`);
+          } else {
+            if (!isToday) {
+              daysFailed.push(key);
+              await addFailedDay(`dayInfo:${key}`);
+            } else {
+              await removeFailedDay(`dayInfo:${key}`);
+            }
+          }
+        }
+      }
+    }
+
+    setStreakDays(daysStreak);
+    setFailedDays(daysFailed);
+    setFrozenDays(frozen);
+  };
 
   const dayIsStreak = (meals: any[] | undefined): boolean => {
     if (!meals || meals.length === 0) return false;
@@ -105,7 +103,6 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
     const firstDay = orderedDays[0];
 
     const referenceId = lastFailed?.id || firstDay?.id;
-    console.log(referenceId);
 
     if (!referenceId) {
       setStreak(0);
@@ -116,7 +113,7 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
     const referenceDate = new Date(refYear, refMonth - 1, refDay);
 
     const today = new Date();
-    today.setDate(today.getDate() - 1); // ayer
+    today.setDate(today.getDate() - 1);
 
     let count = 0;
     let current = new Date(today);
@@ -132,8 +129,8 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
         let nFailed = 0;
 
         const startOfWeek = new Date(current);
-        const dayOfWeek = (startOfWeek.getDay() + 6) % 7; // lunes = 0, domingo = 6
-        startOfWeek.setDate(startOfWeek.getDate() - dayOfWeek); // Ir al lunes
+        const dayOfWeek = (startOfWeek.getDay() + 6) % 7;
+        startOfWeek.setDate(startOfWeek.getDate() - dayOfWeek);
 
         const checkDate = new Date(startOfWeek);
         while (checkDate <= current) {
@@ -150,9 +147,7 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
         if (nFailed > 1) {
           exit = true;
         }
-        // Si hay solo 1 failed, no sumamos ni salimos, simplemente seguimos con el while
       } else {
-        // Día sin info o no streak/failed
         exit = true;
       }
 
@@ -162,7 +157,11 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
     setStreak(count);
   };
 
-
+  const handleCurrentDay = () => {
+    setVisibleMonth(today.getMonth());
+    setVisibleYear(today.getFullYear());
+    fetchDayInfo();
+  };
 
   return (
     <View style={styles.dashboardContainer}>
@@ -196,7 +195,7 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
           <MaterialCommunityIcons name="arrow-right" size={30} color={"rgba(255, 255, 255, 1)"} />
         </TouchableOpacity>
       </View>
-      <TouchableOpacity >
+      <TouchableOpacity onPress={() => handleCurrentDay()}>
         <Text style={styles.dashboardInfo}>{today.toLocaleString("default", {
           weekday: "long",
           day: "numeric",

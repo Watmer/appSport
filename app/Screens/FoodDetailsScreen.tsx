@@ -50,7 +50,6 @@ export default function FoodDetailScreen({ route }: { route: any }) {
       if (dayInfo && dayInfo.meals) {
         const filtered = dayInfo.meals.filter(day => day.meal === mealType);
         setMealData(filtered);
-        console.log("mealIds:", filtered.map(m => m.id));
       } else {
         setMealData([]);
       }

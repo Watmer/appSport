@@ -35,7 +35,6 @@ export default function ShopListScreen() {
       if (filteredItems[filteredItems.length - 1].id !== item.id) {
         result += "\n";
       }
-      console.log(result);
     }
     if (filteredItems.length > 0) {
       await Clipboard.setStringAsync(result);
@@ -50,7 +49,6 @@ export default function ShopListScreen() {
 
   const fetchShopData = async () => {
     let saved = await getAsyncInfo({ keyPath: shopKey });
-    console.log("ShopList:", saved);
     if (saved) {
       (saved as any[]).filter((item) => item.text !== "")
       if (saved[saved.length - 1].text !== "") {
