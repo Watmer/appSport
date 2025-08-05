@@ -4,11 +4,11 @@ import EditFoodScreen from "../Screens/EditFoodScreen";
 import FoodDetailScreen from "../Screens/FoodDetailsScreen";
 import FoodListScreen from "../Screens/FoodListScreen";
 import Home from "../Screens/Home";
+import MealDetailScreen from "../Screens/MealDetailsScreen";
 import RecepyScreen from "../Screens/RecepyScreen";
 import ShopListScreen from "../Screens/ShopListScreen";
 import TimerScreen from "../Screens/TimerScreen";
 import TabsNavigator from "./TabsNavigator";
-import MealDetailScreen from "../Screens/MealDetailsScreen";
 
 const RootStack = createStackNavigator();
 
@@ -17,7 +17,7 @@ export default function RootNavigator() {
     <RootStack.Navigator screenOptions={
       {
         headerShown: true,
-        headerStyle: { backgroundColor: "rgba(100, 100, 100, 1)" },
+        headerStyle: { backgroundColor: "rgba(70, 70, 70, 1)" },
         headerTitleStyle: { color: "rgba(255, 255, 255, 1)" },
         headerTitleAlign: "center",
         headerTintColor: "rgba(255, 255, 255, 1)",

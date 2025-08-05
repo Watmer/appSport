@@ -26,23 +26,24 @@ export default function FoodDetailScreen({ route }: { route: any }) {
           style={{ marginRight: 20 }}
           onPress={() => setEditing(!editing)}
         >
-          {editing ? (
-            <MaterialCommunityIcons
-              name="close"
-              size={30}
-              color="rgba(255, 70, 70, 1)"
-            />
-          ) : (
-            <MaterialCommunityIcons
-              name="pencil-box-outline"
-              size={30}
-              color="rgba(255, 170, 0, 1)"
-            />
-          )}
+          {mealData?.length !== 0 &&
+            (editing ? (
+              <MaterialCommunityIcons
+                name="close"
+                size={30}
+                color="rgba(255, 70, 70, 1)"
+              />
+            ) : (
+              <MaterialCommunityIcons
+                name="pencil-box-outline"
+                size={30}
+                color="rgba(255, 170, 0, 1)"
+              />
+            ))}
         </TouchableOpacity>
       ),
     });
-  }, [navigation, dayInfoKey, editing]);
+  }, [navigation, dayInfoKey, editing, mealData]);
 
   const fetchMealData = async () => {
     try {
@@ -154,7 +155,7 @@ export default function FoodDetailScreen({ route }: { route: any }) {
 const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
-    backgroundColor: "rgba(120, 120, 120, 1)",
+    backgroundColor: "rgba(30, 30, 30, 1)",
   },
   container: {
     padding: 16,
@@ -166,10 +167,12 @@ const styles = StyleSheet.create({
     color: "rgba(255, 255, 255, 1)"
   },
   card: {
-    backgroundColor: "rgba(35, 80, 120, 1)",
+    backgroundColor: "rgba(0, 60, 90, 1)", 
     borderRadius: 10,
     padding: 12,
     marginBottom: 16,
+    borderWidth: 0.4,
+    borderColor: "rgba(255, 255, 255, 0.3)"
   },
   arson: {
     flex: 1,

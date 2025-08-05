@@ -28,7 +28,7 @@ export default function ShopListScreen() {
     const saved = await getAsyncInfo({ keyPath: shopKey });
     const filteredItems = (saved as any[] || []).slice()
       .reverse()
-      .filter((item) => item.text !== "");
+      .filter((item) => item.text !== "" && !item.completed);
 
     for (const item of filteredItems) {
       result += item.text;
@@ -136,7 +136,7 @@ export default function ShopListScreen() {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          progressBackgroundColor="rgba(70, 70, 70, 1)"
+          progressBackgroundColor="rgba(90, 90, 90, 1)"
           colors={["rgba(255, 170, 0, 1)"]}
         />
       }>
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 35,
-    backgroundColor: "rgba(120,120,120,1)"
+    backgroundColor: "rgba(30,30,30,1)"
   },
   row: {
     flexDirection: "row",

@@ -173,28 +173,9 @@ export default function MealCard({ dayInfoKey, refreshTrigger }: MealCardProps) 
 }
 
 const styles = StyleSheet.create({
-  scrollContainer: {
-    flex: 1,
-    backgroundColor: "rgba(120, 120, 120, 1)",
-  },
-  container: {
-    flex: 1,
-    marginTop: 20,
-    marginHorizontal: 15,
-    flexWrap: "wrap-reverse",
-    flexDirection: "row",
-    justifyContent: "flex-start",
-    alignItems: "center",
-    gap: 10,
-  },
-  cardsContainer: {
-    marginTop: 10,
-    gap: 10,
-    alignItems: "center",
-  },
   cardContainer: {
     justifyContent: "center",
-    backgroundColor: "rgba(150, 150, 150, 1)",
+    backgroundColor: "rgba(90, 90, 90, 1)",
     borderRadius: 15,
     minWidth: 350,
     maxWidth: 350,
@@ -222,10 +203,12 @@ const styles = StyleSheet.create({
   cardInfo: {
     width: "100%",
     minHeight: 100,
-    backgroundColor: "rgba(35, 80, 120, 1)",
+    backgroundColor: "rgba(0, 60, 90, 1)",
     borderRadius: 10,
     justifyContent: "center",
     padding: 15,
+    borderWidth: 0.4,
+    borderColor: "rgba(0, 0, 0, 0.4)"
   },
   titleText: {
     fontSize: 20,

@@ -4,21 +4,60 @@ import React, { useEffect, useLayoutEffect, useState } from "react";
 import { Alert, Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { RefreshControl } from "react-native-gesture-handler";
 import MealCard from "../components/MealCard";
-import { getDayInfo, setDayInfo } from "../db/DaySqlLiteCRUD";
+import { getDayInfo, setDayInfo, swapDayInfo } from "../db/DaySqlLiteCRUD";
 
 const { width, height } = Dimensions.get("window");
 
 const meals = ["Desayuno", "Almuerzo", "Comida", "Merienda", "Cena"];
 
 export default function FoodListScreen({ route }: { route: any }) {
+  const { dayInfoKey } = route.params || {};
+  const navigation = useNavigation();
+
+  const [selectedDaysToRepeat, setSelectedDaysToRepeat] = useState<string[]>([]);
+  const [selectedDayToSwap, setSelectedDayToSwap] = useState<string>();
+
+  const [isRepeatModalVisible, setIsRepeatModalVisible] = useState(false);
+  const [isSwapModalVisible, setIsSwapModalVisible] = useState(false);
+
+  const [mealInfo, setMealInfo] = useState<any[]>([]);
+
   const today = new Date();
   const currentDay = today.getDate();
 
-  const [selectedDaysToRepeat, setSelectedDaysToRepeat] = useState<string[]>([]);
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const defaultKey = `dayInfo:${currentDay}-${today.getMonth() + 1}-${today.getFullYear()}`;
+  const keyToUse: string = dayInfoKey || defaultKey;
 
+  const [useDay, useMonth, useYear] = keyToUse.slice().replace(`dayInfo:`, "").split("-");
+
+  const [visibleMonth, setVisibleMonth] = useState(today.getMonth());
+  const [visibleYear, setVisibleYear] = useState(today.getFullYear());
   const [refreshing, setRefreshing] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
+
+  const startDate = new Date(visibleYear, visibleMonth, 1);
+  startDate.setDate(startDate.getDate() - ((startDate.getDay() + 6) % 7));
+
+  const dates = Array.from({ length: 42 }, (_, i) => {
+    const date = new Date(startDate);
+    date.setDate(startDate.getDate() + i);
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+    return {
+      day,
+      month,
+      year,
+      key: `${day}-${month}-${year}`,
+      isCurrentMonth: month === visibleMonth + 1 && year === visibleYear,
+      isToday: day === parseInt(useDay) && month === today.getMonth() + 1 && year === today.getFullYear(),
+    };
+  });
+
+  const weeks = Array.from({ length: 6 }, (_, i) => dates.slice(i * 7, i * 7 + 7));
+
+
+
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -27,28 +66,31 @@ export default function FoodListScreen({ route }: { route: any }) {
     setRefreshing(false);
   };
 
-  const { dayInfoKey } = route.params || {};
-  const defaultKey = `dayInfo:${currentDay}-${today.getMonth() + 1}-${today.getFullYear()}`;
-  const keyToUse = dayInfoKey || defaultKey;
 
-  const navigation = useNavigation();
-  const [mealInfo, setMealInfo] = useState<any[]>([]);
 
   useLayoutEffect(() => {
     navigation.setOptions({
       headerLeft: () => (
-        <TouchableOpacity
-          style={{ marginLeft: 20 }}
-          onPress={() => navigation.goBack()}
-        >
-          <MaterialCommunityIcons name="arrow-left" size={30} color="rgba(255, 170, 0, 1)" />
-        </TouchableOpacity>
+        <View style={{ flexDirection: "row", gap: 10 }}>
+          <TouchableOpacity
+            style={{ marginLeft: 20 }}
+            onPress={() => navigation.goBack()}
+          >
+            <MaterialCommunityIcons name="arrow-left" size={30} color="rgba(255, 170, 0, 1)" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={{ marginLeft: 20 }}
+            onPress={() => setIsSwapModalVisible(true)}
+          >
+            <MaterialCommunityIcons name="swap-horizontal" size={30} color="rgba(255, 170, 0, 1)" />
+          </TouchableOpacity>
+        </View>
       ),
       headerRight: () => (
         <View style={{ flexDirection: "row", gap: 10 }}>
           <TouchableOpacity
             style={{ marginRight: 20 }}
-            onPress={() => setIsModalVisible(true)}
+            onPress={() => setIsRepeatModalVisible(true)}
           >
             <MaterialCommunityIcons name="repeat-variant" size={30} color="rgba(255, 170, 0, 1)" />
           </TouchableOpacity>
@@ -115,49 +157,61 @@ export default function FoodListScreen({ route }: { route: any }) {
     }
   };
 
-  const renderRepeatMealsModal = () => {
-    const [day, month, year] = keyToUse.replace("dayInfo:", "").split("-").map(Number);
-    const startDate = new Date(year, month - 1, day - 7);
+  const swapDays = async (selectedDateKey: string) => {
+    try {
+      await swapDayInfo(keyToUse, `dayInfo:${selectedDateKey}`);
 
-    const dates = Array.from({ length: 38 }, (_, i) => {
-      const date = new Date(startDate);
-      date.setDate(startDate.getDate() + i);
-      const day = date.getDate();
-      const month = date.getMonth() + 1;
-      const year = date.getFullYear();
-      return {
-        day,
-        month,
-        year,
-        weekday: (date.getDay() + 6) % 7, // Lunes = 0
-        key: `${day}-${month}-${year}`,
-      };
-    });
-
-    // Alinear la primera semana con null al inicio
-    const firstWeekday = dates[0].weekday;
-    const paddedDates = [...Array(firstWeekday).fill(null), ...dates];
-
-    // Rellenar al final con nulls para completar la última fila de 7
-    while (paddedDates.length % 7 !== 0) {
-      paddedDates.push(null);
+      Alert.alert("Comidas intercambiadas correctamente.");
+    } catch (error) {
+      console.error("Error intercambiando comidas:", error);
+      Alert.alert("Error intercambiando comidas.");
     }
+  };
 
-    // Dividir en semanas
-    const weeks = Array.from({ length: paddedDates.length / 7 }, (_, i) =>
-      paddedDates.slice(i * 7, i * 7 + 7)
-    );
-
+  const renderSwapMealsModal = () => {
     return (
       <Modal
         animationType="fade"
         transparent={true}
-        visible={isModalVisible}
-        onRequestClose={() => setIsModalVisible(false)}
+        visible={isSwapModalVisible}
+        onRequestClose={() => setIsSwapModalVisible(false)}
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalView}>
-            <Text style={styles.modalText}>Selecciona los días:</Text>
+            <Text style={styles.modalText}>Selecciona el día:</Text>
+
+            <View style={styles.monthHeader}>
+              <TouchableOpacity onPress={() => {
+                if (visibleMonth === 0) {
+                  setVisibleMonth(11);
+                  setVisibleYear(visibleYear - 1);
+                } else {
+                  setVisibleMonth(visibleMonth - 1);
+                }
+              }}>
+                <MaterialCommunityIcons name="arrow-left" size={30} color={"rgba(255, 255, 255, 1)"} />
+              </TouchableOpacity>
+
+
+              <Text style={styles.monthTitle}>
+                {new Date(visibleYear, visibleMonth).toLocaleString("default", {
+                  month: "long",
+                  year: "numeric",
+                })}
+              </Text>
+
+              <TouchableOpacity onPress={() => {
+                if (visibleMonth === 11) {
+                  setVisibleMonth(0);
+                  setVisibleYear(visibleYear + 1);
+                } else {
+                  setVisibleMonth(visibleMonth + 1);
+                }
+              }}>
+                <MaterialCommunityIcons name="arrow-right" size={30} color={"rgba(255, 255, 255, 1)"} />
+              </TouchableOpacity>
+            </View>
+
 
             {/* Cabecera de días */}
             <View style={styles.weekRow}>
@@ -171,15 +225,14 @@ export default function FoodListScreen({ route }: { route: any }) {
             {/* Cuadrícula de días */}
             {weeks.map((week, weekIndex) => (
               <View key={weekIndex} style={styles.weekRow}>
-                {week.map((diaObj, colIndex) => {
+                {week.find((day) => day.isCurrentMonth) && week.map((diaObj, colIndex) => {
                   if (!diaObj) return <View key={colIndex} style={[styles.dayCell]} />;
-                  const isSelected = selectedDaysToRepeat.includes(diaObj.key);
-                  const isToday = diaObj.day === day && diaObj.month === month && diaObj.year === year;
-                  if (isToday) {
+                  const isSelected = selectedDayToSwap === diaObj.key;
+                  if (diaObj.isToday) {
                     return (
                       <View key={colIndex} style={styles.dayCell}>
                         <View key={colIndex} style={[styles.dayCircle, styles.todayCircle]}>
-                          <Text style={styles.dayLabel}>{day}</Text>
+                          <Text style={styles.dayLabel}>{diaObj.day}</Text>
                         </View>
                       </View>);
                   }
@@ -189,7 +242,127 @@ export default function FoodListScreen({ route }: { route: any }) {
                       <TouchableOpacity
                         style={[
                           styles.dayCircle,
-                          (diaObj.month !== month || diaObj.year !== year) && [styles.otherMonthCircle, {opacity:0.4}],
+                          (!diaObj.isCurrentMonth) && [styles.otherMonthCircle, { opacity: 0.4 }],
+                          isSelected && {
+                            borderWidth: 4,
+                            borderColor: "rgba(0, 195, 255, 1)",
+                          },
+                        ]}
+                        onPress={() => {
+                          setSelectedDayToSwap(diaObj.key);
+                        }}
+                      >
+                        <Text style={styles.dayText}>{diaObj.day}</Text>
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
+              </View>
+            ))}
+
+            {/* Botones */}
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <TouchableOpacity
+                style={styles.modalButton}
+                onPress={async () => {
+                  await swapDays(selectedDayToSwap || "");
+                  setIsSwapModalVisible(false);
+                  setSelectedDayToSwap("");
+                }}
+              >
+                <Text style={styles.buttonText}>Intercambiar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => {
+                  setIsSwapModalVisible(false);
+                  setSelectedDayToSwap("");
+                }}
+              >
+                <Text style={styles.modalCancelButtonText}>Cancelar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
+  const renderRepeatMealsModal = () => {
+    return (
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={isRepeatModalVisible}
+        onRequestClose={() => setIsRepeatModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalView}>
+            <Text style={styles.modalText}>Selecciona el día:</Text>
+
+            <View style={styles.monthHeader}>
+              <TouchableOpacity onPress={() => {
+                if (visibleMonth === 0) {
+                  setVisibleMonth(11);
+                  setVisibleYear(visibleYear - 1);
+                } else {
+                  setVisibleMonth(visibleMonth - 1);
+                }
+              }}>
+                <MaterialCommunityIcons name="arrow-left" size={30} color={"rgba(255, 255, 255, 1)"} />
+              </TouchableOpacity>
+
+
+              <Text style={styles.monthTitle}>
+                {new Date(visibleYear, visibleMonth).toLocaleString("default", {
+                  month: "long",
+                  year: "numeric",
+                })}
+              </Text>
+
+              <TouchableOpacity onPress={() => {
+                if (visibleMonth === 11) {
+                  setVisibleMonth(0);
+                  setVisibleYear(visibleYear + 1);
+                } else {
+                  setVisibleMonth(visibleMonth + 1);
+                }
+              }}>
+                <MaterialCommunityIcons name="arrow-right" size={30} color={"rgba(255, 255, 255, 1)"} />
+              </TouchableOpacity>
+            </View>
+
+            {/* Cabecera de días */}
+            <View style={styles.weekRow}>
+              {["L", "M", "X", "J", "V", "S", "D"].map((d, i) => (
+                <View key={i} style={styles.dayCell}>
+                  <Text style={styles.dayLabel}>{d}</Text>
+                </View>
+              ))}
+            </View>
+
+            {/* Cuadrícula de días */}
+            {weeks.map((week, weekIndex) => (
+              <View key={weekIndex} style={styles.weekRow}>
+                {week.find((day) => day.isCurrentMonth) && week.map((diaObj, colIndex) => {
+                  if (!diaObj) return <View key={colIndex} style={[styles.dayCell]} />;
+                  const isSelected = selectedDaysToRepeat.includes(diaObj.key);
+                  if (diaObj.isToday) {
+                    return (
+                      <View key={colIndex} style={styles.dayCell}>
+                        <View key={colIndex} style={[styles.dayCircle, styles.todayCircle]}>
+                          <Text style={styles.dayLabel}>{diaObj.day}</Text>
+                        </View>
+                      </View>);
+                  }
+
+                  return (
+                    <View key={colIndex} style={styles.dayCell}>
+                      <TouchableOpacity
+                        style={[
+                          styles.dayCircle,
+                          (!diaObj.isCurrentMonth) && [styles.otherMonthCircle, { opacity: 0.4 }],
                           isSelected && {
                             borderWidth: 4,
                             borderColor: "rgba(0, 195, 255, 1)",
@@ -216,7 +389,7 @@ export default function FoodListScreen({ route }: { route: any }) {
                 style={styles.modalButton}
                 onPress={async () => {
                   await repeatMeals(selectedDaysToRepeat);
-                  setIsModalVisible(false);
+                  setIsRepeatModalVisible(false);
                   setSelectedDaysToRepeat([]);
                 }}
               >
@@ -226,7 +399,7 @@ export default function FoodListScreen({ route }: { route: any }) {
               <TouchableOpacity
                 style={styles.modalCancelButton}
                 onPress={() => {
-                  setIsModalVisible(false);
+                  setIsRepeatModalVisible(false);
                   setSelectedDaysToRepeat([]);
                 }}
               >
@@ -243,9 +416,15 @@ export default function FoodListScreen({ route }: { route: any }) {
     <ScrollView
       style={styles.scrollContainer}
       refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} progressBackgroundColor="rgba(70, 70, 70, 1)" colors={["rgba(255, 170, 0, 1)"]} />
-      }>
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          progressBackgroundColor="rgba(90, 90, 90, 1)"
+          colors={["rgba(255, 170, 0, 1)"]} />
+      }
+    >
       {renderRepeatMealsModal()}
+      {renderSwapMealsModal()}
       <View style={styles.container}>
         <View style={styles.cardsContainer}>
           {renderMealCards()}
@@ -258,7 +437,7 @@ export default function FoodListScreen({ route }: { route: any }) {
 const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
-    backgroundColor: "rgba(120, 120, 120, 1)",
+    backgroundColor: "rgba(30, 30, 30, 1)",
   },
   container: {
     flex: 1,
@@ -297,10 +476,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(100, 100, 100, 0.9)",
+    backgroundColor: "rgba(30, 30, 30, 0.95)",
   },
   modalView: {
-    backgroundColor: "rgba(55, 55, 55, 1)",
+    backgroundColor: "rgba(70, 70, 70, 1)",
     borderRadius: 15,
     padding: 10,
     alignItems: "center",
@@ -379,7 +558,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(80, 80, 80, 1)",
+    backgroundColor: "rgba(95, 95, 95, 1)",
+    borderWidth: 0.5,
+    borderColor: "rgba(255, 255, 255, 0.2)",
   },
   todayCircle: {
     backgroundColor: "rgba(255, 170, 0, 1)",
@@ -391,5 +572,17 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
   },
-
+  monthHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    width: "100%"
+  },
+  monthTitle: {
+    fontSize: 15,
+    color: "white",
+    fontWeight: "bold",
+    textTransform: "capitalize",
+  },
 });

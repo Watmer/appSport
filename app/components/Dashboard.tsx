@@ -228,7 +228,7 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
                     isStreak && { backgroundColor: "rgba(70, 115, 200, 1)" },
                     isFailed && { backgroundColor: "rgba(255, 50, 50, 1)" },
                     isFrozen && { backgroundColor: "rgba(80, 185, 255, 1)" },
-                    !dateObj.isCurrentMonth && { opacity: 0.4 },
+                    !dateObj.isCurrentMonth && { opacity: 0.35 },
                     dateObj.isToday && styles.todayCircle,
                   ]}
                   onPress={() =>
@@ -249,95 +249,20 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
 }
 
 const styles = StyleSheet.create({
-  scrollContainer: {
-    flex: 1,
-    backgroundColor: "rgba(120, 120, 120, 1)",
-  },
-  container: {
-    flex: 1,
-    marginTop: 20,
-    marginHorizontal: 15,
-    flexWrap: "wrap-reverse",
-    flexDirection: "row",
-    justifyContent: "flex-start",
-    alignItems: "center",
-    gap: 10,
-  },
   dashboardContainer: {
     flex: 1,
     maxWidth: height / 1.5,
     maxHeight: height / 1,
-    backgroundColor: "rgba(100, 100, 100, 1)",
+    backgroundColor: "rgba(60, 60, 60, 1)",
     borderRadius: 15,
     marginBottom: 20,
     padding: 10,
     alignSelf: "flex-end",
   },
-  dashboardTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "rgba(255, 255, 255, 1)",
-    textAlign: "center",
-    marginBottom: 10,
-  },
   dashboardInfo: {
     fontSize: 17,
     color: "rgba(255, 255, 255, 0.8)",
     textAlign: "center",
-  },
-  cardsContainer: {
-    marginTop: 10,
-    gap: 10,
-    alignItems: "center",
-  },
-  cardContainer: {
-    justifyContent: "center",
-    backgroundColor: "rgba(150, 150, 150, 1)",
-    borderRadius: 15,
-    minWidth: 350,
-    maxWidth: 500,
-    minHeight: 100,
-    maxHeight: 400,
-  },
-  groupCard: {
-    margin: 10,
-    gap: 10,
-  },
-  groupCardTitle: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  groupCardTitleText: {
-    color: "rgba(255, 255, 255, 1)",
-    fontSize: 24,
-    fontWeight: "bold",
-    alignSelf: "center",
-    margin: 5,
-  },
-  cardInfo: {
-    width: "100%",
-    minHeight: 100,
-    backgroundColor: "rgba(60, 80, 145, 1)",
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  titleText: {
-    fontSize: 20,
-    color: "rgba(255, 255, 255, 1)",
-    fontWeight: "bold",
-    textAlign: "center",
-  },
-  text: {
-    fontSize: 20,
-    color: "rgb(255, 255, 255)",
-  },
-
-
-  calendarGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
   },
   weekRow: {
     flexDirection: "row",
@@ -350,7 +275,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   dayLabel: {
-    color: "white",
+    color: "rgba(255, 255, 255, 1)",
     fontWeight: "bold",
   },
   dayCircle: {
@@ -359,7 +284,9 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(70, 70, 70, 1)",
+    backgroundColor: "rgba(95, 95, 95, 1)",
+    borderWidth: 0.5,
+    borderColor: "rgba(255, 255, 255, 0.2)"
   },
   todayCircle: {
     backgroundColor: "rgba(255, 170, 0, 1)",
@@ -368,7 +295,6 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
   },
-
   monthHeader: {
     flexDirection: "row",
     justifyContent: "space-between",

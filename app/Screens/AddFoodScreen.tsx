@@ -2,18 +2,18 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useState } from "react";
 import {
-  Alert,
-  Dimensions,
-  Keyboard,
-  KeyboardAvoidingView,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  TouchableWithoutFeedback,
-  View
+    Alert,
+    Dimensions,
+    Keyboard,
+    KeyboardAvoidingView,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View
 } from "react-native";
 import { addMealWithIngredients } from "../db/DaySqlLiteCRUD";
 
@@ -216,7 +216,7 @@ export default function AddFoodScreen({ route }: { route: any }) {
 const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
-    backgroundColor: "rgba(120, 120, 120, 1)",
+    backgroundColor: "rgba(30, 30, 30, 1)",
   },
   container: {
     flex: 1,
@@ -272,10 +272,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(100, 100, 100, 0.9)",
+    backgroundColor: "rgba(30, 30, 30, 0.95)",
   },
   modalView: {
-    backgroundColor: "rgba(55, 55, 55, 1)",
+    backgroundColor: "rgba(70, 70, 70, 1)",
     borderRadius: 15,
     padding: 10,
     alignItems: "center",
@@ -286,7 +286,7 @@ const styles = StyleSheet.create({
     width: "100%",
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.3)",
+    borderBottomColor: "rgba(100, 100, 100, 1)",
   },
   modalOptionText: {
     fontSize: 20,

@@ -60,13 +60,10 @@ export async function getAllDays() {
   return days || [];
 }
 
-// Guardar info de un día con comidas e ingredientes
 export async function setDayInfo(dayId: string, meals: any[]) {
-  // Asegura que el día exista en la tabla de días (no lo sobrescribe si ya existe)
   await db.insert(dayTable).values({ id: dayId }).onConflictDoNothing();
 
   for (const meal of meals) {
-    // Inserta siempre una nueva comida con el dayId correcto
     const [inserted] = await db.insert(mealTable)
       .values({
         dayId,
@@ -90,6 +87,17 @@ export async function setDayInfo(dayId: string, meals: any[]) {
       });
     }
   }
+}
+
+export async function swapDayInfo(day1Id: string, day2Id: string) {
+  const day1 = await getDayInfo(day1Id);
+  const day2 = await getDayInfo(day2Id);
+
+  await removeDayInfo(day1Id);
+  await removeDayInfo(day2Id);
+
+  await setDayInfo(day1Id, day2.meals);
+  await setDayInfo(day2Id, day1.meals);
 }
 
 

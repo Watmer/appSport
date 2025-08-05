@@ -105,16 +105,17 @@ export default function TimerScreen() {
     const timerKeys = keys.filter((key) => key.startsWith("timer_"));
     const data = await AsyncStorage.multiGet(timerKeys);
 
-    const loaded = data
-      .map(([, value]) => {
-        if (!value) return null;
-        const parsed = JSON.parse(value);
-        return {
-          ...parsed,
-          startTime: new Date(parsed.startTime),
-        };
-      });
-    setTimers(loaded);
+    const loaded = data.map(([, value]) => {
+      if (!value) return null;
+      const parsed = JSON.parse(value);
+      return {
+        ...parsed,
+        startTime: new Date(parsed.startTime),
+      };
+    });
+    setTimers(loaded.slice().sort((a, b) => {
+      return a.remaining - b.remaining;
+    }));
   };
 
   useEffect(() => {
@@ -124,7 +125,9 @@ export default function TimerScreen() {
   useEffect(() => {
     const interval = setInterval(() => {
       setTimers((prev) =>
-        prev.map((timer) => {
+        prev.sort((a, b) => {
+          return a.remaining - b.remaining;
+        }).map((timer) => {
           if (timer.paused) return timer;
 
           const now = new Date();
@@ -396,7 +399,6 @@ export default function TimerScreen() {
             };
           }
         } else {
-          const elapsed = Math.floor((now - new Date(timer.startTime).getTime()) / 1000);
           return {
             ...timer,
             paused: true,
@@ -436,12 +438,12 @@ export default function TimerScreen() {
 const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
-    backgroundColor: "rgba(120, 120, 120, 1)",
+    backgroundColor: "rgba(30, 30, 30, 1)",
     width: "100%",
   },
   container: {
     flex: 1,
-    marginTop: 20,
+    marginTop: 40,
     flexDirection: "row",
     flexWrap: "wrap",
     marginHorizontal: 15,
@@ -473,13 +475,15 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   timerContainer: {
-    backgroundColor: "rgba(0, 85, 160, 1)",
+    backgroundColor: "rgba(0, 50, 95, 1)",
     borderRadius: 15,
     marginBottom: 10,
     justifyContent: "center",
     padding: 10,
     width: 173,
     minHeight: 173,
+    borderWidth: 0.2,
+    borderColor: "rgba(255, 255, 255, 0.3)"
   },
   timerText: {
     color: "rgba(255, 255, 255, 1)",

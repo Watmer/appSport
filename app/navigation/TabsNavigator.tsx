@@ -17,10 +17,10 @@ export default function TabsNavigator() {
       screenOptions={
         {
           headerShown: true,
-          headerStyle: { backgroundColor: "rgba(100, 100, 100, 1)", },
+          headerStyle: { backgroundColor: "rgba(70, 70, 70, 1)", borderColor: "rgba(0, 0, 0, 0.5)" },
           headerTitleStyle: { color: "rgba(255, 255, 255, 1)", },
           headerTitleAlign: "center",
-          tabBarStyle: { backgroundColor: "rgba(100, 100, 100, 1)", },
+          tabBarStyle: { backgroundColor: "rgba(70, 70, 70, 1)", borderColor: "rgba(0, 0, 0, 0.5)"},
           tabBarActiveTintColor: "rgba(255, 200, 0, 1)",
           tabBarInactiveTintColor: "rgba(0, 0, 0, 0.5)",
         }

@@ -126,7 +126,7 @@ export default function RecepyScreen({ route }: { route: any }) {
 const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
-    backgroundColor: "rgba(120, 120, 120, 1)",
+    backgroundColor: "rgba(30, 30, 30, 1)",
   },
   container: {
     padding: 16,
@@ -143,10 +143,12 @@ const styles = StyleSheet.create({
   cardInfo: {
     width: "100%",
     minHeight: 100,
-    backgroundColor: "rgba(35, 80, 120, 1)",
+    backgroundColor: "rgba(0, 60, 90, 1)", 
     borderRadius: 10,
     justifyContent: "center",
     padding: 15,
+    borderWidth: 0.4,
+    borderColor: "rgba(255, 255, 255, 0.3)"
   },
   titleText: {
     fontSize: 20,

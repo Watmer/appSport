@@ -143,7 +143,7 @@ export default function Home() {
         <RefreshControl
           refreshing={refreshing}
           onRefresh={onRefresh}
-          progressBackgroundColor="rgba(70, 70, 70, 1)"
+          progressBackgroundColor="rgba(90, 90, 90, 1)"
           colors={["rgba(255, 170, 0, 1)"]}
         />
       }
@@ -160,7 +160,7 @@ export default function Home() {
 const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
-    backgroundColor: "rgba(120, 120, 120, 1)",
+    backgroundColor: "rgba(30, 30, 30, 1)",
   },
   container: {
     flex: 1,
