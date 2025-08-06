@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   formContainer: {
-    backgroundColor: "rgba(100, 100, 100, 1)",
+    backgroundColor: "rgba(70, 70, 70, 1)",
     borderRadius: 15,
     padding: 20,
     marginBottom: 20,
@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   addButton: {
-    backgroundColor: "rgba(170, 170, 170, 1)",
+    backgroundColor: "rgba(100, 100, 100, 1)",
     padding: 10,
     borderRadius: 5,
     marginBottom: 10,

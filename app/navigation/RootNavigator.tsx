@@ -17,7 +17,7 @@ export default function RootNavigator() {
     <RootStack.Navigator screenOptions={
       {
         headerShown: true,
-        headerStyle: { backgroundColor: "rgba(70, 70, 70, 1)" },
+        headerStyle: { backgroundColor: "rgba(50, 50, 50, 1)" },
         headerTitleStyle: { color: "rgba(255, 255, 255, 1)" },
         headerTitleAlign: "center",
         headerTintColor: "rgba(255, 255, 255, 1)",
