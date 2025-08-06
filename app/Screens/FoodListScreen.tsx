@@ -16,11 +16,13 @@ export default function FoodListScreen({ route }: { route: any }) {
 
   const [selectedDaysToRepeat, setSelectedDaysToRepeat] = useState<string[]>([]);
   const [selectedDayToSwap, setSelectedDayToSwap] = useState<string>();
+  const [selectedFoods, setSelectedFoods] = useState<number[]>([]);
 
   const [isRepeatModalVisible, setIsRepeatModalVisible] = useState(false);
   const [isSwapModalVisible, setIsSwapModalVisible] = useState(false);
 
   const [mealInfo, setMealInfo] = useState<any[]>([]);
+  const [mealSwapInfo, setMealSwapInfo] = useState<any>(null)
 
   const today = new Date();
   const currentDay = today.getDate();
@@ -56,17 +58,12 @@ export default function FoodListScreen({ route }: { route: any }) {
 
   const weeks = Array.from({ length: 6 }, (_, i) => dates.slice(i * 7, i * 7 + 7));
 
-
-
-
   const onRefresh = async () => {
     setRefreshing(true);
     await fetchDayInfo();
     setRefreshTrigger((prev) => prev + 1);
     setRefreshing(false);
   };
-
-
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -146,8 +143,12 @@ export default function FoodListScreen({ route }: { route: any }) {
     try {
       const data = await getDayInfo(keyToUse);
 
+      const filteredMeals = data.meals.filter(meal =>
+        selectedFoods.includes(meal.id)
+      );
+
       for (const dateKey of selectedDateKeys) {
-        await setDayInfo(`dayInfo:${dateKey}`, data.meals);
+        await setDayInfo(`dayInfo:${dateKey}`, filteredMeals);
       }
 
       Alert.alert("Comidas repetidas correctamente.");
@@ -160,6 +161,7 @@ export default function FoodListScreen({ route }: { route: any }) {
   const swapDays = async (selectedDateKey: string) => {
     try {
       await swapDayInfo(keyToUse, `dayInfo:${selectedDateKey}`);
+      onRefresh();
 
       Alert.alert("Comidas intercambiadas correctamente.");
     } catch (error) {
@@ -268,6 +270,8 @@ export default function FoodListScreen({ route }: { route: any }) {
                   await swapDays(selectedDayToSwap || "");
                   setIsSwapModalVisible(false);
                   setSelectedDayToSwap("");
+                  setSelectedFoods([]);
+                  setMealSwapInfo(null);
                 }}
               >
                 <Text style={styles.buttonText}>Intercambiar</Text>
@@ -278,14 +282,64 @@ export default function FoodListScreen({ route }: { route: any }) {
                 onPress={() => {
                   setIsSwapModalVisible(false);
                   setSelectedDayToSwap("");
+                  setSelectedFoods([]);
+                  setMealSwapInfo(null);
                 }}
               >
                 <Text style={styles.modalCancelButtonText}>Cancelar</Text>
               </TouchableOpacity>
             </View>
           </View>
+          {renderSwapFood()}
         </View>
       </Modal>
+    );
+  };
+
+  const fetchSwapInfo = async () => {
+    if (selectedDayToSwap) {
+      setMealSwapInfo(await getDayInfo(`dayInfo:${selectedDayToSwap}`));
+      console.log(mealSwapInfo);
+    }
+  };
+
+  useEffect(() => {
+    fetchSwapInfo();
+  }, [selectedDayToSwap])
+
+  const renderSwapFood = () => {
+    const sortedCurrent = [...mealInfo].sort(
+      (a, b) => meals.indexOf(a.meal) - meals.indexOf(b.meal)
+    );
+
+    const sortedSelected = [...(mealSwapInfo?.meals || [])].sort(
+      (a, b) => meals.indexOf(a.meal) - meals.indexOf(b.meal)
+    );
+
+    return (
+      <ScrollView style={styles.scrollFoodInfo}>
+        <View style={styles.viewFoodInfo}>
+          {sortedCurrent.map((meal, index) => (
+            <View key={meal.id} style={styles.selectFoodCard}>
+              <View style={styles.selectFoodTextContainer}>
+                <Text style={styles.selectFoodType}>{meal.meal}</Text>
+                <Text style={styles.selectFoodName}>{meal.foodName}</Text>
+              </View>
+
+              <MaterialCommunityIcons style={{ paddingRight: 10 }} name="swap-horizontal" size={30} color={"rgba(150, 150, 150, 1)"} />
+
+              <View style={styles.selectFoodTextContainer}>
+                <Text style={styles.selectFoodType}>
+                  {sortedSelected[index]?.meal || "-"}
+                </Text>
+                <Text style={styles.selectFoodName}>
+                  {sortedSelected[index]?.foodName || "-"}
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
     );
   };
 
@@ -312,7 +366,6 @@ export default function FoodListScreen({ route }: { route: any }) {
               }}>
                 <MaterialCommunityIcons name="arrow-left" size={30} color={"rgba(255, 255, 255, 1)"} />
               </TouchableOpacity>
-
 
               <Text style={styles.monthTitle}>
                 {new Date(visibleYear, visibleMonth).toLocaleString("default", {
@@ -391,6 +444,7 @@ export default function FoodListScreen({ route }: { route: any }) {
                   await repeatMeals(selectedDaysToRepeat);
                   setIsRepeatModalVisible(false);
                   setSelectedDaysToRepeat([]);
+                  setSelectedFoods([]);
                 }}
               >
                 <Text style={styles.buttonText}>Repetir Comidas</Text>
@@ -401,14 +455,52 @@ export default function FoodListScreen({ route }: { route: any }) {
                 onPress={() => {
                   setIsRepeatModalVisible(false);
                   setSelectedDaysToRepeat([]);
+                  setSelectedFoods([]);
                 }}
               >
                 <Text style={styles.modalCancelButtonText}>Cancelar</Text>
               </TouchableOpacity>
             </View>
           </View>
+          {renderSelectFood()}
         </View>
       </Modal>
+    );
+  };
+
+  const toggleSelectFood = (mealId: number) => {
+    if (selectedFoods.includes(mealId)) {
+      setSelectedFoods(prev => prev.filter(id => id !== mealId));
+    } else {
+      setSelectedFoods(prev => [...prev, mealId]);
+    }
+  };
+
+  const renderSelectFood = () => {
+    const mealTypesSorted = [...mealInfo].sort(
+      (a, b) => meals.indexOf(a.meal) - meals.indexOf(b.meal)
+    );
+
+    return (
+      <ScrollView style={styles.scrollFoodInfo}>
+        <View style={styles.viewFoodInfo}>
+          {mealTypesSorted.map((meal) => (
+            <TouchableOpacity
+              onPress={() => toggleSelectFood(meal.id)}
+              key={meal.id} style={styles.selectFoodCard}
+            >
+              {selectedFoods.includes(meal.id) ?
+                <MaterialCommunityIcons name="checkbox-marked" size={30} color={"rgba(255, 170, 0, 1)"} />
+                : <MaterialCommunityIcons name="checkbox-blank-outline" size={30} color={"rgba(155,155,155,1)"} />}
+              <View style={styles.selectFoodTextContainer}>
+                <Text style={styles.selectFoodType}>{meal.meal}</Text>
+                <Text style={styles.selectFoodName}>{meal.foodName}</Text>
+              </View>
+            </TouchableOpacity>
+
+          ))}
+        </View>
+      </ScrollView >
     );
   };
 
@@ -584,5 +676,34 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
     textTransform: "capitalize",
+  },
+  scrollFoodInfo: {
+    marginTop: 10,
+    width: "100%",
+    maxHeight: "35%",
+  },
+  viewFoodInfo: {
+    alignItems: "center",
+  },
+  selectFoodCard: {
+    marginBottom: 10,
+    minHeight: 60,
+    width: "85%",
+    backgroundColor: "rgba(70, 70, 70, 1)",
+    borderRadius: 15,
+    padding: 10,
+    alignItems: "center",
+    flexDirection: "row",
+  },
+  selectFoodTextContainer: {
+    flex: 1,
+    paddingHorizontal: 10,
+  },
+  selectFoodType: {
+    color: "rgba(170, 170, 170, 1)",
+    fontWeight: "bold",
+  },
+  selectFoodName: {
+    color: "rgba(250, 250, 250, 1)"
   },
 });
