@@ -17,27 +17,27 @@ export default function TabsNavigator() {
       screenOptions={
         {
           headerShown: true,
-          headerStyle: { backgroundColor: "rgba(70, 70, 70, 1)", borderColor: "rgba(0, 0, 0, 0.5)" },
+          headerStyle: { backgroundColor: "rgba(50, 50, 50, 1)", borderColor: "rgba(0, 0, 0, 0.5)" },
           headerTitleStyle: { color: "rgba(255, 255, 255, 1)", },
           headerTitleAlign: "center",
-          tabBarStyle: { backgroundColor: "rgba(70, 70, 70, 1)", borderColor: "rgba(0, 0, 0, 0.5)"},
-          tabBarActiveTintColor: "rgba(255, 200, 0, 1)",
+          tabBarStyle: { backgroundColor: "rgba(50, 50, 50, 1)", borderColor: "rgba(0, 0, 0, 0.5)"},
+          tabBarActiveTintColor: "rgba(255, 170, 0, 1)",
           tabBarInactiveTintColor: "rgba(0, 0, 0, 0.5)",
         }
       }>
       <Tab.Screen name="Home" component={Home} options={{
         title: "Home", tabBarIcon: ({ color, focused }) => (
-          <MaterialCommunityIcons name={focused ? 'home' : 'home-outline'} color={color} size={24} />
+          <MaterialCommunityIcons name={focused ? 'home' : 'home-outline'} color={color} size={25} />
         ),
       }} />
       <Tab.Screen name="TimerScreen" component={TimerScreen} options={{
         title: "Timer", tabBarIcon: ({ color, focused }) => (
-          <MaterialCommunityIcons name={focused ? 'timer' : 'timer-outline'} color={color} size={24} />
+          <MaterialCommunityIcons name={focused ? 'timer' : 'timer-outline'} color={color} size={25} />
         ),
       }} />
       <Tab.Screen name="ShopListScreen" component={ShopListScreen} options={{
         title: "Shop List", tabBarIcon: ({ color, focused }) => (
-          <MaterialCommunityIcons name={focused ? 'cart' : 'cart-outline'} color={color} size={24} />
+          <MaterialCommunityIcons name={focused ? 'cart' : 'cart-outline'} color={color} size={25} />
         ),
       }} />
     </Tab.Navigator>
