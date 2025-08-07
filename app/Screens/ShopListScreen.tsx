@@ -75,16 +75,13 @@ export default function ShopListScreen() {
   };
 
   const updateText = async (id: string, text: string) => {
-    let newItems = items.map(item => {
-      if (item.id === id) {
-        return { ...item, text: text };
-      }
-      return item;
-    });
+    let newItems = items
+      .map(item => item.id === id ? { ...item, text } : item)
+      .filter(item => item.text.trim() !== "" || item.id === items.at(-1)?.id);
 
-    const lastItem = newItems[newItems.length - 1];
-    if (lastItem.text !== "") {
-      newItems = [...newItems, { id: Date.now().toString(), text: "", completed: false }];
+    const lastItem = newItems.at(-1);
+    if (lastItem && lastItem.text.trim() !== "") {
+      newItems.push({ id: Date.now().toString(), text: "", completed: false });
     }
     saveItems(newItems);
   };
@@ -115,9 +112,15 @@ export default function ShopListScreen() {
           <TextInput
             style={[styles.input, item.completed && styles.completedText]}
             value={item.text}
-            onChangeText={(text) => updateText(item.id, text)}
+            onChangeText={(text) => {
+              setItems(prev => prev.map(i => i.id === item.id ? { ...i, text } : i));
+            }}
+            onEndEditing={(e) => updateText(item.id, e.nativeEvent.text)}
             placeholder="Escribe un ítem"
             placeholderTextColor="rgba(255, 255, 255, 0.4)"
+            selectionColor={"rgba(255, 170, 0, 0.5)"}
+            selectionHandleColor={"rgba(255, 170, 0, 1)"}
+            cursorColor={"rgba(255, 170, 0, 1)"}
           />
           {item.id !== items.at(-1)?.id &&
             <TouchableOpacity onPress={() => deleteItem(item.id)}>

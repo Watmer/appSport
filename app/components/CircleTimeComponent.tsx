@@ -8,15 +8,18 @@ type TimerWheelProps = {
   totalDuration: number;
   up: boolean;
   paused: boolean;
+  size: number;
 };
 
-export default function TimerWheel({ currentTime, up, paused, totalDuration }: TimerWheelProps) {
+export default function TimerWheel({ currentTime, up, paused, totalDuration, size }: TimerWheelProps) {
   const player = useAudioPlayer(require('../../assets/sounds/TimerSound.mp3'));
 
   const opacity = useRef(new Animated.Value(1)).current;
-  const radius = 50;
-  const stroke = 3;
+  const stroke = size * 0.03;
+  const radius = (size - stroke) / 2.25;
   const circumference = 2 * Math.PI * radius;
+  const cx = size / 2;
+  const cy = size / 2;
 
   const progress = up
     ? Math.min(currentTime / totalDuration, 1)
@@ -62,7 +65,7 @@ export default function TimerWheel({ currentTime, up, paused, totalDuration }: T
     const safeTime = Math.max(seconds, 0);
     const h = Math.floor(seconds / 3600);
     const m = Math.floor(seconds / 60) % 60;
-    const s = seconds % 60;
+    const s = Math.floor(seconds % 60);
     if (safeTime !== 0) {
       return `${h > 0 ? h + ':' : ''}${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
     } else {
@@ -73,21 +76,21 @@ export default function TimerWheel({ currentTime, up, paused, totalDuration }: T
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center' }}>
       <Animated.View style={{ opacity }}>
-        <Svg width={120} height={120}>
+        <Svg width={size} height={size}>
           <Circle
-            cx="60"
-            cy="60"
+            cx={cx}
+            cy={cy}
             r={radius}
             stroke="rgba(255, 255, 255, 0.25)"
             strokeWidth={stroke}
             fill="none"
             strokeDasharray={circumference}
             rotation="-90"
-            origin="60,60"
+            origin={`${cx},${cy}`}
           />
           <Circle
-            cx="60"
-            cy="60"
+            cx={cx}
+            cy={cy}
             r={radius}
             stroke="rgba(255, 255, 255, 1)"
             strokeWidth={stroke}
@@ -96,14 +99,14 @@ export default function TimerWheel({ currentTime, up, paused, totalDuration }: T
             strokeDashoffset={strokeDashoffset}
             strokeLinecap="round"
             rotation="-90"
-            origin="60,60"
+            origin={`${cx},${cy}`}
           />
         </Svg>
       </Animated.View>
       <Text
         style={{
           color: 'rgba(255, 255, 255, 1)',
-          fontSize: 16,
+          fontSize: size * 0.15,
           fontWeight: "bold",
           position: 'absolute',
         }}

@@ -20,14 +20,14 @@ export default function TabsNavigator() {
           headerStyle: { backgroundColor: "rgba(50, 50, 50, 1)", borderColor: "rgba(0, 0, 0, 0.5)" },
           headerTitleStyle: { color: "rgba(255, 255, 255, 1)", },
           headerTitleAlign: "center",
-          tabBarStyle: { backgroundColor: "rgba(50, 50, 50, 1)", borderColor: "rgba(0, 0, 0, 0.5)"},
+          tabBarStyle: { backgroundColor: "rgba(50, 50, 50, 1)", borderColor: "rgba(0, 0, 0, 0.5)" },
           tabBarActiveTintColor: "rgba(255, 170, 0, 1)",
-          tabBarInactiveTintColor: "rgba(0, 0, 0, 0.5)",
+          tabBarInactiveTintColor: "rgba(100, 100, 100, 1)",
         }
       }>
       <Tab.Screen name="Home" component={Home} options={{
         title: "Home", tabBarIcon: ({ color, focused }) => (
-          <MaterialCommunityIcons name={focused ? 'home' : 'home-outline'} color={color} size={25} />
+          <MaterialCommunityIcons name={'home-variant'} color={color} size={25} />
         ),
       }} />
       <Tab.Screen name="TimerScreen" component={TimerScreen} options={{

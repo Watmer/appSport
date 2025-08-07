@@ -2,18 +2,18 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useState } from "react";
 import {
-    Alert,
-    Dimensions,
-    Keyboard,
-    KeyboardAvoidingView,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    TouchableWithoutFeedback,
-    View
+  Alert,
+  Dimensions,
+  Keyboard,
+  KeyboardAvoidingView,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View
 } from "react-native";
 import { addMealWithIngredients } from "../db/DaySqlLiteCRUD";
 
@@ -131,6 +131,9 @@ export default function AddFoodScreen({ route }: { route: any }) {
                 placeholder="Ej: Tostada con Aguacate"
                 placeholderTextColor="gray"
                 onChangeText={setFoodName}
+                selectionColor={"rgba(255, 170, 0, 0.5)"}
+                selectionHandleColor={"rgba(255, 170, 0, 1)"}
+                cursorColor={"rgba(255, 170, 0, 1)"}
               />
 
               <Text style={styles.label}>Tiempo (min):</Text>
@@ -140,6 +143,9 @@ export default function AddFoodScreen({ route }: { route: any }) {
                 keyboardType="numeric"
                 placeholderTextColor="gray"
                 onChangeText={(text) => setTime(parseInt(text) || 0)}
+                selectionColor={"rgba(255, 170, 0, 0.5)"}
+                selectionHandleColor={"rgba(255, 170, 0, 1)"}
+                cursorColor={"rgba(255, 170, 0, 1)"}
               />
 
               <Text style={styles.label}>Ingredientes:</Text>
@@ -155,6 +161,9 @@ export default function AddFoodScreen({ route }: { route: any }) {
                       setIngredients(copy);
                     }}
                     placeholderTextColor="gray"
+                    selectionColor={"rgba(255, 170, 0, 0.5)"}
+                    selectionHandleColor={"rgba(255, 170, 0, 1)"}
+                    cursorColor={"rgba(255, 170, 0, 1)"}
                   />
                   <TextInput
                     style={[styles.input, { flex: 1 }]}
@@ -166,6 +175,9 @@ export default function AddFoodScreen({ route }: { route: any }) {
                       setIngredients(copy);
                     }}
                     placeholderTextColor="gray"
+                    selectionColor={"rgba(255, 170, 0, 0.5)"}
+                    selectionHandleColor={"rgba(255, 170, 0, 1)"}
+                    cursorColor={"rgba(255, 170, 0, 1)"}
                   />
                   <TouchableOpacity onPress={() => deleteIngredient(i)}>
                     <MaterialCommunityIcons
@@ -188,6 +200,9 @@ export default function AddFoodScreen({ route }: { route: any }) {
                 placeholderTextColor="gray"
                 multiline={true}
                 onChangeText={setRecepy}
+                selectionColor={"rgba(255, 170, 0, 0.5)"}
+                selectionHandleColor={"rgba(255, 170, 0, 1)"}
+                cursorColor={"rgba(255, 170, 0, 1)"}
               />
 
               <Text style={styles.label}>Comentarios:</Text>
@@ -197,6 +212,9 @@ export default function AddFoodScreen({ route }: { route: any }) {
                 placeholderTextColor="gray"
                 multiline={true}
                 onChangeText={setComments}
+                selectionColor={"rgba(255, 170, 0, 0.5)"}
+                selectionHandleColor={"rgba(255, 170, 0, 1)"}
+                cursorColor={"rgba(255, 170, 0, 1)"}
               />
 
               <TouchableOpacity

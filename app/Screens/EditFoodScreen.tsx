@@ -151,6 +151,9 @@ export default function EditFoodScreen({ route }: { route: any }) {
                 placeholderTextColor="gray"
                 value={foodName}
                 onChangeText={setFoodName}
+                selectionColor={"rgba(255, 170, 0, 0.5)"}
+                selectionHandleColor={"rgba(255, 170, 0, 1)"}
+                cursorColor={"rgba(255, 170, 0, 1)"}
               />
 
               <Text style={styles.label}>Tiempo (min):</Text>
@@ -161,6 +164,9 @@ export default function EditFoodScreen({ route }: { route: any }) {
                 placeholderTextColor="gray"
                 value={time.toString()}
                 onChangeText={(text) => setTime(parseInt(text) || 0)}
+                selectionColor={"rgba(255, 170, 0, 0.5)"}
+                selectionHandleColor={"rgba(255, 170, 0, 1)"}
+                cursorColor={"rgba(255, 170, 0, 1)"}
               />
 
               <Text style={styles.label}>Ingredientes:</Text>
@@ -176,6 +182,9 @@ export default function EditFoodScreen({ route }: { route: any }) {
                       setIngredients(copy);
                     }}
                     placeholderTextColor="gray"
+                    selectionColor={"rgba(255, 170, 0, 0.5)"}
+                    selectionHandleColor={"rgba(255, 170, 0, 1)"}
+                    cursorColor={"rgba(255, 170, 0, 1)"}
                   />
                   <TextInput
                     style={[styles.input, { flex: 1 }]}
@@ -187,6 +196,9 @@ export default function EditFoodScreen({ route }: { route: any }) {
                       setIngredients(copy);
                     }}
                     placeholderTextColor="gray"
+                    selectionColor={"rgba(255, 170, 0, 0.5)"}
+                    selectionHandleColor={"rgba(255, 170, 0, 1)"}
+                    cursorColor={"rgba(255, 170, 0, 1)"}
                   />
                   <TouchableOpacity onPress={() => deleteIngredient(i)}>
                     <MaterialCommunityIcons
@@ -210,6 +222,9 @@ export default function EditFoodScreen({ route }: { route: any }) {
                 multiline={true}
                 value={recepy}
                 onChangeText={setRecepy}
+                selectionColor={"rgba(255, 170, 0, 0.5)"}
+                selectionHandleColor={"rgba(255, 170, 0, 1)"}
+                cursorColor={"rgba(255, 170, 0, 1)"}
               />
 
               <Text style={styles.label}>Comentarios:</Text>
@@ -220,6 +235,9 @@ export default function EditFoodScreen({ route }: { route: any }) {
                 multiline={true}
                 value={comments}
                 onChangeText={setComments}
+                selectionColor={"rgba(255, 170, 0, 0.5)"}
+                selectionHandleColor={"rgba(255, 170, 0, 1)"}
+                cursorColor={"rgba(255, 170, 0, 1)"}
               />
 
               <TouchableOpacity

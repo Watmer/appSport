@@ -18,6 +18,10 @@ export default function TimerScreen() {
 
   const [addingCrono, setAddingCrono] = useState(false);
   const [addingTimer, setAddingTimer] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [editId, setEditId] = useState("");
+  const [editingTime, setEditingTime] = useState(false);
+
   const [timers, setTimers] =
     useState<{
       id: string;
@@ -100,6 +104,65 @@ export default function TimerScreen() {
     setInputTitle("");
   };
 
+  const handleUpdateTimerTitle = async (id: string, newTitle: string) => {
+    setTimers((prevTimers) =>
+      prevTimers.map((timer) =>
+        timer.id === id ?
+          { ...timer, title: newTitle }
+          : timer
+      )
+    );
+
+    try {
+      const existing = await AsyncStorage.getItem(id);
+      if (existing) {
+        const timerData = JSON.parse(existing);
+        timerData.title = newTitle;
+        await AsyncStorage.setItem(id, JSON.stringify(timerData));
+      }
+    } catch (error) {
+      console.error("Error actualizando título en AsyncStorage:", error);
+    }
+  };
+
+  const handleUpdateTimerDuration = async (id: string) => {
+    if (inputHours !== 0 || inputMinutes !== 0 || inputSeconds !== 0) {
+      const newDuration = inputHours * 3600 + inputMinutes * 60 + inputSeconds;
+
+      setTimers((prevTimers) =>
+        prevTimers.map((timer) =>
+          timer.id === id
+            ? {
+              ...timer,
+              totalDuration: newDuration,
+              remaining: newDuration,
+              initialDuration: newDuration,
+              startTime: new Date(),
+            }
+            : timer
+        )
+      );
+
+      const updatedTimer = timers.find((timer) => timer.id === id);
+      if (updatedTimer) {
+        await AsyncStorage.setItem(
+          id,
+          JSON.stringify({
+            ...updatedTimer,
+            totalDuration: newDuration,
+            remaining: newDuration,
+            initialDuration: newDuration,
+            startTime: new Date().toISOString(),
+          })
+        );
+      }
+    }
+    setEditingTime(false);
+    setInputHours(0);
+    setInputMinutes(0);
+    setInputSeconds(0);
+  };
+
   const loadTimers = async () => {
     const keys = await AsyncStorage.getAllKeys();
     const timerKeys = keys.filter((key) => key.startsWith("timer_"));
@@ -131,7 +194,7 @@ export default function TimerScreen() {
           if (timer.paused) return timer;
 
           const now = new Date();
-          const elapsed = Math.floor((now.getTime() - new Date(timer.startTime).getTime()) / 1000);
+          const elapsed = ((now.getTime() - new Date(timer.startTime).getTime()) / 1000);
 
           const currentRemaining = timer.up
             ? elapsed
@@ -228,7 +291,11 @@ export default function TimerScreen() {
             style={styles.inputTitle}
             placeholder="Titulo del temporizador"
             placeholderTextColor={"rgba(255, 255, 255, 0.7)"}
-            onChangeText={setInputTitle} />
+            onChangeText={setInputTitle}
+            selectionColor={"rgba(255, 170, 0, 0.5)"}
+            selectionHandleColor={"rgba(255, 170, 0, 1)"}
+            cursorColor={"rgba(255, 170, 0, 1)"}
+          />
           <View style={{ flexDirection: "row", }}>
             <TextInput
               style={styles.inputTime}
@@ -236,6 +303,9 @@ export default function TimerScreen() {
               placeholderTextColor={"rgba(255, 255, 255, 0.7)"}
               keyboardType="numeric"
               onChangeText={(text) => setInputHours(parseInt(text) || 0)}
+              selectionColor={"rgba(255, 170, 0, 0.5)"}
+              selectionHandleColor={"rgba(255, 170, 0, 1)"}
+              cursorColor={"rgba(255, 170, 0, 1)"}
             />
             <Text style={styles.inputSep}>:</Text>
             <TextInput
@@ -244,6 +314,9 @@ export default function TimerScreen() {
               placeholderTextColor={"rgba(255, 255, 255, 0.7)"}
               keyboardType="numeric"
               onChangeText={(text) => setInputMinutes(parseInt(text) || 0)}
+              selectionColor={"rgba(255, 170, 0, 0.5)"}
+              selectionHandleColor={"rgba(255, 170, 0, 1)"}
+              cursorColor={"rgba(255, 170, 0, 1)"}
             />
             <Text style={styles.inputSep}>:</Text>
             <TextInput
@@ -252,6 +325,9 @@ export default function TimerScreen() {
               placeholderTextColor={"rgba(255, 255, 255, 0.7)"}
               keyboardType="numeric"
               onChangeText={(text) => setInputSeconds(parseInt(text) || 0)}
+              selectionColor={"rgba(255, 170, 0, 0.5)"}
+              selectionHandleColor={"rgba(255, 170, 0, 1)"}
+              cursorColor={"rgba(255, 170, 0, 1)"}
             />
           </View>
           <View style={{ flexDirection: "row", gap: 10 }}>
@@ -294,7 +370,9 @@ export default function TimerScreen() {
             style={styles.inputTitle}
             placeholder="Titulo del cronometro"
             placeholderTextColor={"rgba(255, 255, 255, 0.7)"}
-
+            selectionColor={"rgba(255, 170, 0, 0.5)"}
+            selectionHandleColor={"rgba(255, 170, 0, 1)"}
+            cursorColor={"rgba(255, 170, 0, 1)"}
             onChangeText={setInputTitle}
           />
           <View style={{ flexDirection: "row", gap: 10 }}>
@@ -323,11 +401,150 @@ export default function TimerScreen() {
     </Modal>
   );
 
+  const renderModalEdit = () => {
+    const timer = timers.find((item) => item.id === editId);
+    if (!timer) return;
+    return (
+      <Modal
+        animationType="fade"
+        transparent
+        visible={editing}
+        onRequestClose={() => {
+          setEditing(false);
+          setEditingTime(false);
+          setEditId("");
+        }}
+      >
+        <View style={styles.modalContainer}>
+          <View key={timer.id} style={styles.modalTimerContainer}>
+            <View style={styles.modalTimerTextContainer}>
+              {timer.up ? (
+                <MaterialCommunityIcons name="timer" size={35} color="rgba(255, 255, 255, 1)" />
+              ) : (
+                <MaterialCommunityIcons name="timer-sand" size={35} color="rgba(255, 255, 255, 1)" />
+              )}
+              <TextInput
+                style={styles.modalTimerInputText}
+                multiline={true}
+                defaultValue={timer.title}
+                onEndEditing={(e) => handleUpdateTimerTitle(timer.id, e.nativeEvent.text)}
+                placeholder="Título..."
+                placeholderTextColor={"rgba(255, 255, 255, 0.7)"}
+                selectionColor={"rgba(255, 170, 0, 0.5)"}
+                selectionHandleColor={"rgba(255, 170, 0, 1)"}
+                cursorColor={"rgba(255, 170, 0, 1)"}
+              />
+              <TouchableOpacity
+                style={{ paddingRight: 10 }}
+                onPress={() => {
+                  setEditing(false);
+                  setEditId("");
+                  setEditingTime(false);
+                }}>
+                <MaterialCommunityIcons name="close" size={35} color={"rgba(255, 50, 50, 1)"} />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              activeOpacity={!timer.up ? 0 : 1}
+              onPress={() => {
+                if (!timer.up) {
+                  setEditingTime(true);
+                  if (!timer.paused) {
+                    handlePauseTimer(timer.id);
+                  }
+                }
+              }}
+            >
+              {editingTime ?
+                (<View style={{ margin: 10, flexDirection: "row", alignSelf: "center" }}>
+                  <TextInput
+                    style={[styles.inputTime, { fontSize: 30 }]}
+                    placeholder={Math.floor(timer.totalDuration / 3600).toString().padStart(2, '0')}
+                    placeholderTextColor={"rgba(255, 255, 255, 0.7)"}
+                    keyboardType="numeric"
+                    onChangeText={(text) => setInputHours(parseInt(text) || 0)}
+                    selectionColor={"rgba(255, 170, 0, 0.5)"}
+                    selectionHandleColor={"rgba(255, 170, 0, 1)"}
+                    cursorColor={"rgba(255, 170, 0, 1)"}
+                  />
+                  <Text style={[styles.inputSep, { fontSize: 30 }]}>:</Text>
+                  <TextInput
+                    style={[styles.inputTime, { fontSize: 30 }]}
+                    placeholder={(Math.floor(timer.totalDuration / 60) % 60).toString().padStart(2, '0')}
+                    placeholderTextColor={"rgba(255, 255, 255, 0.7)"}
+                    keyboardType="numeric"
+                    onChangeText={(text) => setInputMinutes(parseInt(text) || 0)}
+                    selectionColor={"rgba(255, 170, 0, 0.5)"}
+                    selectionHandleColor={"rgba(255, 170, 0, 1)"}
+                    cursorColor={"rgba(255, 170, 0, 1)"}
+                  />
+                  <Text style={[styles.inputSep, { fontSize: 30 }]}>:</Text>
+                  <TextInput
+                    style={[styles.inputTime, { fontSize: 30 }]}
+                    placeholder={Math.floor(timer.totalDuration % 60).toString().padStart(2, '0')}
+                    placeholderTextColor={"rgba(255, 255, 255, 0.7)"}
+                    keyboardType="numeric"
+                    onChangeText={(text) => setInputSeconds(parseInt(text) || 0)}
+                    selectionColor={"rgba(255, 170, 0, 0.5)"}
+                    selectionHandleColor={"rgba(255, 170, 0, 1)"}
+                    cursorColor={"rgba(255, 170, 0, 1)"}
+                  />
+                </View>)
+                : (<CircleTimeComponent
+                  currentTime={timer.remaining}
+                  up={timer.up}
+                  paused={timer.paused}
+                  totalDuration={timer.totalDuration}
+                  size={200}
+                />)
+              }
+            </TouchableOpacity>
+            <View style={{ margin: 10, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
+              <TouchableOpacity
+                onPress={() => {
+                  handlePauseTimer(timer.id);
+                  setEditingTime(false);
+                }}
+              >
+                <MaterialCommunityIcons
+                  name={timer.paused ? "play" : "pause"} size={40} color="rgba(255, 255, 255, 1)"
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => handleDeleteTimer(timer.id)}
+              >
+                <MaterialCommunityIcons name={"trash-can-outline"} size={35} color={"rgba(255, 50, 50, 1)"} />
+              </TouchableOpacity>
+              {!editingTime ?
+                (<TouchableOpacity
+                  onPress={() => handleRestartTime(timer.id)}
+                >
+                  <MaterialCommunityIcons name={"restart"} size={40} color={"rgba(255, 255, 255, 1)"} />
+                </TouchableOpacity>)
+                : (<TouchableOpacity
+                  onPress={() => handleUpdateTimerDuration(timer.id)}
+                >
+                  <MaterialCommunityIcons name={"check"} size={40} color={"rgba(255, 255, 255, 1)"} />
+                </TouchableOpacity>)}
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
   const renderTimers = () => {
     return (
       timers.length > 0 ? (
         timers.map((timer) => (
-          <View key={timer.id} style={styles.timerContainer}>
+          <TouchableOpacity
+            onPress={() => {
+              setEditId(timer.id);
+              setEditing(true);
+            }}
+            key={timer.id}
+            style={styles.timerContainer}
+          >
             <View style={styles.timerTextContainer}>
               {timer.up ? (
                 <MaterialCommunityIcons name="timer" size={30} color="rgba(255, 255, 255, 1)" />
@@ -341,6 +558,7 @@ export default function TimerScreen() {
               up={timer.up}
               paused={timer.paused}
               totalDuration={timer.totalDuration}
+              size={120}
             />
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
               <TouchableOpacity
@@ -361,7 +579,7 @@ export default function TimerScreen() {
                 <MaterialCommunityIcons name={"restart"} size={30} color={"rgba(255, 255, 255, 1)"} />
               </TouchableOpacity>
             </View>
-          </View >
+          </TouchableOpacity >
         ))
       ) : (
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
@@ -429,6 +647,7 @@ export default function TimerScreen() {
       <View style={styles.container}>
         {renderModalCrono()}
         {renderModalTimer()}
+        {renderModalEdit()}
         {renderTimers()}
       </View>
     </ScrollView>
@@ -475,7 +694,7 @@ const styles = StyleSheet.create({
     alignSelf: "center",
   },
   timerContainer: {
-    backgroundColor: "rgba(0, 50, 95, 1)",
+    backgroundColor: "rgba(0, 50, 120, 1)",
     borderRadius: 15,
     marginBottom: 10,
     justifyContent: "center",
@@ -483,11 +702,16 @@ const styles = StyleSheet.create({
     width: 173,
     minHeight: 173,
     borderWidth: 0.2,
-    borderColor: "rgba(255, 255, 255, 0.3)"
+    borderColor: "rgba(255, 255, 255, 0.5)"
   },
   timerText: {
     color: "rgba(255, 255, 255, 1)",
     fontSize: 18,
+  },
+  modalTimerInputText: {
+    width: "90%",
+    fontSize: 22,
+    color: "rgba(255, 255, 255, 1)",
   },
   modalContainer: {
     flex: 1,
@@ -559,7 +783,25 @@ const styles = StyleSheet.create({
   timerTextContainer: {
     flexDirection: "row",
     width: "80%",
-    paddingHorizontal: 10,
+    paddingRight: 10,
+    alignItems: "center",
+    gap: 10,
+  },
+  modalTimerContainer: {
+    backgroundColor: "rgba(0, 50, 120, 1)",
+    borderRadius: 15,
+    marginBottom: 10,
+    justifyContent: "center",
+    padding: 10,
+    width: "85%",
+    borderWidth: 0.2,
+    borderColor: "rgba(255, 255, 255, 0.5)"
+  },
+  modalTimerTextContainer: {
+    flexDirection: "row",
+    width: "80%",
+    paddingRight: 10,
+    alignItems: "center",
     gap: 10,
   },
 });
