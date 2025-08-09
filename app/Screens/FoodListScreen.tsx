@@ -32,8 +32,8 @@ export default function FoodListScreen({ route }: { route: any }) {
 
   const [useDay, useMonth, useYear] = keyToUse.slice().replace(`dayInfo:`, "").split("-");
 
-  const [visibleMonth, setVisibleMonth] = useState(today.getMonth());
-  const [visibleYear, setVisibleYear] = useState(today.getFullYear());
+  const [visibleMonth, setVisibleMonth] = useState(parseInt(useMonth) - 1);
+  const [visibleYear, setVisibleYear] = useState(parseInt(useYear));
   const [refreshing, setRefreshing] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -52,7 +52,7 @@ export default function FoodListScreen({ route }: { route: any }) {
       year,
       key: `${day}-${month}-${year}`,
       isCurrentMonth: month === visibleMonth + 1 && year === visibleYear,
-      isToday: day === parseInt(useDay) && month === today.getMonth() + 1 && year === today.getFullYear(),
+      isToday: day === parseInt(useDay) && month === parseInt(useMonth) && year === parseInt(useYear),
     };
   });
 
@@ -181,6 +181,19 @@ export default function FoodListScreen({ route }: { route: any }) {
         <View style={styles.modalContainer}>
           <View style={styles.modalView}>
             <Text style={styles.modalText}>Selecciona el día:</Text>
+            <TouchableOpacity
+              onPress={() => {
+                setVisibleMonth(parseInt(useMonth) - 1);
+                setVisibleYear(parseInt(useYear));
+              }}
+            >
+              <Text style={styles.dashboardInfo}>{(new Date(parseInt(useYear), parseInt(useMonth) - 1, parseInt(useDay))).toLocaleString("default", {
+                weekday: "long",
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}</Text>
+            </TouchableOpacity>
 
             <View style={styles.monthHeader}>
               <TouchableOpacity onPress={() => {
@@ -316,18 +329,28 @@ export default function FoodListScreen({ route }: { route: any }) {
       (a, b) => meals.indexOf(a.meal) - meals.indexOf(b.meal)
     );
 
+    const n = Math.max(sortedCurrent.length, sortedSelected.length);
+
     return (
       <ScrollView style={styles.scrollFoodInfo}>
         <View style={styles.viewFoodInfo}>
-          {sortedCurrent.map((meal, index) => (
-            <View key={meal.id} style={styles.selectFoodCard}>
+          {Array.from({ length: n }).map((_, index) => (
+            <View key={sortedCurrent[index]?.id || index} style={styles.selectFoodCard}>
               <View style={styles.selectFoodTextContainer}>
-                <Text style={styles.selectFoodType}>{meal.meal}</Text>
-                <Text style={styles.selectFoodName}>{meal.foodName}</Text>
+                <Text style={styles.selectFoodType}>
+                  {sortedCurrent[index]?.meal || "-"}
+                </Text>
+                <Text style={styles.selectFoodName}>
+                  {sortedCurrent[index]?.foodName || "-"}
+                </Text>
               </View>
 
-              <MaterialCommunityIcons style={{ paddingRight: 10 }} name="swap-horizontal" size={30} color={"rgba(150, 150, 150, 1)"} />
-
+              <MaterialCommunityIcons
+                style={{ paddingRight: 10 }}
+                name="swap-horizontal"
+                size={30}
+                color={"rgba(150, 150, 150, 1)"}
+              />
               <View style={styles.selectFoodTextContainer}>
                 <Text style={styles.selectFoodType}>
                   {sortedSelected[index]?.meal || "-"}
@@ -354,6 +377,19 @@ export default function FoodListScreen({ route }: { route: any }) {
         <View style={styles.modalContainer}>
           <View style={styles.modalView}>
             <Text style={styles.modalText}>Selecciona el día:</Text>
+            <TouchableOpacity
+              onPress={() => {
+                setVisibleMonth(parseInt(useMonth) - 1);
+                setVisibleYear(parseInt(useYear));
+              }}
+            >
+              <Text style={styles.dashboardInfo}>{(new Date(parseInt(useYear), parseInt(useMonth) - 1, parseInt(useDay))).toLocaleString("default", {
+                weekday: "long",
+                day: "numeric",
+                month: "short",
+                year: "numeric",
+              })}</Text>
+            </TouchableOpacity>
 
             <View style={styles.monthHeader}>
               <TouchableOpacity onPress={() => {
@@ -705,5 +741,10 @@ const styles = StyleSheet.create({
   },
   selectFoodName: {
     color: "rgba(250, 250, 250, 1)"
+  },
+  dashboardInfo: {
+    fontSize: 17,
+    color: "rgba(255, 255, 255, 0.8)",
+    textAlign: "center",
   },
 });

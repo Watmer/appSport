@@ -221,7 +221,7 @@ export default function TimerScreen() {
           };
         })
       );
-    }, 1000);
+    }, 500);
 
     return () => clearInterval(interval);
   }, []);

@@ -5,7 +5,6 @@ import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 
 import { addRecepy, getAllRecepys, getDayInfo, removeRecepy, updateMealById } from "../db/DaySqlLiteCRUD";
 
-
 const { width, height } = Dimensions.get("window");
 
 interface Ingredient {
@@ -26,23 +25,19 @@ interface MealInfo {
 
 interface MealCardProps {
   dayInfoKey: string;
-  refreshTrigger?: number
+  refreshTrigger?: number;
 }
 
 const meals = ["Desayuno", "Almuerzo", "Comida", "Merienda", "Cena"];
 
 function sortMealsByOrder(mealInfo: any[]) {
-  return mealInfo.slice().sort((a, b) => {
-    const indexA = meals.indexOf(a.meal);
-    const indexB = meals.indexOf(b.meal);
-    return indexA - indexB;
-  });
+  return mealInfo.slice().sort((a, b) => meals.indexOf(a.meal) - meals.indexOf(b.meal));
 }
 
 export default function MealCard({ dayInfoKey, refreshTrigger }: MealCardProps) {
   const navigation = useNavigation();
   const [mealsArray, setMealsArray] = useState<MealInfo[]>([]);
-  const [recepysArray, setRecepysArray] = useState<any[]>([])
+  const [recepysArray, setRecepysArray] = useState<any[]>([]);
 
   useEffect(() => {
     loadData();
@@ -65,28 +60,20 @@ export default function MealCard({ dayInfoKey, refreshTrigger }: MealCardProps) 
       console.error("Error: El ID de la comida es undefined.");
       return;
     }
+
     mealToUpdate.completed = mealToUpdate.completed ? 0 : 1;
 
     await updateMealById(mealToUpdate.id, {
       ...mealToUpdate,
       completed: mealToUpdate.completed === 1,
     });
+
     setMealsArray(updatedMeals);
   };
 
   const handleCardPress = (mealType: string) => {
     (navigation as any).navigate("FoodDetailScreen", { dayInfoKey, mealType });
   };
-
-  const groupedMeals: { [mealType: string]: MealInfo[] } = {};
-  mealsArray.forEach((item) => {
-    if (!groupedMeals[item.meal]) groupedMeals[item.meal] = [];
-    groupedMeals[item.meal].push(item);
-  });
-
-  const mealTypesSorted = Object.keys(groupedMeals).sort(
-    (a, b) => meals.indexOf(a) - meals.indexOf(b)
-  );
 
   const isInRecepys = (mealId: number) => {
     return recepysArray.find((recepy) => recepy.mealId === mealId);
@@ -101,73 +88,85 @@ export default function MealCard({ dayInfoKey, refreshTrigger }: MealCardProps) 
     loadData();
   };
 
+  const renderMealGroup = (title: string, items: MealInfo[]) => (
+    <View key={title} style={styles.cardContainer}>
+      <View style={styles.groupCard}>
+        <TouchableOpacity onPress={() => handleCardPress(title)}>
+          <View style={styles.groupCardTitle}>
+            <Text style={styles.groupCardTitleText}>{title}</Text>
+          </View>
+
+          {items.map((mealInf, index) => (
+            <View style={styles.groupCardInfo} key={mealInf.id}>
+              <View style={styles.cardInfo}>
+                <View
+                  style={{
+                    paddingBottom: 5,
+                    borderBottomWidth: 1,
+                    borderBottomColor: "rgba(255, 255, 255, 1)",
+                  }}
+                >
+                  <View style={{ flexDirection: "row", marginRight: 25 }}>
+                    <TouchableOpacity
+                      onPress={() =>
+                        toggleCompleted(
+                          mealsArray.findIndex((meal) => meal.id === mealInf.id)
+                        )
+                      }
+                    >
+                      <MaterialCommunityIcons
+                        name={mealInf.completed ? "checkbox-marked" : "checkbox-blank-outline"}
+                        size={28}
+                        color="rgba(255, 200, 0, 1)"
+                      />
+                    </TouchableOpacity>
+                    <Text style={styles.titleText}>{mealInf.foodName}</Text>
+                    <TouchableOpacity
+                      onPress={() => toggleInRecepys(mealInf.id)}
+                    >
+                      <MaterialCommunityIcons
+                        name={isInRecepys(mealInf.id) ? "bookmark" : "bookmark-outline"}
+                        size={30}
+                        color={
+                          isInRecepys(mealInf.id)
+                            ? "rgba(220, 50, 50, 1)"
+                            : "rgba(255, 255, 255, 0.6)"
+                        }
+                      />
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={styles.text}>⏱ {mealInf.time} min</Text>
+                </View>
+
+                <Text style={[styles.text, { marginTop: 10, fontWeight: "600" }]}>
+                  Ingredientes:
+                </Text>
+                {mealInf.ingredients.map((ing, i) => (
+                  <Text key={i} style={styles.text}>
+                    • {ing.ingName} ({ing.quantity})
+                  </Text>
+                ))}
+              </View>
+            </View>
+          ))}
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  const uncompleted = mealsArray.filter((m) => !m.completed);
+  const completed = mealsArray.filter((m) => m.completed);
+
   return (
     <>
-      {mealTypesSorted.map((mealType) => (
-        <View key={mealType} style={styles.cardContainer}>
-          <View style={styles.groupCard}>
-            <TouchableOpacity onPress={() => handleCardPress(mealType)}>
-              <View style={styles.groupCardTitle}>
-                <Text style={styles.groupCardTitleText}>{mealType}</Text>
-              </View>
-
-              {groupedMeals[mealType].map((mealInf, index) => (
-                <View style={styles.groupCardInfo} key={index}>
-                  <View style={styles.cardInfo}>
-                    <View
-                      style={{
-                        paddingBottom: 5,
-                        borderBottomWidth: 1,
-                        borderBottomColor: "rgba(255, 255, 255, 1)",
-                      }}
-                    >
-                      <View style={{ flexDirection: "row", marginRight: 25 }}>
-                        <TouchableOpacity
-                          onPress={() =>
-                            toggleCompleted(
-                              mealsArray.findIndex((meal) => meal.id === mealInf.id)
-                            )
-                          }
-                        >
-                          <MaterialCommunityIcons
-                            name={mealInf.completed ? "checkbox-marked" : "checkbox-blank-outline"}
-                            size={28}
-                            color="rgba(255, 200, 0, 1)"
-                          />
-                        </TouchableOpacity>
-                        <Text style={styles.titleText}>
-                          {mealInf.foodName}
-                        </Text>
-                        <TouchableOpacity
-                          onPress={() => toggleInRecepys(mealInf.id)}
-                        >
-                          <MaterialCommunityIcons
-                            name={isInRecepys(mealInf.id) ? "bookmark" : "bookmark-outline"}
-                            size={30}
-                            color={isInRecepys(mealInf.id) ? "rgba(220, 50, 50, 1)" : "rgba(255, 255, 255, 0.6)"}
-                          />
-                        </TouchableOpacity>
-                      </View>
-                      <Text style={styles.text}>⏱ {mealInf.time} min</Text>
-                    </View>
-
-                    <Text
-                      style={[styles.text, { marginTop: 10, fontWeight: "600" }]}
-                    >
-                      Ingredientes:
-                    </Text>
-                    {mealInf.ingredients.map((ing, i) => (
-                      <Text key={i} style={styles.text}>
-                        • {ing.ingName} ({ing.quantity})
-                      </Text>
-                    ))}
-                  </View>
-                </View>
-              ))}
-            </TouchableOpacity>
-          </View>
-        </View>
-      ))}
+      {meals.map((mealType) => {
+        const uncompletedMeals = uncompleted.filter((m) => m.meal === mealType);
+        return uncompletedMeals.length > 0 && renderMealGroup(mealType, uncompletedMeals);
+      })}
+      {meals.map((mealType) => {
+        const completedMeals = completed.filter((m) => m.meal === mealType);
+        return completedMeals.length > 0 && renderMealGroup(mealType, completedMeals);
+      })}
     </>
   );
 }
@@ -208,7 +207,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     padding: 15,
     borderWidth: 0.4,
-    borderColor: "rgba(0, 0, 0, 0.4)"
+    borderColor: "rgba(0, 0, 0, 0.4)",
   },
   titleText: {
     fontSize: 20,
