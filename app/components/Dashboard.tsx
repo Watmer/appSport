@@ -227,12 +227,12 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
                     styles.dayCircle,
                     isStreak && { backgroundColor: "rgba(70, 115, 200, 1)" },
                     isFailed && { backgroundColor: "rgba(255, 50, 50, 1)" },
-                    isFrozen && { backgroundColor: "rgba(80, 185, 255, 1)" },
+                    isFrozen && { backgroundColor: "rgba(80, 225, 255, 1)" },
                     !dateObj.isCurrentMonth && { opacity: 0.35 },
                     dateObj.isToday && styles.todayCircle,
                   ]}
                   onPress={() =>
-                    navigation.getParent()?.navigate("FoodListScreen", {
+                    (navigation as any).navigate("FoodListScreen", {
                       dayInfoKey: `dayInfo:${dateObj.day}-${dateObj.month}-${dateObj.year}`,
                     })
                   }

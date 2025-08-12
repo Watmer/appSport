@@ -96,7 +96,7 @@ export default function MealCard({ dayInfoKey, refreshTrigger }: MealCardProps) 
             <Text style={styles.groupCardTitleText}>{title}</Text>
           </View>
 
-          {items.map((mealInf, index) => (
+          {items.map((mealInf) => (
             <View style={styles.groupCardInfo} key={mealInf.id}>
               <View style={styles.cardInfo}>
                 <View

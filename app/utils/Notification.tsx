@@ -1,90 +1,165 @@
-import * as Notifications from 'expo-notifications';
+import notifee, {
+  AndroidCategory,
+  AndroidImportance,
+  EventType,
+  TimestampTrigger,
+  TriggerType,
+} from '@notifee/react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
+import { eventBus } from './EventBus';
 
-// First, set the handler that will cause the notification
-// to show the alert
 export async function configureNotificationHandler() {
-  const { status } = await Notifications.getPermissionsAsync();
-  let finalStatus = status;
-
-  if (status !== 'granted') {
-    const { status: askStatus } = await Notifications.requestPermissionsAsync();
-    finalStatus = askStatus;
+  if (Platform.OS === 'android') {
+    await notifee.requestPermission();
+    await notifee.createChannel({
+      id: 'timers_channel',
+      name: 'Timers',
+      importance: AndroidImportance.HIGH,
+      sound: 'default',
+    });
+  } else {
+    await notifee.requestPermission();
   }
 
-  if (finalStatus !== 'granted') {
-    console.warn('Permiso de notificaciones no concedido');
-    return;
-  }
+  notifee.onBackgroundEvent(async ({ type, detail }) => {
+    if (type === EventType.ACTION_PRESS) {
+      const actionId = detail.pressAction?.id;
+      const timerDat = detail?.notification?.data?.timer ?? null;
+      const notifId = detail?.notification?.id ?? '';
 
-  await Notifications.setNotificationCategoryAsync('timer-actions', [
-    {
-      identifier: 'STOP_TIMER',
-      buttonTitle: 'Detener',
-      options: {
-        isDestructive: true,
-      },
-    },
-    {
-      identifier: 'DISMISS_ONE_TIMER',
-      buttonTitle: '+1 min',
-      options: {
-        isDestructive: false,
-      },
-    },
-    {
-      identifier: 'DISMISS_FIVE_TIMER',
-      buttonTitle: '+5 min',
-      options: {
-        isDestructive: false,
-      },
-    },
-  ]);
+      if (!timerDat) return;
 
-  Notifications.setNotificationHandler({
-    handleNotification: async () => ({
-      shouldShowBanner: true,
-      shouldShowList: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-    }),
+      const existing = await AsyncStorage.getItem((timerDat as any).id);
+
+      let timer = null;
+
+      if (existing) {
+        timer = JSON.parse(existing);
+        console.log(timer.remaining);
+      }
+
+      if (actionId === 'STOP_TIMER') {
+        await cancelNotifAsync(notifId);
+        timer.paused = true;
+
+      } else if (actionId === 'DISMISS_ONE_TIMER') {
+        timer.startTime = new Date();
+        timer.totalDuration = 60;
+        timer.remaining = 60;
+        timer.sentNotif = false;
+        if (!timer.paused) {
+          timer.notificationId = await scheduleNotifAsync(
+            timer.title,
+            "El temporizador ha terminado",
+            { timer: { id: timer.id } },
+            "default",
+            timer.remaining
+          );
+        }
+
+      } else if (actionId === 'DISMISS_FIVE_TIMER') {
+        console.log("+5 min");
+
+        timer.startTime = new Date();
+        timer.totalDuration = 300;
+        timer.remaining = 300;
+        timer.sentNotif = false;
+        if (!timer.paused) {
+          timer.notificationId = await scheduleNotifAsync(
+            timer.title,
+            "El temporizador ha terminado",
+            { timer: { id: timer.id } },
+            "default",
+            timer.remaining
+          );
+        }
+      }
+
+      await AsyncStorage.setItem(timer.id, JSON.stringify(timer));
+      eventBus.emit('timersUpdated');
+
+    } else if (type === EventType.PRESS) {
+      console.log("Notificacion pulsada");
+    }
   });
 }
 
-// Second, call scheduleNotificationAsync()
-export async function scheduleNotifAsync(title: string, body: string, data: any = {}, sound: string = 'default', categoryIdentifier: string = 'default') {
-  await Notifications.scheduleNotificationAsync({
-    content: {
-      title: title,
-      body: body,
-      data: data,
-      sound: sound,
-      categoryIdentifier: categoryIdentifier,
-      color: '#FFC800',
+
+export async function scheduleNotifAsync(
+  title: string,
+  body: string,
+  data: any = {},
+  sound: string = 'default',
+  triggerSeconds?: number
+) {
+  const notification = {
+    title,
+    body,
+    data,
+    android: {
+      channelId: 'timers_channel',
+      pressAction: { id: 'DEFAULT' },
+      category: AndroidCategory.REMINDER,
+      color: '#FFaa00',
+      sound,
+      actions: [
+        { title: 'Detener', pressAction: { id: 'STOP_TIMER' } },
+        { title: '+1 min', pressAction: { id: 'DISMISS_ONE_TIMER' } },
+        { title: '+5 min', pressAction: { id: 'DISMISS_FIVE_TIMER' } },
+      ],
     },
-    trigger: null,
-  });
+    ios: { categoryId: 'timer-actions', sound },
+  };
+
+  if (!triggerSeconds || triggerSeconds <= 0) {
+    const id = await notifee.displayNotification(notification);
+    return id ?? null;
+  }
+
+  const trigger: TimestampTrigger = {
+    type: TriggerType.TIMESTAMP,
+    timestamp: Date.now() + 1000 + triggerSeconds * 1000,
+    alarmManager: false,
+  };
+
+  const id = await notifee.createTriggerNotification(notification, trigger);
+  return id ?? null;
+}
+
+export async function cancelNotifAsync(notificationId: string) {
+  if (!notificationId) return;
+  try {
+    await notifee.cancelNotification(notificationId);
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 export function handleTimerNotifResponse(
   onAction: (
-    action: 'STOP_TIMER' | 'DISMISS_ONE_TIMER' | 'DISMISS_FIVE_TIMER',
+    action: 'STOP_TIMER' | 'DISMISS_ONE_TIMER' | 'DISMISS_FIVE_TIMER' | 'DEFAULT',
     timerData: any,
     notificationId: string
   ) => void
-) {
-  const subscription = Notifications.addNotificationResponseReceivedListener((response) => {
-    const action = response.actionIdentifier;
-    const timer = response.notification.request.content.data?.timer;
-    const notificationId = response.notification.request.identifier;
+): () => void {
+  const unsubscribe = notifee.onForegroundEvent(({ type, detail }) => {
+    const timerData = detail?.notification?.data?.timer ?? null;
+    const notifId = detail?.notification?.id ?? '';
+    if (type === EventType.ACTION_PRESS) {
+      const action = detail?.pressAction?.id as
+        | 'STOP_TIMER'
+        | 'DISMISS_ONE_TIMER'
+        | 'DISMISS_FIVE_TIMER'
+        | 'DEFAULT';
 
-    if (action === 'DISMISS_ONE_TIMER') {
-      onAction('DISMISS_ONE_TIMER', timer, notificationId);
-    } else if (action === 'DISMISS_FIVE_TIMER') {
-      onAction('DISMISS_FIVE_TIMER', timer, notificationId);
-    } else if (action === 'STOP_TIMER') {
-      onAction('STOP_TIMER', timer, notificationId);
-    } 
+      if (action === 'STOP_TIMER') { onAction('STOP_TIMER', timerData, notifId); }
+      else if (action === 'DISMISS_ONE_TIMER') { onAction('DISMISS_ONE_TIMER', timerData, notifId); }
+      else if (action === 'DISMISS_FIVE_TIMER') { onAction('DISMISS_FIVE_TIMER', timerData, notifId); }
+    } else if (type === EventType.PRESS) {
+      onAction('DEFAULT', timerData, notifId);
+    }
   });
 
-  return () => subscription.remove();
+  return unsubscribe;
 }
