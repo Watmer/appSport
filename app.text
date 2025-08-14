@@ -1,19 +1,18 @@
 //DEBUGGER
-
 {
   "expo": {
     "name": "SportAppDev",
-    "slug": "SportAppDev",
+    "slug": "SportApp",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png", 
-    "scheme": "sportappdev",  
+    "icon": "./assets/images/icon.png",
+    "scheme": "sportappdev",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#008000"
+      "backgroundColor": "#00a000"
     },
     "ios": {
       "supportsTablet": true,
@@ -30,7 +29,7 @@
       ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon/foreground.png",
-        "backgroundColor": "#008000"  
+        "backgroundColor": "#00a000"
       },
       "edgeToEdgeEnabled": true,
       "enableBackgroundNotification": true,
@@ -51,7 +50,24 @@
         }
       ],
       "expo-sqlite",
-      "expo-audio"
+      "expo-audio",
+      [
+        "react-native-android-widget",
+        {
+          "widgets": [
+            {
+              "name": "Hello",
+              "label": "Hello Widget",
+              "description": "Un widget de prueba",
+              "minWidth": "160dp",
+              "minHeight": "110dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "updatePeriodMillis": 0
+            }
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true
@@ -120,7 +136,24 @@
         }
       ],
       "expo-sqlite",
-      "expo-audio"
+      "expo-audio",
+      [
+    "react-native-android-widget",
+    {
+      "widgets": [
+        {
+          "name": "Hello",
+          "label": "Hello Widget",
+          "description": "Un widget de prueba",
+          "minWidth": "160dp",
+          "minHeight": "110dp",
+          "targetCellWidth": 4,
+          "targetCellHeight": 2,
+          "updatePeriodMillis": 0
+        }
+      ]
+    }
+  ]
     ],
     "experiments": {
       "typedRoutes": true

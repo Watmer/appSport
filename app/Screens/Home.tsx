@@ -22,7 +22,7 @@ export default function Home() {
 
   const today = new Date();
   const currentDay = today.getDate();
-  const defaultKey = `dayInfo:${currentDay}-${today.getMonth()+1}-${today.getFullYear()}`;
+  const defaultKey = `dayInfo:${currentDay}-${today.getMonth() + 1}-${today.getFullYear()}`;
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -123,7 +123,7 @@ export default function Home() {
     try {
       const dataString = await exportAllInfoString();
 
-      const fileUri = FileSystem.documentDirectory + 'datos_exportados.json';
+      const fileUri = FileSystem.documentDirectory + 'datos_exportados' + new Date(Date.now()).toDateString() + '.json';
       await FileSystem.writeAsStringAsync(fileUri, dataString, {
         encoding: FileSystem.EncodingType.UTF8,
       });

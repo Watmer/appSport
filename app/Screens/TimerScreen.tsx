@@ -5,8 +5,8 @@ import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useLayoutEffect, useState } from "react";
 import { Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
 import CircleTimeComponent from "../components/CircleTimeComponent";
-import { cancelNotifAsync, handleTimerNotifResponse, scheduleNotifAsync } from '../utils/Notification';
 import { eventBus } from "../utils/EventBus";
+import { cancelNotifAsync, handleTimerNotifResponse, scheduleNotifAsync } from '../utils/Notification';
 
 export default function TimerScreen() {
   const navigation = useNavigation();
@@ -153,13 +153,7 @@ export default function TimerScreen() {
       }
       let newNotificationId = "";
       if (oldTimer?.paused) {
-        newNotificationId = await scheduleNotifAsync(
-          oldTimer?.title || "Timer",
-          "El temporizador ha terminado",
-          { timer: { id } },
-          "default",
-          newDuration
-        );
+        newNotificationId = await createNotifAsync(oldTimer?.title, oldTimer?.id, oldTimer?.remaining);
       }
 
       setTimers((prevTimers) =>
@@ -205,7 +199,7 @@ export default function TimerScreen() {
       title,
       "El temporizador ha terminado",
       { timer: { id } },
-      "default",
+      "timersound",
       remaining
     );
   };

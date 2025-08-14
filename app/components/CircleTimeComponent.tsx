@@ -1,5 +1,4 @@
-import { useAudioPlayer } from 'expo-audio';
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import { Animated, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
@@ -12,7 +11,6 @@ type TimerWheelProps = {
 };
 
 export default function TimerWheel({ currentTime, up, paused, totalDuration, size }: TimerWheelProps) {
-  const player = useAudioPlayer(require('../../assets/sounds/TimerSound.mp3'));
 
   const opacity = useRef(new Animated.Value(1)).current;
   const stroke = size * 0.03;
@@ -26,40 +24,6 @@ export default function TimerWheel({ currentTime, up, paused, totalDuration, siz
     : Math.max((totalDuration - currentTime) / totalDuration, 0);
 
   const strokeDashoffset = currentTime >= 0 ? circumference * (1 - progress) : 0;
-
-  useEffect(() => {
-    if (!up && currentTime === 0 && !paused && !player.playing) {
-      player.loop = true;
-      player.play();
-    }
-
-    if (currentTime > 0 || currentTime < -250 || paused) {
-      player.pause();
-    }
-  }, [currentTime, up, player, paused]);
-
-  // Efecto para parpadeo
-  useEffect(() => {
-    if (currentTime < 0 && !paused) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(opacity, {
-            toValue: 1,
-            useNativeDriver: true,
-          }),
-          Animated.timing(opacity, {
-            toValue: 0.5,
-            duration: 700,
-            useNativeDriver: true,
-            easing: () => 1,
-          }),
-        ])
-      ).start();
-    } else {
-      opacity.stopAnimation();
-      opacity.setValue(1);
-    }
-  }, [currentTime, paused]);
 
   const formatTime = (seconds: number) => {
     const safeTime = Math.max(seconds, 0);

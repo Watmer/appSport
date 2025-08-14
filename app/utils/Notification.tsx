@@ -1,6 +1,7 @@
 import notifee, {
   AndroidCategory,
   AndroidImportance,
+  AndroidLaunchActivityFlag,
   EventType,
   TimestampTrigger,
   TriggerType,
@@ -16,7 +17,9 @@ export async function configureNotificationHandler() {
       id: 'timers_channel',
       name: 'Timers',
       importance: AndroidImportance.HIGH,
-      sound: 'default',
+      sound: 'timersound',
+      vibration: true,
+      vibrationPattern: [1000, 1000],
     });
   } else {
     await notifee.requestPermission();
@@ -53,7 +56,7 @@ export async function configureNotificationHandler() {
             timer.title,
             "El temporizador ha terminado",
             { timer: { id: timer.id } },
-            "default",
+            "timersound",
             timer.remaining
           );
         }
@@ -70,7 +73,7 @@ export async function configureNotificationHandler() {
             timer.title,
             "El temporizador ha terminado",
             { timer: { id: timer.id } },
-            "default",
+            "timersound",
             timer.remaining
           );
         }
@@ -81,16 +84,16 @@ export async function configureNotificationHandler() {
 
     } else if (type === EventType.PRESS) {
       console.log("Notificacion pulsada");
+      console.log(await notifee.getInitialNotification());
     }
   });
 }
-
 
 export async function scheduleNotifAsync(
   title: string,
   body: string,
   data: any = {},
-  sound: string = 'default',
+  sound: string = 'timersound',
   triggerSeconds?: number
 ) {
   const notification = {
@@ -99,10 +102,15 @@ export async function scheduleNotifAsync(
     data,
     android: {
       channelId: 'timers_channel',
-      pressAction: { id: 'DEFAULT' },
+      pressAction: {
+        id: 'DEFAULT',
+        launchActivity: 'default',
+        launchActivityFlags: [AndroidLaunchActivityFlag.SINGLE_TOP],
+      },
       category: AndroidCategory.REMINDER,
       color: '#FFaa00',
       sound,
+      loopSound: true,
       actions: [
         { title: 'Detener', pressAction: { id: 'STOP_TIMER' } },
         { title: '+1 min', pressAction: { id: 'DISMISS_ONE_TIMER' } },

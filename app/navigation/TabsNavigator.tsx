@@ -5,6 +5,7 @@ import { useNavigation } from "@react-navigation/native";
 import Home from "../Screens/Home";
 import ShopListScreen from "../Screens/ShopListScreen";
 import TimerScreen from "../Screens/TimerScreen";
+import { PreviewWidgets } from "../Screens/PreviewWidgets";
 
 const Tab = createBottomTabNavigator();
 
@@ -38,6 +39,11 @@ export default function TabsNavigator() {
       <Tab.Screen name="ShopListScreen" component={ShopListScreen} options={{
         title: "Shop List", tabBarIcon: ({ color, focused }) => (
           <MaterialCommunityIcons name={focused ? 'cart' : 'cart-outline'} color={color} size={25} />
+        ),
+      }} />
+      <Tab.Screen name="PreviewWidgets" component={PreviewWidgets} options={{
+        title: "Preview Widgets", tabBarIcon: ({ color, focused }) => (
+          <MaterialCommunityIcons name={focused ? 'widgets' : 'widgets-outline'} color={color} size={25} />
         ),
       }} />
     </Tab.Navigator>

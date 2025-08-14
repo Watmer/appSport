@@ -5,6 +5,7 @@ import FoodDetailScreen from "../Screens/FoodDetailsScreen";
 import FoodListScreen from "../Screens/FoodListScreen";
 import Home from "../Screens/Home";
 import MealDetailScreen from "../Screens/MealDetailsScreen";
+import { PreviewWidgets } from "../Screens/PreviewWidgets";
 import RecepyScreen from "../Screens/RecepyScreen";
 import ShopListScreen from "../Screens/ShopListScreen";
 import TimerScreen from "../Screens/TimerScreen";
@@ -44,6 +45,8 @@ export default function RootNavigator() {
         options={{ title: "Recetas" }} />
       <RootStack.Screen name="MealDetailsScreen" component={MealDetailScreen}
         options={{ title: "Meal Detail" }} />
+        <RootStack.Screen name="PreviewWidgets" component={PreviewWidgets}
+        options={{ title: "Preview Widgets" }} />
     </RootStack.Navigator>
   );
 }
