@@ -312,7 +312,6 @@ export default function FoodListScreen({ route }: { route: any }) {
   const fetchSwapInfo = async () => {
     if (selectedDayToSwap) {
       setMealSwapInfo(await getDayInfo(`dayInfo:${selectedDayToSwap}`));
-      console.log(mealSwapInfo);
     }
   };
 

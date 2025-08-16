@@ -45,7 +45,7 @@ export default function RootNavigator() {
         options={{ title: "Recetas" }} />
       <RootStack.Screen name="MealDetailsScreen" component={MealDetailScreen}
         options={{ title: "Meal Detail" }} />
-        <RootStack.Screen name="PreviewWidgets" component={PreviewWidgets}
+      <RootStack.Screen name="PreviewWidgets" component={PreviewWidgets}
         options={{ title: "Preview Widgets" }} />
     </RootStack.Navigator>
   );

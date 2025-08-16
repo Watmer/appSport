@@ -3,7 +3,7 @@ import { useNavigation } from "@react-navigation/native";
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import { useLayoutEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { Alert, Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { RefreshControl } from "react-native-gesture-handler";
 import Dashboard from "../components/Dashboard";
@@ -18,7 +18,6 @@ export default function Home() {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const [importing, setImporting] = useState(false);
-  const [inputText, setInputText] = useState("");
 
   const today = new Date();
   const currentDay = today.getDate();
@@ -50,8 +49,12 @@ export default function Home() {
     setRefreshing(false);
   };
 
+  useEffect(() => {
+    onRefresh();
+  }, []);
+
   const renderMealCards = () => {
-    return <MealCard dayInfoKey={defaultKey} refreshTrigger={refreshTrigger} />;
+    return <MealCard dayInfoKey={defaultKey} refreshTrigger={refreshTrigger} isTodayMeal={true} />;
   };
 
   const renderModalImport = () => {

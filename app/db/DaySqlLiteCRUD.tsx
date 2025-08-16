@@ -160,6 +160,14 @@ export async function updateMealById(mealId: number, mealData: {
   return mealId;
 }
 
+export async function updateCompletedMealById(mealId: number, mark: boolean) {
+  await db.update(mealTable)
+    .set({
+      completed: mark ? 1 : 0,
+    })
+    .where(eq(mealTable.id, mealId));
+}
+
 export async function addMealWithIngredients(dayId: string, mealData: {
   meal: string;
   foodName: string;

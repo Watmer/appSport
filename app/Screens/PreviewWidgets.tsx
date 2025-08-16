@@ -1,16 +1,39 @@
-import * as React from 'react';
-import { StyleSheet, View } from 'react-native';
-import { registerWidgetTaskHandler, WidgetPreview } from 'react-native-android-widget';
-import { HelloWidget } from '../utils/Widget';
-import { widgetTaskHandler } from '../utils/WidgetHandler';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { WidgetPreview } from 'react-native-android-widget';
+import { getDayInfo } from '../db/DaySqlLiteCRUD';
+import { TodayMealsWidget } from '../utils/Widget';
 
-registerWidgetTaskHandler(widgetTaskHandler);
- 
 export function PreviewWidgets() {
+  const [meals, setMeals] = useState<any[] | null>(null);
+
+  const onRefresh = async () => {
+    await loadData();
+  };
+
+  async function loadData() {
+    const today = new Date();
+    const currentDay = today.getDate();
+    const dayData = await getDayInfo(`dayInfo:${currentDay}-${today.getMonth() + 1}-${today.getFullYear()}`);
+    setMeals(dayData?.meals || []);
+  }
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  if (!meals) {
+    return <ActivityIndicator size="large" color="#ffaa00" />;
+  }
+
   return (
     <View style={styles.container}>
+      <TouchableOpacity onPress={onRefresh}>
+        <MaterialCommunityIcons name='refresh' color={'#ffffff'} size={30} />
+      </TouchableOpacity>
       <WidgetPreview
-        renderWidget={() => <HelloWidget />}
+        renderWidget={() => <TodayMealsWidget widgetInfo={{ meals }} />}
         width={320}
         height={200}
       />
@@ -23,6 +46,6 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: "rgba(30,30,30,1)",
+    backgroundColor: "rgba(0, 0, 0, 1)",
   },
 });

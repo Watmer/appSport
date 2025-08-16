@@ -3,7 +3,9 @@ import { useNavigation } from "@react-navigation/native";
 import { useEffect, useState } from "react";
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
+import { requestWidgetUpdate } from "react-native-android-widget";
 import { addRecepy, getAllRecepys, getDayInfo, removeRecepy, updateMealById } from "../db/DaySqlLiteCRUD";
+import { TodayMealsWidget } from "../utils/Widget";
 
 const { width, height } = Dimensions.get("window");
 
@@ -26,6 +28,7 @@ interface MealInfo {
 interface MealCardProps {
   dayInfoKey: string;
   refreshTrigger?: number;
+  isTodayMeal?: boolean;
 }
 
 const meals = ["Desayuno", "Almuerzo", "Comida", "Merienda", "Cena"];
@@ -34,7 +37,7 @@ function sortMealsByOrder(mealInfo: any[]) {
   return mealInfo.slice().sort((a, b) => meals.indexOf(a.meal) - meals.indexOf(b.meal));
 }
 
-export default function MealCard({ dayInfoKey, refreshTrigger }: MealCardProps) {
+export default function MealCard({ dayInfoKey, refreshTrigger, isTodayMeal }: MealCardProps) {
   const navigation = useNavigation();
   const [mealsArray, setMealsArray] = useState<MealInfo[]>([]);
   const [recepysArray, setRecepysArray] = useState<any[]>([]);
@@ -50,7 +53,19 @@ export default function MealCard({ dayInfoKey, refreshTrigger }: MealCardProps) 
       setMealsArray(sorted);
     }
     setRecepysArray(await getAllRecepys());
+
+    if (isTodayMeal) {
+      updateWidgetInfo();
+    }
   };
+
+  async function updateWidgetInfo() {
+    await requestWidgetUpdate({
+      widgetName: 'TodayMeals',
+      renderWidget: () => <TodayMealsWidget widgetInfo={{ meals: mealsArray }} />,
+      widgetNotFound: () => { },
+    });
+  }
 
   const toggleCompleted = async (index: number) => {
     const updatedMeals = [...mealsArray];
@@ -69,6 +84,10 @@ export default function MealCard({ dayInfoKey, refreshTrigger }: MealCardProps) 
     });
 
     setMealsArray(updatedMeals);
+
+    if (isTodayMeal) {
+      updateWidgetInfo();
+    }
   };
 
   const handleCardPress = (mealType: string) => {

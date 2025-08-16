@@ -9,13 +9,14 @@
 
     android:resizeMode="none"
 
-    android:description="@string/widget_hello_description"
+    android:description="@string/widget_todaymeals_description"
 
     android:initialLayout="@layout/rn_widget"
 
 
+    android:configure="com.anonymous.SportAppDev.WidgetConfigurationActivity"
+    android:widgetFeatures="reconfigurable|configuration_optional"
 
-
-    android:updatePeriodMillis="0"
+    android:updatePeriodMillis="1800000"
     android:widgetCategory="home_screen">
 </appwidget-provider>

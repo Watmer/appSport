@@ -2,5 +2,5 @@ package com.anonymous.SportAppDev.widget;
 
 import com.reactnativeandroidwidget.RNWidgetProvider;
 
-public class Hello extends RNWidgetProvider {
+public class TodayMeals extends RNWidgetProvider {
 }

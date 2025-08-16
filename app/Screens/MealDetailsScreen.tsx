@@ -28,7 +28,6 @@ export default function MealDetailScreen({ route }: { route: any }) {
       const mealInfo = await getMealById(mealInfoKey);
       if (mealInfo) {
         setMealData(mealInfo);
-        console.log(mealInfo?.foodName);
       } else {
         setMealData(null);
       }
@@ -104,7 +103,7 @@ const styles = StyleSheet.create({
     color: "rgba(255, 255, 255, 1)"
   },
   card: {
-    backgroundColor: "rgba(0, 60, 90, 1)", 
+    backgroundColor: "rgba(0, 60, 90, 1)",
     borderRadius: 10,
     padding: 12,
     marginBottom: 16,

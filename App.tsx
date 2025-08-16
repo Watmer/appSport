@@ -1,13 +1,13 @@
-import React, { useEffect } from 'react';
-import { registerWidgetTaskHandler } from 'react-native-android-widget';
+import React, { useEffect } from "react";
+import { registerWidgetTaskHandler } from "react-native-android-widget";
 
-import notifee from '@notifee/react-native';
-import { NavigationContainer, useNavigationContainerRef } from '@react-navigation/native';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { useInitDb } from './app/db/initializeDb';
-import RootNavigator from './app/navigation/RootNavigator';
-import { configureNotificationHandler } from './app/utils/Notification';
-import { widgetTaskHandler } from './app/utils/WidgetHandler';
+import notifee from "@notifee/react-native";
+import { NavigationContainer, useNavigationContainerRef } from "@react-navigation/native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
+import { useInitDb } from "./app/db/initializeDb";
+import RootNavigator from "./app/navigation/RootNavigator";
+import { configureNotificationHandler } from "./app/utils/Notification";
+import { widgetTaskHandler } from "./app/utils/WidgetHandler";
 
 registerWidgetTaskHandler(widgetTaskHandler);
 
@@ -16,7 +16,7 @@ function NotificationHandler() {
 
   useEffect(() => {
     configureNotificationHandler().catch(err =>
-      console.error('Error configuring notifications:', err)
+      console.error("Error configuring notifications:", err)
     );
   }, []);
 
@@ -25,18 +25,26 @@ function NotificationHandler() {
   }, [navigationRef]);
 
   const pressNotif = async () => {
-    console.log(await notifee.getInitialNotification());
-    await notifee.getInitialNotification().then(initial => {
-      if (initial) {
-        if (navigationRef.isReady()) {
-          (navigationRef as any).navigate('TimerScreen');
-        }
-      }
-    });
+    const initial = await notifee.getInitialNotification();
+    console.log("Initial notification:", initial);
+
+    if (initial && navigationRef.isReady()) {
+      (navigationRef as any).navigate("TimerScreen");
+    }
   };
 
   return null;
 }
+
+const linking = {
+  prefixes: ["sportappdev://"],
+  config: {
+    screens: {
+      TimerScreen: "timer",
+      MealDetailsScreen: "meal-details/:mealInfoKey",
+    },
+  },
+};
 
 export default function App() {
   const { success, error } = useInitDb();
@@ -58,7 +66,7 @@ export default function App() {
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer linking={linking}>
       <RootNavigator />
       <NotificationHandler />
     </NavigationContainer>
@@ -68,7 +76,7 @@ export default function App() {
 const styles = StyleSheet.create({
   loaderContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
 });

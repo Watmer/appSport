@@ -29,20 +29,22 @@
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
-        <data android:scheme="sportapp"/>
-        <data android:scheme="com.anonymous.SportApp"/>
-        <data android:scheme="exp+sportapp"/>
         <data android:scheme="sportappdev"/>
         <data android:scheme="com.anonymous.SportAppDev"/>
-        <data android:scheme="exp+sportappdev"/>
+        <data android:scheme="exp+sportapp"/>
       </intent-filter>
     </activity>
-    <receiver android:name=".widget.Hello" android:exported="false" android:label="Hello Widget">
+    <activity android:name=".WidgetConfigurationActivity" android:exported="true">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/>
+      </intent-filter>
+    </activity>
+    <receiver android:name=".widget.TodayMeals" android:exported="false" android:label="Meals Widget">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
-        <action android:name="com.anonymous.SportApp.WIDGET_CLICK"/>
+        <action android:name="com.anonymous.SportAppDev.WIDGET_CLICK"/>
       </intent-filter>
-      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_hello"/>
+      <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_todaymeals"/>
     </receiver>
   </application>
 </manifest>
