@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { WidgetPreview } from 'react-native-android-widget';
 import { getDayInfo } from '../db/DaySqlLiteCRUD';
-import { TodayMealsWidget } from '../utils/Widget';
+import { StreakDaysWidget, TodayMealsWidget } from '../utils/Widget';
 
 export function PreviewWidgets() {
   const [meals, setMeals] = useState<any[] | null>(null);
@@ -34,6 +34,11 @@ export function PreviewWidgets() {
       </TouchableOpacity>
       <WidgetPreview
         renderWidget={() => <TodayMealsWidget widgetInfo={{ meals }} />}
+        width={320}
+        height={200}
+      />
+      <WidgetPreview
+        renderWidget={() => <StreakDaysWidget />}
         width={320}
         height={200}
       />

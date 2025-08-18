@@ -3,12 +3,15 @@ import { registerWidgetTaskHandler } from "react-native-android-widget";
 
 import notifee from "@notifee/react-native";
 import { NavigationContainer, useNavigationContainerRef } from "@react-navigation/native";
+import { registerRootComponent } from "expo";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { useInitDb } from "./app/db/initializeDb";
 import RootNavigator from "./app/navigation/RootNavigator";
 import { configureNotificationHandler } from "./app/utils/Notification";
-import { widgetTaskHandler } from "./app/utils/WidgetHandler";
+import { setAppReady, widgetTaskHandler } from "./app/utils/WidgetHandler";
+import { eventBus } from "./app/utils/EventBus";
 
+registerRootComponent(App);
 registerWidgetTaskHandler(widgetTaskHandler);
 
 function NotificationHandler() {
@@ -26,7 +29,6 @@ function NotificationHandler() {
 
   const pressNotif = async () => {
     const initial = await notifee.getInitialNotification();
-    console.log("Initial notification:", initial);
 
     if (initial && navigationRef.isReady()) {
       (navigationRef as any).navigate("TimerScreen");
@@ -49,6 +51,13 @@ const linking = {
 export default function App() {
   const { success, error } = useInitDb();
 
+  useEffect(() => {
+    if (success) {
+      setAppReady(true);
+      eventBus.emit('REFRESH_WIDGETS_FROM_APP');
+    }
+  }, [success]);
+
   if (error) {
     return (
       <View>
@@ -64,6 +73,8 @@ export default function App() {
       </View>
     );
   }
+
+
 
   return (
     <NavigationContainer linking={linking}>

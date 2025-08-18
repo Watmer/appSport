@@ -2,7 +2,8 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { addFailedDay, getDayInfo, getLastFailedDay, getOrderedDays, removeFailedDay } from "../db/DaySqlLiteCRUD";
+import { addFailedDay, addFrozenDay, addStreak, addStreakDay, getDayInfo, getLastFailedDay, getOrderedDays, removeFailedDay } from "../db/DaySqlLiteCRUD";
+import { eventBus } from "../utils/EventBus";
 
 const { width, height } = Dimensions.get("window");
 const daysOfWeek = ["L", "M", "X", "J", "V", "S", "D"];
@@ -41,41 +42,44 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
 
   useEffect(() => {
     fetchDayInfo();
-  }, [refreshTrigger, visibleMonth, visibleYear]);
+  }, [visibleMonth, visibleYear]);
 
   useEffect(() => {
-    fetchContinuousStreak();
+    (async () => {
+      await fetchDayInfo();
+      await fetchContinuousStreak();
+    })();
   }, [refreshTrigger]);
 
   const fetchDayInfo = async () => {
-    const daysStreak = [];
-    const daysFailed = [];
-    const frozen = [];
+    const daysStreak: string[] = [];
+    const daysFailed: string[] = [];
+    const frozen: string[] = [];
 
     for (const week of weeks) {
       let frozenAdded = false;
 
       for (const { day, month, year, key, isToday } of week) {
-        const dayInfoKey = `dayInfo:${day}-${month}-${year}`;
-        const dayData = await getDayInfo(dayInfoKey);
+        const dayId = `dayInfo:${key}`;
+        const dayData = await getDayInfo(dayId);
 
         const isStreak = dayIsStreak(dayData?.meals);
         const isFailed = dayIsFailed(dayData?.meals);
 
         if (isStreak) {
           daysStreak.push(key);
-          await removeFailedDay(`dayInfo:${key}`);
+          await addStreakDay(dayId);
+          await removeFailedDay(dayId);
         } else if (isFailed) {
           if (!frozenAdded) {
             frozen.push(key);
             frozenAdded = true;
-            await removeFailedDay(`dayInfo:${key}`);
+            await addFrozenDay(dayId);
+            await removeFailedDay(dayId);
           } else {
             if (!isToday) {
               daysFailed.push(key);
-              await addFailedDay(`dayInfo:${key}`);
-            } else {
-              await removeFailedDay(`dayInfo:${key}`);
+              await addFailedDay(dayId);
             }
           }
         }
@@ -85,6 +89,8 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
     setStreakDays(daysStreak);
     setFailedDays(daysFailed);
     setFrozenDays(frozen);
+
+    eventBus.emit('REFRESH_STREAKDAYS_WIDGET');
   };
 
   const dayIsStreak = (meals: any[] | undefined): boolean => {
@@ -123,9 +129,9 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
       const dayKey = `dayInfo:${current.getDate()}-${current.getMonth() + 1}-${current.getFullYear()}`;
       const dayInfo = await getDayInfo(dayKey);
 
-      if (dayIsStreak(dayInfo.meals)) {
+      if (dayIsStreak(dayInfo?.meals)) {
         count++;
-      } else if (dayIsFailed(dayInfo.meals)) {
+      } else if (dayIsFailed(dayInfo?.meals)) {
         let nFailed = 0;
 
         const startOfWeek = new Date(current);
@@ -155,6 +161,7 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
     }
 
     setStreak(count);
+    await addStreak(count);
   };
 
   const handleCurrentDay = () => {

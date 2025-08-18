@@ -9,7 +9,7 @@
 
     android:resizeMode="horizontal|vertical"
 
-    android:description="@string/widget_todaymeals_description"
+    android:description="@string/widget_streakdays_description"
 
     android:initialLayout="@layout/rn_widget"
 

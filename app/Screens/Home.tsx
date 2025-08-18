@@ -8,7 +8,7 @@ import { Alert, Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacit
 import { RefreshControl } from "react-native-gesture-handler";
 import Dashboard from "../components/Dashboard";
 import MealCard from "../components/MealCard";
-import { exportAllInfoString, importAllInfoString } from "../db/DaySqlLiteCRUD";
+import { exportAllInfoString, getStreakInfo, importAllInfoString } from "../db/DaySqlLiteCRUD";
 
 const { width, height } = Dimensions.get("window");
 

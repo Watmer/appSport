@@ -1,59 +1,94 @@
 import React from 'react';
 import type { WidgetTaskHandlerProps } from 'react-native-android-widget';
-import { getDayInfo, updateCompletedMealById } from '../db/DaySqlLiteCRUD';
-import { TodayMealsWidget } from './Widget';
+import { getDayInfo, getStreakInfo, updateCompletedMealById } from '../db/DaySqlLiteCRUD';
+import { StreakDaysWidget, TodayMealsWidget, } from './Widget';
+import { eventBus } from './EventBus';
 
 const nameToWidget = {
   TodayMeals: TodayMealsWidget,
+  StreakDays: StreakDaysWidget,
 };
 
+let appReady = false;
+
+export function setAppReady(value: boolean) {
+  appReady = value;
+}
+
 export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
-  const Widget = nameToWidget[props.widgetInfo.widgetName as keyof typeof nameToWidget];
+  const { widgetName } = props.widgetInfo;
 
-  async function refreshWidget() {
-    const today = new Date();
-    const currentDay = today.getDate();
-    const defaultKey = `dayInfo:${currentDay}-${today.getMonth() + 1}-${today.getFullYear()}`;
+  async function refreshWidget(widgetName: string) {
+    if (widgetName === "TodayMeals") {
+      const today = new Date();
+      const currentDay = today.getDate();
+      const defaultKey = `dayInfo:${currentDay}-${today.getMonth() + 1}-${today.getFullYear()}`;
 
-    const dayInfo = await getDayInfo(defaultKey);
-    props.renderWidget(<Widget widgetInfo={{ meals: dayInfo.meals }} />);
+      const dayInfo = await getDayInfo(defaultKey);
+      console.log(dayInfo);
+      props.renderWidget(<TodayMealsWidget widgetInfo={{ meals: dayInfo.meals }} />);
+    }
+
+    if (widgetName === "StreakDays") {
+      const streakInfo = await getStreakInfo();
+      props.renderWidget(<StreakDaysWidget widgetInfo={{ ...props.widgetInfo, streakInfo }} />);
+    }
   }
 
   async function toggleCompleted(mealId: number, mark: boolean) {
     await updateCompletedMealById(mealId, mark);
-    await refreshWidget();
+    await refreshWidget("TodayMeals");
   }
+
+  eventBus.on('REFRESH_STREAKDAYS_WIDGET', async () => {
+    await refreshWidget("StreakDays");
+
+  });
+
+  eventBus.on('REFRESH_WIDGETS_FROM_APP', async () => {
+    await refreshWidget("StreakDays");
+    await refreshWidget("TodayMeals");
+  });
 
   switch (props.widgetAction) {
     case 'WIDGET_ADDED':
-      await refreshWidget();
-      console.log("widget añadido.");
+      await refreshWidget(widgetName);
+      console.log(`${widgetName} añadido.`);
       break;
+
     case 'WIDGET_UPDATE':
-      await refreshWidget();
+      await refreshWidget(widgetName);
+      console.log(`${widgetName} actualizado.`);
+
       break;
-    case 'WIDGET_RESIZED': {
-      await refreshWidget();
+
+    case 'WIDGET_RESIZED':
+      await refreshWidget(widgetName);
+      console.log(`${widgetName} redimensionado.`);
+
       break;
-    }
+
     case 'WIDGET_CLICK': {
-      if (props.clickAction === 'MARK_COMPLETED') {
-        const { mealId } = props.clickActionData as any;
-        await toggleCompleted(mealId, true);
+      if (widgetName === "TodayMeals") {
+        if (props.clickAction === 'MARK_COMPLETED') {
+          const { mealId } = props.clickActionData as any;
+          await toggleCompleted(mealId, true);
+        }
+
+        if (props.clickAction === 'MARK_UNCOMPLETED') {
+          const { mealId } = props.clickActionData as any;
+          await toggleCompleted(mealId, false);
+        }
       }
 
-      if (props.clickAction === 'MARK_UNCOMPLETED') {
-        const { mealId } = props.clickActionData as any;
-        await toggleCompleted(mealId, false);
-      }
+      console.log(`${widgetName} pulsado.`);
+      break;
+    }
 
-      console.log("widget pulsado.");
+    case 'WIDGET_DELETED':
+      console.log(`${widgetName} eliminado.`);
       break;
-    }
-    case 'WIDGET_DELETED': {
-      console.log("widget eliminado.");
-      break;
-    }
+
     default:
       break;
   }

@@ -16,7 +16,8 @@ export function TodayMealsWidget({ widgetInfo }: any) {
       style={{
         height: "match_parent",
         width: "match_parent",
-      }}>
+      }}
+    >
       <FlexWidget
         style={{
           width: "match_parent",
@@ -168,3 +169,144 @@ export function TodayMealsWidget({ widgetInfo }: any) {
     </OverlapWidget>
   );
 }
+
+function addDays(date: Date, offset: number) {
+  const copy = new Date(date);
+  copy.setDate(copy.getDate() + offset);
+  return copy;
+}
+
+export function StreakDaysWidget({ widgetInfo }: { widgetInfo?: any }) {
+  const today = new Date();
+  const w = widgetInfo?.width ?? 200;
+  const h = widgetInfo?.height ?? 100;
+
+  const { col, row } = getWidgetGrid(w, h);
+  const { offsetArray, titleSize, fontSize, padding } = getLayoutConfig(col, row);
+
+  const streakDays = widgetInfo?.streakInfo?.streakDays ?? [];
+  const frozenDays = widgetInfo?.streakInfo?.frozenDays ?? [];
+  const failedDays = widgetInfo?.streakInfo?.failedDays ?? [];
+  const streak = widgetInfo?.streakInfo?.streak ?? 0;
+
+  return (
+    <OverlapWidget
+      style={{ width: "match_parent", height: "match_parent" }}
+    >
+      <FlexWidget
+        style={{
+          width: "match_parent",
+          height: "match_parent",
+          borderRadius: 10,
+          backgroundColor: "#1e1e1e",
+          borderColor: "#2e2e2e",
+          borderWidth: 1,
+          padding,
+          alignItems: "center",
+        }}
+      >
+        <FlexWidget
+          style={{
+            alignItems: "center",
+            justifyContent: "center",
+            marginBottom: padding + 10,
+          }}
+        >
+          <TextWidget
+            text={`Días de racha ${streak}`}
+            style={{
+              color: "#ffffff",
+              fontWeight: "bold",
+              fontSize: titleSize,
+            }}
+          />
+        </FlexWidget>
+
+        <FlexWidget
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          {offsetArray.map((offset, index, array) => {
+            const day = addDays(today, offset);
+            const key = `dayInfo:${day.getDate()}-${day.getMonth() + 1}-${day.getFullYear()}`;
+            let color = "#3C3C3C";
+            if (offset === 0) color = "#ffaa00";
+            else if (streakDays.includes(key)) color = "#4673c8";
+            else if (frozenDays.includes(key)) color = "#50E1FF";
+            else if (failedDays.includes(key)) color = "#FF3232";
+
+            return (
+              <FlexWidget key={offset}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}>
+                <FlexWidget
+                  style={{
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding,
+                    borderRadius: 10,
+                    backgroundColor: color as any,
+                  }}
+                >
+                  <TextWidget
+                    text={day.getDate().toString()}
+                    style={{
+                      color: "#ffffff",
+                      fontWeight: "bold",
+                      fontSize,
+                    }}
+                  />
+                </FlexWidget>
+
+                {index < array.length - 1 && (
+                  <FlexWidget
+                    style={{
+                      padding: padding + 2,
+                      backgroundGradient: {
+                        from: color as any,
+                        to: "#1e1e1e" as any,
+                        orientation: "LEFT_RIGHT",
+                      },
+                    }}
+                  />
+                )}
+              </FlexWidget>
+            );
+          })}
+        </FlexWidget>
+      </FlexWidget>
+    </OverlapWidget>
+  );
+}
+
+function getLayoutConfig(col: number, row: number) {
+  console.log(col, row);
+
+  if (col >= 4 && row >= 2) {
+    return { offsetArray: [-3, -2, -1, 0, 1], fontSize: 18, titleSize: 28, padding: 10 };
+  }
+  if (col === 3 && row >= 2) {
+    return { offsetArray: [-2, -1, 0, 1], fontSize: 17, titleSize: 27, padding: 9 };
+  }
+  if (col === 2 && row >= 2) {
+    return { offsetArray: [-2, -1, 0], fontSize: 16, titleSize: 25, padding: 7 };
+  }
+  return { offsetArray: [0], fontSize: 14, titleSize: 14, padding: 8 };
+}
+
+function getWidgetGrid(width: number, height: number) {
+  console.log(width, height);
+  const col = Math.round(width / 92);
+  const row = Math.round(height / 92);
+  console.log(col, row);
+
+  return { col, row };
+}
+
+

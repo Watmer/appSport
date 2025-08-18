@@ -71,9 +71,24 @@
               "name": "TodayMeals",
               "label": "Meals Widget",
               "description": "Comidas de hoy",
-              "minWidth": "160dp",
-              "minHeight": "110dp",
+              "minWidth": "74dp",
+              "minHeight": "74dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
               "updatePeriodMillis": 1800000,
+              "widgetFeatures": "reconfigurable|configuration_optional"
+            },
+            {
+              "name": "StreakDays",
+              "label": "Streak Widget",
+              "description": "Días de racha",
+              "minWidth": "74dp",
+              "minHeight": "74dp",
+              "targetCellWidth": 4,
+              "targetCellHeight": 2,
+              "resizeMode": "horizontal|vertical",
+              "updatePeriodMillis": 0,
               "widgetFeatures": "reconfigurable|configuration_optional"
             }
           ]

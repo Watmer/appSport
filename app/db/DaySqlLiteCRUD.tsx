@@ -1,6 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { db } from "./db";
-import { dayTable, ingredientsTable, mealTable, savedRecepyTable } from "./schema";
+import { dayTable, ingredientsTable, mealTable, savedRecepyTable, streakTable } from "./schema";
 
 // Obtener info de un día (día + comidas + ingredientes)
 export async function getDayInfo(dayId: string) {
@@ -330,6 +330,7 @@ export async function getAllFailedDays() {
 
 export async function addFailedDay(dayId: string) {
   await db.update(dayTable).set({
+    isFrozen: 0,
     isFailed: 1,
   }).where(eq(dayTable.id, dayId));
 }
@@ -338,4 +339,61 @@ export async function removeFailedDay(dayId: string) {
   await db.update(dayTable).set({
     isFailed: 0,
   }).where(eq(dayTable.id, dayId));
+}
+
+export async function addStreakDay(dayId: string) {
+  await db.update(dayTable).set({
+    isStreak: 1,
+    isFailed: 0,
+    isFrozen: 0,
+  }).where(eq(dayTable.id, dayId));
+}
+
+export async function removeStreakDay(dayId: string) {
+  await db.update(dayTable).set({
+    isStreak: 0,
+  }).where(eq(dayTable.id, dayId));
+}
+
+export async function addFrozenDay(dayId: string) {
+  await db.update(dayTable).set({
+    isFrozen: 1,
+    isFailed: 0,
+  }).where(eq(dayTable.id, dayId));
+}
+
+export async function removeFrozenDay(dayId: string) {
+  await db.update(dayTable).set({
+    isFrozen: 0,
+  }).where(eq(dayTable.id, dayId));
+}
+
+export async function addStreak(count: number) {
+  await db.insert(streakTable).values({ id: 1, streak: count })
+    .onConflictDoUpdate({
+      target: streakTable.id,
+      set: { streak: count }
+    });
+}
+
+export async function getStreakInfo() {
+  const streakResult = await db.select().from(streakTable).limit(1);
+  const streak = streakResult[0]?.streak ?? 0;
+
+  const days = await db.select().from(dayTable);
+
+  const streakDays = days.filter(d => d.isStreak === 1).map(d => d.id);
+  const frozenDays = days.filter(d => d.isFrozen === 1).map(d => d.id);
+  const failedDays = days.filter(d => d.isFailed === 1).map(d => d.id);
+
+  return {
+    streak,
+    streakDays,
+    frozenDays,
+    failedDays,
+  };
+}
+
+export async function clearStreakTable() {
+  await db.delete(streakTable).run();
 }
