@@ -8,8 +8,7 @@ import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import { useInitDb } from "./app/db/initializeDb";
 import RootNavigator from "./app/navigation/RootNavigator";
 import { configureNotificationHandler } from "./app/utils/Notification";
-import { setAppReady, widgetTaskHandler } from "./app/utils/WidgetHandler";
-import { eventBus } from "./app/utils/EventBus";
+import { widgetTaskHandler } from "./app/utils/WidgetHandler";
 
 registerRootComponent(App);
 registerWidgetTaskHandler(widgetTaskHandler);
@@ -50,13 +49,6 @@ const linking = {
 
 export default function App() {
   const { success, error } = useInitDb();
-
-  useEffect(() => {
-    if (success) {
-      setAppReady(true);
-      eventBus.emit('REFRESH_WIDGETS_FROM_APP');
-    }
-  }, [success]);
 
   if (error) {
     return (

@@ -45,3 +45,16 @@ export const streakTable = sqliteTable("streak_table", {
   id: int().primaryKey({ autoIncrement: true }),
   streak: int(),
 });
+
+export const aiChatSessionTable = sqliteTable("aiChatSession_table", {
+  id: int().primaryKey({ autoIncrement: true }),
+  systemRole: text().notNull(),
+  systemMessage: text().notNull(),
+});
+
+export const aiMessagesTable = sqliteTable("aiMessages_table", {
+  id: int().primaryKey({ autoIncrement: true }),
+  role: text().notNull(),
+  message: text().notNull(),
+  aiChatId: int().references(() => aiChatSessionTable.id),
+});

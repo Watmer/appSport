@@ -3,12 +3,15 @@ import { useNavigation } from "@react-navigation/native";
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { Alert, Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { RefreshControl } from "react-native-gesture-handler";
 import Dashboard from "../components/Dashboard";
 import MealCard from "../components/MealCard";
-import { exportAllInfoString, getStreakInfo, importAllInfoString } from "../db/DaySqlLiteCRUD";
+import { exportAllInfoString, getDayInfo, getStreakInfo, importAllInfoString, updateCompletedMealById } from "../db/DaySqlLiteCRUD";
+import { eventBus } from "../utils/EventBus";
+import { StreakDaysWidget, TodayMealsWidget } from "../utils/Widget";
+import { WidgetTaskHandlerProps } from "react-native-android-widget";
 
 const { width, height } = Dimensions.get("window");
 
@@ -43,14 +46,27 @@ export default function Home() {
     });
   }, [navigation]);
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     setRefreshTrigger((prev) => prev + 1);
     setRefreshing(false);
-  };
+  }, []);
 
   useEffect(() => {
     onRefresh();
+  }, []);
+
+  useEffect(() => {
+    const handler = () => {
+      onRefresh();
+      console.log("aa");
+    };
+
+    eventBus.on('REFRESH_HOME', handler);
+
+    return () => {
+      eventBus.off('REFRESH_HOME', handler);
+    };
   }, []);
 
   const renderMealCards = () => {

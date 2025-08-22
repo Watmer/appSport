@@ -16,6 +16,7 @@ import {
   View
 } from "react-native";
 import { getMealWithIngredients, updateMealById } from "../db/DaySqlLiteCRUD";
+import { eventBus } from "../utils/EventBus";
 
 const { width, height } = Dimensions.get("window");
 
@@ -76,6 +77,7 @@ export default function EditFoodScreen({ route }: { route: any }) {
       await updateMealById(mealId, newFood);
       Alert.alert("Comida guardada correctamente.");
       navigation.goBack();
+      eventBus.emit('REFRESH_HOME');
     } catch (error) {
       console.error("Error guardando comida:", error);
       Alert.alert("Error guardando comida.");

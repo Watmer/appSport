@@ -69,13 +69,11 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
         if (isStreak) {
           daysStreak.push(key);
           await addStreakDay(dayId);
-          await removeFailedDay(dayId);
         } else if (isFailed) {
           if (!frozenAdded) {
             frozen.push(key);
             frozenAdded = true;
             await addFrozenDay(dayId);
-            await removeFailedDay(dayId);
           } else {
             if (!isToday) {
               daysFailed.push(key);

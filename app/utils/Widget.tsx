@@ -178,8 +178,8 @@ function addDays(date: Date, offset: number) {
 
 export function StreakDaysWidget({ widgetInfo }: { widgetInfo?: any }) {
   const today = new Date();
-  const w = widgetInfo?.width ?? 200;
-  const h = widgetInfo?.height ?? 100;
+  const w = widgetInfo?.width ?? 400;
+  const h = widgetInfo?.height ?? 400;
 
   const { col, row } = getWidgetGrid(w, h);
   const { offsetArray, titleSize, fontSize, padding } = getLayoutConfig(col, row);
@@ -188,6 +188,8 @@ export function StreakDaysWidget({ widgetInfo }: { widgetInfo?: any }) {
   const frozenDays = widgetInfo?.streakInfo?.frozenDays ?? [];
   const failedDays = widgetInfo?.streakInfo?.failedDays ?? [];
   const streak = widgetInfo?.streakInfo?.streak ?? 0;
+
+  console.log("b", widgetInfo);
 
   return (
     <OverlapWidget
@@ -233,6 +235,7 @@ export function StreakDaysWidget({ widgetInfo }: { widgetInfo?: any }) {
             const day = addDays(today, offset);
             const key = `dayInfo:${day.getDate()}-${day.getMonth() + 1}-${day.getFullYear()}`;
             let color = "#3C3C3C";
+
             if (offset === 0) color = "#ffaa00";
             else if (streakDays.includes(key)) color = "#4673c8";
             else if (frozenDays.includes(key)) color = "#50E1FF";

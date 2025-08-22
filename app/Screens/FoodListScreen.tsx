@@ -5,6 +5,7 @@ import { Alert, Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacit
 import { RefreshControl } from "react-native-gesture-handler";
 import MealCard from "../components/MealCard";
 import { getDayInfo, setDayInfo, swapDayInfo } from "../db/DaySqlLiteCRUD";
+import { eventBus } from "../utils/EventBus";
 
 const { width, height } = Dimensions.get("window");
 
@@ -151,6 +152,8 @@ export default function FoodListScreen({ route }: { route: any }) {
         await setDayInfo(`dayInfo:${dateKey}`, filteredMeals);
       }
 
+      eventBus.emit('REFRESH_HOME');
+
       Alert.alert("Comidas repetidas correctamente.");
     } catch (error) {
       console.error("Error repitiendo comidas:", error);
@@ -162,6 +165,7 @@ export default function FoodListScreen({ route }: { route: any }) {
     try {
       await swapDayInfo(keyToUse, `dayInfo:${selectedDateKey}`);
       onRefresh();
+      eventBus.emit('REFRESH_HOME');
 
       Alert.alert("Comidas intercambiadas correctamente.");
     } catch (error) {

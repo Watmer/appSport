@@ -3,6 +3,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useEffect, useLayoutEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { addRecepy, getAllMealsInRecepys, getAllRecepys, removeRecepy } from "../db/DaySqlLiteCRUD";
+import { eventBus } from "../utils/EventBus";
 
 interface Ingredient {
   ingName: string;
@@ -57,6 +58,7 @@ export default function RecepyScreen({ route }: { route: any }) {
       }
       const updated = await getAllRecepys();
       setRecepysArray(updated || []);
+      eventBus.emit('REFRESH_HOME');
     } catch (err) {
       console.error("Error toggling recepy:", err);
     }

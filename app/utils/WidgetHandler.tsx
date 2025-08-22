@@ -2,18 +2,6 @@ import React from 'react';
 import type { WidgetTaskHandlerProps } from 'react-native-android-widget';
 import { getDayInfo, getStreakInfo, updateCompletedMealById } from '../db/DaySqlLiteCRUD';
 import { StreakDaysWidget, TodayMealsWidget, } from './Widget';
-import { eventBus } from './EventBus';
-
-const nameToWidget = {
-  TodayMeals: TodayMealsWidget,
-  StreakDays: StreakDaysWidget,
-};
-
-let appReady = false;
-
-export function setAppReady(value: boolean) {
-  appReady = value;
-}
 
 export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
   const { widgetName } = props.widgetInfo;
@@ -39,16 +27,6 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
     await updateCompletedMealById(mealId, mark);
     await refreshWidget("TodayMeals");
   }
-
-  eventBus.on('REFRESH_STREAKDAYS_WIDGET', async () => {
-    await refreshWidget("StreakDays");
-
-  });
-
-  eventBus.on('REFRESH_WIDGETS_FROM_APP', async () => {
-    await refreshWidget("StreakDays");
-    await refreshWidget("TodayMeals");
-  });
 
   switch (props.widgetAction) {
     case 'WIDGET_ADDED':

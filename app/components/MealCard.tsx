@@ -6,6 +6,7 @@ import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-nati
 import { requestWidgetUpdate } from "react-native-android-widget";
 import { addRecepy, getAllRecepys, getDayInfo, removeRecepy, updateMealById } from "../db/DaySqlLiteCRUD";
 import { TodayMealsWidget } from "../utils/Widget";
+import { eventBus } from "../utils/EventBus";
 
 const { width, height } = Dimensions.get("window");
 
@@ -84,6 +85,7 @@ export default function MealCard({ dayInfoKey, refreshTrigger, isTodayMeal }: Me
     });
 
     setMealsArray(updatedMeals);
+    eventBus.emit('REFRESH_HOME');
 
     if (isTodayMeal) {
       updateWidgetInfo();
@@ -105,6 +107,7 @@ export default function MealCard({ dayInfoKey, refreshTrigger, isTodayMeal }: Me
       await addRecepy(mealId);
     }
     loadData();
+    eventBus.emit('REFRESH_HOME');
   };
 
   const renderMealGroup = (title: string, items: MealInfo[]) => (

@@ -16,6 +16,7 @@ import {
   View
 } from "react-native";
 import { addMealWithIngredients } from "../db/DaySqlLiteCRUD";
+import { eventBus } from "../utils/EventBus";
 
 const { width, height } = Dimensions.get("window");
 
@@ -57,6 +58,7 @@ export default function AddFoodScreen({ route }: { route: any }) {
 
       Alert.alert("Comida guardada correctamente.");
       navigation.goBack();
+      eventBus.emit('REFRESH_HOME');
     } catch (error) {
       console.error("Error guardando comida:", error);
       Alert.alert("Error guardando comida.");

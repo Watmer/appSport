@@ -330,8 +330,9 @@ export async function getAllFailedDays() {
 
 export async function addFailedDay(dayId: string) {
   await db.update(dayTable).set({
-    isFrozen: 0,
     isFailed: 1,
+    isFrozen: 0,
+    isStreak: 0,
   }).where(eq(dayTable.id, dayId));
 }
 
@@ -359,6 +360,7 @@ export async function addFrozenDay(dayId: string) {
   await db.update(dayTable).set({
     isFrozen: 1,
     isFailed: 0,
+    isStreak: 0,
   }).where(eq(dayTable.id, dayId));
 }
 

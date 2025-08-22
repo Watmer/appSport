@@ -227,6 +227,9 @@ export default function TimerScreen() {
       loadTimers();
     };
 
+    eventBus.on('REFRESH_STREAKDAYS_WIDGET', () => console.log("c"));
+    eventBus.off('REFRESH_STREAKDAYS_WIDGET', () => console.log("d"));
+
     eventBus.on('timersUpdated', handler);
 
     return () => {

@@ -3,6 +3,7 @@ import { useNavigation } from "@react-navigation/native";
 import { useEffect, useLayoutEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { getDayInfo, removeMealById } from "../db/DaySqlLiteCRUD";
+import { eventBus } from "../utils/EventBus";
 
 export default function FoodDetailScreen({ route }: { route: any }) {
   const { dayInfoKey, mealType } = route.params || {};
@@ -71,6 +72,7 @@ export default function FoodDetailScreen({ route }: { route: any }) {
     } catch (err) {
       console.error("Error deleting meal:", err);
     }
+    eventBus.emit('REFRESH_HOME');
   };
 
   return (
