@@ -3,7 +3,7 @@ import { AzureOpenAI } from "openai";
 
 dotenv.config();
 
-export async function configureAiChat() {
+export async function main() {
   // Configuración
   const endpoint =
     process.env["AZURE_OPENAI_ENDPOINT"] ||
@@ -44,6 +44,6 @@ export async function configureAiChat() {
   console.log(JSON.stringify(result, null, 2));
 }
 
-configureAiChat().catch((err) => {
+main().catch((err) => {
   console.error("The sample encountered an error:", err);
 });

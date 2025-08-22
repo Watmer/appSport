@@ -6,6 +6,7 @@ import Home from "../Screens/Home";
 import ShopListScreen from "../Screens/ShopListScreen";
 import TimerScreen from "../Screens/TimerScreen";
 import { PreviewWidgets } from "../Screens/PreviewWidgets";
+import AiChatScreen from "../Screens/AiChatScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -44,6 +45,11 @@ export default function TabsNavigator() {
       <Tab.Screen name="PreviewWidgets" component={PreviewWidgets} options={{
         title: "Preview Widgets", tabBarIcon: ({ color, focused }) => (
           <MaterialCommunityIcons name={focused ? 'widgets' : 'widgets-outline'} color={color} size={25} />
+        ),
+      }} />
+      <Tab.Screen name="AiChatScreen" component={AiChatScreen} options={{
+        title: "AI Chat", tabBarIcon: ({ color, focused }) => (
+          <MaterialCommunityIcons name={focused ? 'chat' : 'chat-outline'} color={color} size={25} />
         ),
       }} />
     </Tab.Navigator>

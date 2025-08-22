@@ -10,6 +10,7 @@ import RecepyScreen from "../Screens/RecepyScreen";
 import ShopListScreen from "../Screens/ShopListScreen";
 import TimerScreen from "../Screens/TimerScreen";
 import TabsNavigator from "./TabsNavigator";
+import AiChatScreen from "../Screens/AiChatScreen";
 
 const RootStack = createStackNavigator();
 
@@ -47,6 +48,8 @@ export default function RootNavigator() {
         options={{ title: "Meal Detail" }} />
       <RootStack.Screen name="PreviewWidgets" component={PreviewWidgets}
         options={{ title: "Preview Widgets" }} />
+      <RootStack.Screen name="AiChatScreen" component={AiChatScreen}
+        options={{ title: "AI Chat" }} />
     </RootStack.Navigator>
   );
 }

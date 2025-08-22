@@ -1,6 +1,6 @@
 import { desc, eq } from "drizzle-orm";
 import { db } from "./db";
-import { dayTable, ingredientsTable, mealTable, savedRecepyTable, streakTable } from "./schema";
+import { aiChatSessionTable, aiMessagesTable, dayTable, ingredientsTable, mealTable, savedRecepyTable, streakTable } from "./schema";
 
 // Obtener info de un día (día + comidas + ingredientes)
 export async function getDayInfo(dayId: string) {
@@ -398,4 +398,50 @@ export async function getStreakInfo() {
 
 export async function clearStreakTable() {
   await db.delete(streakTable).run();
+}
+
+export async function createAiSession() {
+  const [initialMessage] = await db.insert(aiChatSessionTable).values({
+    systemRole: 'system',
+    systemMessage: "Estoy siguiendo una dieta, y quiero que en base a la receta que tengo que seguir hoy, me propongas alternativas con valores nutricionales (calorías, proteínas, grasas e hidratos de carbono) similares. Estas alternativas deben tener en cuenta los ingredientes que te indicaré.\nIndica una alternativa de cada vez, y pregunta si  se quiere alguna otra sugerencia. Si no se indican ingredientes de base, propón tú los que consideres, y pregunta si se desea especificar alguno en concreto."
+  }).returning();
+  return initialMessage.id;
+}
+
+export async function addUserMessage(chatId: number, message: string) {
+  await db.insert(aiMessagesTable).values({
+    aiChatId: chatId,
+    role: 'user',
+    message: message,
+  })
+}
+
+export async function addAiResponse(chatId: number, response: string) {
+  await db.insert(aiMessagesTable).values({
+    aiChatId: chatId,
+    role: 'assistant',
+    message: response,
+  })
+}
+export async function getAiSessionMessages(id: number) {
+  const systemMessage = await db
+    .select({
+      role: aiChatSessionTable.systemRole,
+      content: aiChatSessionTable.systemMessage,
+    })
+    .from(aiChatSessionTable)
+    .where(eq(aiChatSessionTable.id, id));
+
+  const messages = await db
+    .select({
+      role: aiMessagesTable.role,
+      content: aiMessagesTable.message,
+    })
+    .from(aiMessagesTable)
+    .where(eq(aiMessagesTable.aiChatId, id));
+
+  return [...systemMessage, ...messages].map(message => ({
+    role: message.role as "system" | "user" | "assistant",
+    content: message.content,
+  }));
 }
