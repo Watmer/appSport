@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { addFailedDay, addFrozenDay, addStreak, addStreakDay, getDayInfo, getLastFailedDay, getOrderedDays, removeFailedDay } from "../db/DaySqlLiteCRUD";
+import { addFailedDay, addFrozenDay, addStreak, addStreakDay, getDayInfo, getLastFailedDay, getOrderedDays, removeFailedDay, removeFrozenDay, removeStreakDay } from "../db/DaySqlLiteCRUD";
 import { eventBus } from "../utils/EventBus";
 
 const { width, height } = Dimensions.get("window");
@@ -59,7 +59,7 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
     for (const week of weeks) {
       let frozenAdded = false;
 
-      for (const { day, month, year, key, isToday } of week) {
+      for (const {key, isToday } of week) {
         const dayId = `dayInfo:${key}`;
         const dayData = await getDayInfo(dayId);
 
@@ -80,6 +80,10 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
               await addFailedDay(dayId);
             }
           }
+        } else {
+          await removeFailedDay(dayId);
+          await removeStreakDay(dayId);
+          await removeFrozenDay(dayId);
         }
       }
     }

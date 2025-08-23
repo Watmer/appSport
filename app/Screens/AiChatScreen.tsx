@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
   },
   aiResponses: {
     backgroundColor: "rgba(80, 80, 80, 1)",
-    width: "70%",
+    maxWidth: "70%",
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderRadius: 10,
@@ -131,8 +131,8 @@ const styles = StyleSheet.create({
     marginVertical: 5,
   },
   userMessages: {
-    backgroundColor: "rgba(50, 50, 50, 1)",
-    width: "70%",
+    backgroundColor: "rgba(100, 0, 200, 1)",
+    maxWidth: "70%",
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderRadius: 10,
