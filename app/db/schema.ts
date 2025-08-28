@@ -50,6 +50,7 @@ export const aiChatSessionTable = sqliteTable("aiChatSession_table", {
   id: int().primaryKey({ autoIncrement: true }),
   systemRole: text().notNull(),
   systemMessage: text().notNull(),
+  createdAt: int(),
 });
 
 export const aiMessagesTable = sqliteTable("aiMessages_table", {

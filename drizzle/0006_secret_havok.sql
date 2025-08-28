@@ -1,1 +1,0 @@
-ALTER TABLE `aiMessages_table` ADD `jsonParsed` text;

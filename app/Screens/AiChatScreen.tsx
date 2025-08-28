@@ -15,7 +15,7 @@ export default function AiChatScreen() {
   const [currentIdChat, setCurrentIdChat] = useState(-1);
   const [chatMessages, setChatMessages] = useState<{ role: string, content: string }[]>([]);
   const [inputMessage, setInputMessage] = useState('');
-  const [storedChats, setStoredChats] = useState<{ id: number }[]>([]);
+  const [storedChats, setStoredChats] = useState<{ id: number, createdAt: number | null, systemRole: string, systemMessage: string }[]>([]);
   const [showingChats, setShowingChats] = useState(false);
 
   useLayoutEffect(() => {
@@ -66,6 +66,9 @@ export default function AiChatScreen() {
     if (client) {
       await addUserMessage(currentIdChat, message);
       const sessionMessages = await getAiSessionMessages(currentIdChat);
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
 
       const result = await client.chat.completions.create({
         model: deployment,
@@ -123,7 +126,17 @@ export default function AiChatScreen() {
               setShowingChats(false);
             }}
           >
-            <Text style={{ color: "white" }}>Chat ID: {chat.id}</Text>
+            <Text style={{ color: "white" }}>{new Date(chat.createdAt ?? Date.now()).toLocaleString(
+              "default", {
+              year: 'numeric',
+              month: '2-digit',
+              day: '2-digit',
+              weekday: 'long',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit'
+            }
+            )}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -142,7 +155,7 @@ export default function AiChatScreen() {
           <ScrollView
             ref={scrollViewRef}
             style={styles.scrollContainer}>
-            {chatMessages.map((message, i) => (
+            {chatMessages.length > 0 ? (chatMessages.map((message, i) => (
               <View
                 key={i}
                 style={message.role === 'assistant' ? styles.aiResponses : styles.userMessages}
@@ -152,7 +165,11 @@ export default function AiChatScreen() {
                   selectionColor={"rgba(255, 170, 0, 0.5)"}
                   style={styles.messageText}>{message.content}</Text>
               </View>
-            ))}
+            ))) : (
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 50 }}>
+                <Text style={{ color: 'gray' }}>No hay mensajes aún. ¡Empieza la conversación!</Text>
+              </View>
+            )}
           </ScrollView>
 
           <View style={styles.writeMessageContainer}>

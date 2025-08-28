@@ -1,9 +1,106 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "9cd65eef-188c-4afe-9630-239a550ec332",
+  "id": "21453ae8-fa31-4041-8501-f1afff517dbd",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
+    "aiChatSession_table": {
+      "name": "aiChatSession_table",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "systemRole": {
+          "name": "systemRole",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "systemMessage": {
+          "name": "systemMessage",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "createdAt": {
+          "name": "createdAt",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "aiMessages_table": {
+      "name": "aiMessages_table",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "role": {
+          "name": "role",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "message": {
+          "name": "message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "jsonParsed": {
+          "name": "jsonParsed",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "aiChatId": {
+          "name": "aiChatId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "aiMessages_table_aiChatId_aiChatSession_table_id_fk": {
+          "name": "aiMessages_table_aiChatId_aiChatSession_table_id_fk",
+          "tableFrom": "aiMessages_table",
+          "tableTo": "aiChatSession_table",
+          "columnsFrom": [
+            "aiChatId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "day_table": {
       "name": "day_table",
       "columns": {
@@ -13,6 +110,30 @@
           "primaryKey": true,
           "notNull": true,
           "autoincrement": false
+        },
+        "isFailed": {
+          "name": "isFailed",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": 0
+        },
+        "isFrozen": {
+          "name": "isFrozen",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": 0
+        },
+        "isStreak": {
+          "name": "isStreak",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": 0
         }
       },
       "indexes": {},
@@ -153,6 +274,44 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
+    "savedRecepy_table": {
+      "name": "savedRecepy_table",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "mealId": {
+          "name": "mealId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "savedRecepy_table_mealId_meal_table_id_fk": {
+          "name": "savedRecepy_table_mealId_meal_table_id_fk",
+          "tableFrom": "savedRecepy_table",
+          "tableTo": "meal_table",
+          "columnsFrom": [
+            "mealId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "shopItem_table": {
       "name": "shopItem_table",
       "columns": {
@@ -214,6 +373,30 @@
           "primaryKey": true,
           "notNull": true,
           "autoincrement": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "streak_table": {
+      "name": "streak_table",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "streak": {
+          "name": "streak",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
         }
       },
       "indexes": {},

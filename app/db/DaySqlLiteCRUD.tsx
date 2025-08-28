@@ -410,6 +410,7 @@ export async function createAiSession() {
   );
 
   const [initialMessage] = await db.insert(aiChatSessionTable).values({
+    createdAt: Date.now(),
     systemRole: 'system',
     systemMessage: `
 Eres un asistente nutricional.
