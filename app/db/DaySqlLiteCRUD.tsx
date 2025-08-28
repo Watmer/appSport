@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, notExists } from "drizzle-orm";
 import { db } from "./db";
 import { aiChatSessionTable, aiMessagesTable, dayTable, ingredientsTable, mealTable, savedRecepyTable, streakTable } from "./schema";
 
@@ -401,9 +401,72 @@ export async function clearStreakTable() {
 }
 
 export async function createAiSession() {
+  await db.delete(aiChatSessionTable).where(
+    notExists(
+      db.select()
+        .from(aiMessagesTable)
+        .where(eq(aiMessagesTable.aiChatId, aiChatSessionTable.id))
+    )
+  );
+
   const [initialMessage] = await db.insert(aiChatSessionTable).values({
     systemRole: 'system',
-    systemMessage: "Estoy siguiendo una dieta, y quiero que en base a la receta que tengo que seguir hoy, me propongas alternativas con valores nutricionales (calorías, proteínas, grasas e hidratos de carbono) similares. Estas alternativas deben tener en cuenta los ingredientes que te indicaré.\nIndica una alternativa de cada vez, y pregunta si  se quiere alguna otra sugerencia. Si no se indican ingredientes de base, propón tú los que consideres, y pregunta si se desea especificar alguno en concreto."
+    systemMessage: `
+Eres un asistente nutricional.
+
+Objetivo: 
+- A partir de una receta indicada por el usuario, sugiere alternativas con valores nutricionales (calorías, proteínas, grasas e hidratos de carbono) similares.  
+- Si no se indican ingredientes base, proponlos tú. Pregunta si el usuario quiere concretar alguno.  
+- El usuario puede darte ingredientes disponibles o prohibidos: respétalo en las siguientes sugerencias.  
+
+Reglas de salida:
+1. Cada respuesta debe contener **dos partes diferenciadas**:
+   - **[RESPUESTA]** → Texto normal para el usuario.  
+   - **[JSON]** → Objeto JSON con la siguiente estructura:
+     [JSON]
+     {
+       "meal_table": {
+         "meal": string, (Desayuno, Almuerzo, Comida, Merienda, Cena) (pero no uses Almueerzo a menos que el usuario lo pida)
+         "foodName": string,
+         "time": number,
+         "completed": 0 | 1,
+         "recepy": string,
+         "comments": string
+       },
+       "ingredients_table": [
+         {
+           "ingName": string,
+           "quantity": string
+         }
+       ]
+     }
+     
+2. Si algún dato no está disponible, escribe **null** en ese valor.  
+3. **No mezcles** el JSON con el texto. El bloque [RESPUESTA] es solo texto humano, y el bloque [JSON] es solo el objeto JSON.  
+4. No uses negritas, cursivas, ni ningún otro formato en el texto.
+5. El bloque [JSON] debe ser siempre un JSON válido, sin comas finales ni errores de sintaxis.
+6. No incluyas el [JSON] si esta vacio, es decir que los campos esten todos a null o valores como 0, en ese caso solo responde con [RESPUESTA].
+
+Ejemplo de salida correcta:
+[RESPUESTA]  
+Una alternativa puede ser una ensalada de garbanzos con verduras frescas. Es rica en proteínas y baja en grasas (ademas, recuerda tambien indicar los valores nutricionales). ¿Quieres que te sugiera otra opción?
+
+[JSON]  
+{
+  "meal_table": {
+    "meal": "Comida",
+    "foodName": "Ensalada de garbanzos",
+    "time": 1300,
+    "completed": 0,
+    "recepy": "Mezclar garbanzos con verduras frescas",
+    "comments": "Opción ligera y rica en proteínas"
+  },
+  "ingredients_table": [
+    { "ingName": "Garbanzos cocidos", "quantity": "150g" },
+    { "ingName": "Tomate", "quantity": "100g" },
+    { "ingName": "Pepino", "quantity": "80g" }
+  ]
+}`,
   }).returning();
   return initialMessage.id;
 }
@@ -417,12 +480,21 @@ export async function addUserMessage(chatId: number, message: string) {
 }
 
 export async function addAiResponse(chatId: number, response: string) {
+  const responseText = response.split('[JSON]')[0]?.replace('[RESPUESTA]', '').trim() || response;
+  const responseJson = response.split('[JSON]')[1]?.trim() || null;
+
+  console.log("\nAI Response Text:", responseText);
+  console.log("\nAI Response JSON:", responseJson);
+  console.log("\nFull AI Response:", response);
+
   await db.insert(aiMessagesTable).values({
     aiChatId: chatId,
     role: 'assistant',
-    message: response,
+    message: responseText,
+    jsonParsed: responseJson,
   })
 }
+
 export async function getAiSessionMessages(id: number) {
   const systemMessage = await db
     .select({
@@ -444,4 +516,10 @@ export async function getAiSessionMessages(id: number) {
     role: message.role as "system" | "user" | "assistant",
     content: message.content,
   }));
+}
+
+export async function getAllAiSessions() {
+  const sessions = await db.select().from(aiChatSessionTable).orderBy(desc(aiChatSessionTable.id));
+
+  return sessions || [];
 }

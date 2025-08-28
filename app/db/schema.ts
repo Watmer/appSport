@@ -56,5 +56,6 @@ export const aiMessagesTable = sqliteTable("aiMessages_table", {
   id: int().primaryKey({ autoIncrement: true }),
   role: text().notNull(),
   message: text().notNull(),
+  jsonParsed: text(),
   aiChatId: int().references(() => aiChatSessionTable.id),
 });

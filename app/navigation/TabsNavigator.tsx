@@ -2,11 +2,11 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 
 import { useNavigation } from "@react-navigation/native";
+import AiChatScreen from "../Screens/AiChatScreen";
 import Home from "../Screens/Home";
+import { PreviewWidgets } from "../Screens/PreviewWidgets";
 import ShopListScreen from "../Screens/ShopListScreen";
 import TimerScreen from "../Screens/TimerScreen";
-import { PreviewWidgets } from "../Screens/PreviewWidgets";
-import AiChatScreen from "../Screens/AiChatScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -49,7 +49,7 @@ export default function TabsNavigator() {
       }} />
       <Tab.Screen name="AiChatScreen" component={AiChatScreen} options={{
         title: "AI Chat", tabBarIcon: ({ color, focused }) => (
-          <MaterialCommunityIcons name={focused ? 'chat' : 'chat-outline'} color={color} size={25} />
+          <MaterialCommunityIcons name={focused ? 'message-text' : 'message-text-outline'} color={color} size={25} />
         ),
       }} />
     </Tab.Navigator>
