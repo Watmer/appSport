@@ -56,7 +56,7 @@ export default function MealCard({ dayInfoKey, refreshTrigger, isTodayMeal }: Me
     setRecepysArray(await getAllRecepys());
 
     if (isTodayMeal) {
-      updateWidgetInfo();
+      await updateWidgetInfo();
     }
   };
 

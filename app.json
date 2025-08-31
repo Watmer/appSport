@@ -1,24 +1,24 @@
 {
   "expo": {
-    "name": "SportAppDev",
+    "name": "SportApp",
     "slug": "SportApp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "sportappdev",
+    "scheme": "sportapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash-icon-bordered.png",
       "resizeMode": "contain",
-      "backgroundColor": "#00a000"
+      "backgroundColor": "#ffaa00"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.SportAppDev"
+      "bundleIdentifier": "com.anonymous.SportApp"
     },
     "android": {
-      "package": "com.anonymous.SportAppDev",
+      "package": "com.anonymous.SportApp",
       "permissions": [
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
@@ -28,7 +28,7 @@
       ],
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon/foreground.png",
-        "backgroundColor": "#00a000"
+        "backgroundColor": "#ffaa00"
       },
       "edgeToEdgeEnabled": true,
       "enableBackgroundNotification": true,
@@ -71,8 +71,8 @@
               "name": "TodayMeals",
               "label": "Meals Widget",
               "description": "Comidas de hoy",
-              "minWidth": "74dp",
-              "minHeight": "74dp",
+              "minWidth": "10dp",
+              "minHeight": "10dp",
               "targetCellWidth": 4,
               "targetCellHeight": 2,
               "resizeMode": "horizontal|vertical",
@@ -83,12 +83,12 @@
               "name": "StreakDays",
               "label": "Streak Widget",
               "description": "Días de racha",
-              "minWidth": "74dp",
-              "minHeight": "74dp",
+              "minWidth": "10dp",
+              "minHeight": "10dp",
               "targetCellWidth": 4,
               "targetCellHeight": 2,
               "resizeMode": "horizontal|vertical",
-              "updatePeriodMillis": 0,
+              "updatePeriodMillis": 1800000,
               "widgetFeatures": "reconfigurable|configuration_optional"
             }
           ]

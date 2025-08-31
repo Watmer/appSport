@@ -29,8 +29,8 @@
         <action android:name="android.intent.action.VIEW"/>
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
-        <data android:scheme="sportappdev"/>
-        <data android:scheme="com.anonymous.SportAppDev"/>
+        <data android:scheme="sportapp"/>
+        <data android:scheme="com.anonymous.SportApp"/>
         <data android:scheme="exp+sportapp"/>
       </intent-filter>
     </activity>
@@ -42,14 +42,14 @@
     <receiver android:name=".widget.TodayMeals" android:exported="false" android:label="Meals Widget">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
-        <action android:name="com.anonymous.SportAppDev.WIDGET_CLICK"/>
+        <action android:name="com.anonymous.SportApp.WIDGET_CLICK"/>
       </intent-filter>
       <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_todaymeals"/>
     </receiver>
     <receiver android:name=".widget.StreakDays" android:exported="false" android:label="Streak Widget">
       <intent-filter>
         <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
-        <action android:name="com.anonymous.SportAppDev.WIDGET_CLICK"/>
+        <action android:name="com.anonymous.SportApp.WIDGET_CLICK"/>
       </intent-filter>
       <meta-data android:name="android.appwidget.provider" android:resource="@xml/widgetprovider_streakdays"/>
     </receiver>

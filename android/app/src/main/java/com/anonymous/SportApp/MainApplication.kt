@@ -1,4 +1,4 @@
-package com.anonymous.SportAppDev
+package com.anonymous.SportApp
 
 import android.app.Application
 import android.content.res.Configuration

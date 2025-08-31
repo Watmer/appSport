@@ -1,4 +1,4 @@
-package com.anonymous.SportAppDev;
+package com.anonymous.SportApp;
 
 import com.reactnativeandroidwidget.RNWidgetConfigurationActivity;
 

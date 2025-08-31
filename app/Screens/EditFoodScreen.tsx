@@ -204,7 +204,7 @@ export default function EditFoodScreen({ route }: { route: any }) {
                   />
                   <TouchableOpacity onPress={() => deleteIngredient(i)}>
                     <MaterialCommunityIcons
-                      name="delete"
+                      name="trash-can-outline"
                       size={24}
                       color="rgba(255, 50, 50, 1)"
                     />
@@ -282,14 +282,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 5,
     paddingHorizontal: 10,
-    marginBottom: 10,
     backgroundColor: "rgba(255, 255, 255, 0.9)",
     color: "black",
   },
   inputListGroup: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 10,
+    marginBottom: 20,
     gap: 10,
   },
   addButton: {

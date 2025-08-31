@@ -1,4 +1,4 @@
-package com.anonymous.SportAppDev
+package com.anonymous.SportApp
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build

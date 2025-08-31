@@ -12,6 +12,7 @@ import { exportAllInfoString, getDayInfo, getStreakInfo, importAllInfoString, up
 import { eventBus } from "../utils/EventBus";
 import { StreakDaysWidget, TodayMealsWidget } from "../utils/Widget";
 import { WidgetTaskHandlerProps } from "react-native-android-widget";
+import { StatusBar } from "react-native";
 
 const { width, height } = Dimensions.get("window");
 

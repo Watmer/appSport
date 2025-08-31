@@ -420,16 +420,16 @@ Objetivo:
 - Si no se indican ingredientes base, proponlos tú. Pregunta si el usuario quiere concretar alguno.  
 - El usuario puede darte ingredientes disponibles o prohibidos: respétalo en las siguientes sugerencias.  
 
-Reglas de salida:
+Formato de salida (OBLIGATORIO):
 1. Cada respuesta debe contener **dos partes diferenciadas**:
    - **[RESPUESTA]** → Texto normal para el usuario.  
    - **[JSON]** → Objeto JSON con la siguiente estructura:
      [JSON]
      {
        "meal_table": {
-         "meal": string, (Desayuno, Almuerzo, Comida, Merienda, Cena) (pero no uses Almueerzo a menos que el usuario lo pida)
+         "meal": string, // Desayuno, Almuerzo, Comida, Merienda, Cena. Pero no uses Almuerzo a menos que el usuario lo pida expresamente.
          "foodName": string,
-         "time": number,
+         "time": number, // en segundos
          "completed": 0 | 1,
          "recepy": string,
          "comments": string
@@ -441,35 +441,77 @@ Reglas de salida:
          }
        ]
      }
-     
-2. Si algún dato no está disponible, escribe **null** en ese valor.  
-3. **No mezcles** el JSON con el texto. El bloque [RESPUESTA] es solo texto humano, y el bloque [JSON] es solo el objeto JSON.  
-4. No uses negritas, cursivas, ni ningún otro formato en el texto.
-5. El bloque [JSON] debe ser siempre un JSON válido, sin comas finales ni errores de sintaxis.
-6. No incluyas el [JSON] si esta vacio, es decir que los campos esten todos a null o valores como 0, en ese caso solo responde con [RESPUESTA].
 
-Ejemplo de salida correcta:
+Reglas de salida: 
+- **No mezcles** el JSON con el texto. El bloque [RESPUESTA] es solo texto humano, y el bloque [JSON] es solo el objeto JSON.  
+- No uses negritas, cursivas, ni ningún otro formato en el texto.
+- El bloque [JSON] debe ser siempre un JSON válido, sin comas finales ni errores de sintaxis.
+- No incluyas el bloque [JSON] en los siguientes casos:  
+     a) Si no has generado ninguna receta (ej: solo consejos generales).  
+     b) Si los campos quedarían todos vacíos o en null.  
+     c) Si has propuesto varias recetas y todavía no sabes cuál elige el usuario. En ese caso solo escribe [RESPUESTA] y pregunta cuál prefiere.  
+- Si algún dato no está disponible, escribe **null** en ese valor. 
+- En la [RESPUESTA], si propones una receta, incluye en forma de lista los ingredientes necesarios y un resumen de sus valores nutricionales (calorías, proteínas, grasas e hidratos de carbono, y los que creas relevantes).
+
+Ejemplos de salida:
+
+Ejemplo 1 → El usuario pide una receta concreta:  
 [RESPUESTA]  
-Una alternativa puede ser una ensalada de garbanzos con verduras frescas. Es rica en proteínas y baja en grasas (ademas, recuerda tambien indicar los valores nutricionales). ¿Quieres que te sugiera otra opción?
+Una alternativa saludable puede ser una ensalada de garbanzos con verduras frescas. 
+Suele prepararse en unos 60 minutos y es una opción ligera, rica en proteínas y con bajo contenido en grasas.
+
+Ingredientes necesarios:
+- 150g de garbanzos cocidos
+- 100g de tomate
+- 80g de pepino
+Valor nutricional aproximado:
+- Calorías: 420 kcal
+- Proteínas: 21g
+- Grasas: 8g
+- Hidratos de carbono: 60g
+
+Para prepararla, mezcla los garbanzos cocidos con las verduras frescas y aliña al gusto.
+Si quieres, puedo sugerirte más recetas similares.
+¿Quieres que te sugiera alguna otra receta?  
 
 [JSON]  
 {
   "meal_table": {
     "meal": "Comida",
     "foodName": "Ensalada de garbanzos",
-    "time": 1300,
+    "time": 3600,
     "completed": 0,
-    "recepy": "Mezclar garbanzos con verduras frescas",
-    "comments": "Opción ligera y rica en proteínas"
+    "recepy": "Mezclar garbanzos cocidos con verduras frescas y aliñar al gusto",
+    "comments": "Opción ligera, rica en proteínas y con bajo contenido en grasas"
   },
   "ingredients_table": [
     { "ingName": "Garbanzos cocidos", "quantity": "150g" },
     { "ingName": "Tomate", "quantity": "100g" },
     { "ingName": "Pepino", "quantity": "80g" }
   ]
-}`,
+}
+
+Ejemplo 2 → El usuario no pide receta, solo consejos:  
+[RESPUESTA]  
+Claro, puedes mantener una buena hidratación, hacer ejercicio moderado 3 veces por semana y seguir una dieta variada. ¿Quieres que te sugiera algunas recetas saludables?
+`,
   }).returning();
   return initialMessage.id;
+}
+
+export async function deleteAiSession(id: number) {
+  await db.delete(aiChatSessionTable).where(eq(aiChatSessionTable.id, id));
+  await db.delete(aiMessagesTable).where(eq(aiMessagesTable.aiChatId, id));
+}
+
+export async function deleteSelectedMessages(messageIds: number[]) {
+  for (const messageId of messageIds) {
+    await db.delete(aiMessagesTable).where(eq(aiMessagesTable.id, messageId));
+  }
+}
+
+export async function deleteMessageById(messageId: number) {
+  await db.delete(aiMessagesTable).where(eq(aiMessagesTable.id, messageId));
 }
 
 export async function addUserMessage(chatId: number, message: string) {
@@ -499,6 +541,7 @@ export async function addAiResponse(chatId: number, response: string) {
 export async function getAiSessionMessages(id: number) {
   const systemMessage = await db
     .select({
+      id: aiChatSessionTable.id,
       role: aiChatSessionTable.systemRole,
       content: aiChatSessionTable.systemMessage,
     })
@@ -507,13 +550,15 @@ export async function getAiSessionMessages(id: number) {
 
   const messages = await db
     .select({
+      id: aiMessagesTable.id,
       role: aiMessagesTable.role,
       content: aiMessagesTable.message,
     })
     .from(aiMessagesTable)
-    .where(eq(aiMessagesTable.aiChatId, id));
+    .where(eq(aiMessagesTable.aiChatId, id)).orderBy((aiMessagesTable.id)).limit(100);
 
   return [...systemMessage, ...messages].map(message => ({
+    id: message.id,
     role: message.role as "system" | "user" | "assistant",
     content: message.content,
   }));

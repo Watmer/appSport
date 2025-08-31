@@ -1,28 +1,79 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import * as Clipboard from 'expo-clipboard';
 import { AzureOpenAI } from "openai";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { TextInput } from "react-native-gesture-handler";
-import { addAiResponse, addUserMessage, createAiSession, getAiSessionMessages, getAllAiSessions } from "../db/DaySqlLiteCRUD";
+import { Dimensions, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { addAiResponse, addUserMessage, createAiSession, deleteAiSession, deleteMessageById, getAiSessionMessages, getAllAiSessions } from "../db/DaySqlLiteCRUD";
+
+const { width, height } = Dimensions.get("window");
 
 export default function AiChatScreen() {
   const navigation = useNavigation();
   const scrollViewRef = useRef<ScrollView>(null);
 
   const [client, setClient] = useState<AzureOpenAI>();
-  const [deployment, setDeployment] = useState('');
+  const [deployment, setDeployment] = useState("");
   const [currentIdChat, setCurrentIdChat] = useState(-1);
-  const [chatMessages, setChatMessages] = useState<{ role: string, content: string }[]>([]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [storedChats, setStoredChats] = useState<{ id: number, createdAt: number | null, systemRole: string, systemMessage: string }[]>([]);
+  const [chatMessages, setChatMessages] = useState<{
+    id: number; role: string; content: string
+  }[]>([]);
+  const [inputMessage, setInputMessage] = useState("");
+  const [storedChats, setStoredChats] = useState<{
+    id: number;
+    createdAt: number | null;
+    systemRole: string;
+    systemMessage: string;
+  }[]>([]);
   const [showingChats, setShowingChats] = useState(false);
+  const [selectedMessageId, setSelectedMessageId] = useState(-1);
+  const [selectedMessages, setSelectedMessages] = useState<number[]>([])
+
+  const [selectingMessageContent, setSelectingMessageContent] = useState(false);
+  const [enabledSelection, setEnabledSelection] = useState(false);
+  const [enableSelectingMessages, setEnableSelectingMessages] = useState(false);
+  const [showSelectedMessageOptions, setShowSelectedMessageOptions] = useState(false);
+  const [showingChatOptions, setShowingChatOptions] = useState(false);
+
+  const [useRefPositionMessage, setUseRefPositionMessage] = useState({
+    x: 0,
+    y: 0,
+  });
+  const [useRefPositionChatOptions, setUseRefPositionChatOptions] = useState({
+    x: 0,
+    y: 0,
+  });
 
   useLayoutEffect(() => {
     navigation.setOptions({
       headerLeft: () => (
-        <TouchableOpacity style={{ marginLeft: 20 }} onPress={() => setShowingChats(!showingChats)}>
-          <MaterialCommunityIcons name="view-headline" size={30} color="rgba(255, 170, 0, 1)" />
+        <TouchableOpacity
+          style={{ marginLeft: 20 }}
+          onPress={() => setShowingChats(!showingChats)}
+        >
+          <MaterialCommunityIcons
+            name="view-headline"
+            size={30}
+            color="rgba(255, 170, 0, 1)"
+          />
+        </TouchableOpacity>
+      ),
+      headerRight: () => (
+        <TouchableOpacity
+          style={{ marginRight: 20 }}
+          onPress={(event) => {
+            setShowingChatOptions(true);
+            setUseRefPositionChatOptions({
+              x: event.nativeEvent.pageX,
+              y: event.nativeEvent.pageY,
+            });
+          }}
+        >
+          <MaterialCommunityIcons
+            name="dots-vertical"
+            size={30}
+            color="rgba(255, 170, 0, 1)"
+          />
         </TouchableOpacity>
       ),
     });
@@ -48,19 +99,43 @@ export default function AiChatScreen() {
     const sessionId = await createAiSession();
     setCurrentIdChat(sessionId);
     setClient(initClient);
-
-    setInputMessage('');
-  };
+  }
 
   async function fetchStoredChats() {
+    setChatMessages([]);
+    setInputMessage("");
+    setShowingChats(false);
+    setSelectedMessageId(-1);
+    setShowSelectedMessageOptions(false);
+    setSelectingMessageContent(false);
+    setEnabledSelection(false);
+    setEnableSelectingMessages(false);
+    setSelectedMessages([]);
+    setShowingChatOptions(false);
     const sessions = await getAllAiSessions();
     setStoredChats(sessions);
-  };
+  }
+
+  useEffect(() => {
+    configureAiChat();
+    fetchStoredChats();
+  }, []);
 
   useEffect(() => {
     fetchStoredChats();
-    configureAiChat();
-  }, []);
+  }, [currentIdChat]);
+
+  async function createNewSession() {
+    const newSessionId = await createAiSession();
+    setCurrentIdChat(newSessionId);
+    fetchStoredChats();
+  }
+
+  async function deleteSession() {
+    await deleteAiSession(currentIdChat);
+    await configureAiChat();
+    await fetchStoredChats();
+  }
 
   async function sendMessage(message: string) {
     if (client) {
@@ -83,7 +158,7 @@ export default function AiChatScreen() {
         await addAiResponse(currentIdChat, assistantMessage);
       }
 
-      const updatedMessages = (await getAiSessionMessages(currentIdChat)).filter(msg => msg.role !== 'system');
+      const updatedMessages = (await getAiSessionMessages(currentIdChat)).filter((msg) => msg.role !== "system");
       setChatMessages(updatedMessages);
       setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
@@ -92,17 +167,18 @@ export default function AiChatScreen() {
   }
 
   async function handleSendMessage() {
-    if (inputMessage !== '') {
+    if (inputMessage !== "") {
       sendMessage(inputMessage);
-      setInputMessage('');
-      const updatedMessages = (await getAiSessionMessages(currentIdChat)).filter(msg => msg.role !== 'system');
+      setInputMessage("");
+      const updatedMessages = (await getAiSessionMessages(currentIdChat)).filter((msg) => msg.role !== "system");
       setChatMessages(updatedMessages);
     }
   }
 
   const renderStoredChats = () => {
     return (
-      <ScrollView showsVerticalScrollIndicator={false}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
         style={{
           flex: 1,
           paddingTop: 5,
@@ -110,92 +186,412 @@ export default function AiChatScreen() {
           backgroundColor: "rgba(40, 40, 40, 1)",
         }}
       >
+        <TouchableOpacity
+          style={{
+            padding: 10,
+            borderRadius: 10,
+            marginVertical: 5,
+            alignContent: "center",
+            alignItems: "center",
+            backgroundColor: "rgba(100, 0, 200, 0.5)",
+          }}
+          onPress={async () => {
+            await createNewSession();
+          }}
+        >
+          <MaterialCommunityIcons
+            name="plus"
+            size={20}
+            color="rgba(255, 255, 255, 1)"
+          />
+        </TouchableOpacity>
         {storedChats.map((chat) => (
           <TouchableOpacity
             key={chat.id}
             style={{
-              backgroundColor: "rgba(70, 70, 70, 1)",
+              backgroundColor: chat.id === currentIdChat ?
+                "rgba(100, 0, 200, 1)" : "rgba(70, 70, 70, 1)",
               padding: 15,
               borderRadius: 10,
               marginVertical: 5,
             }}
             onPress={async () => {
               setCurrentIdChat(chat.id);
-              const messages = (await getAiSessionMessages(chat.id)).filter(msg => msg.role !== 'system');
+              const messages = (await getAiSessionMessages(chat.id)).filter(
+                (msg) => msg.role !== "system"
+              );
               setChatMessages(messages);
               setShowingChats(false);
             }}
           >
-            <Text style={{ color: "white" }}>{new Date(chat.createdAt ?? Date.now()).toLocaleString(
-              "default", {
-              year: 'numeric',
-              month: '2-digit',
-              day: '2-digit',
-              weekday: 'long',
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit'
-            }
-            )}</Text>
+            <Text style={{ color: "white" }}>
+              {new Date(chat.createdAt ?? Date.now()).toLocaleString("default", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                weekday: "long",
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+              })}
+            </Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
     );
   };
 
-  return (
-    <View style={styles.container}>
-      <View style={{
-        flex: 1,
-        justifyContent: 'space-between',
-        flexDirection: 'row',
-      }}>
-        {showingChats && renderStoredChats()}
-        <View style={{ flex: 1 }}>
-          <ScrollView
-            ref={scrollViewRef}
-            style={styles.scrollContainer}>
-            {chatMessages.length > 0 ? (chatMessages.map((message, i) => (
-              <View
-                key={i}
-                style={message.role === 'assistant' ? styles.aiResponses : styles.userMessages}
-              >
-                <Text
-                  selectable
-                  selectionColor={"rgba(255, 170, 0, 0.5)"}
-                  style={styles.messageText}>{message.content}</Text>
-              </View>
-            ))) : (
-              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 50 }}>
-                <Text style={{ color: 'gray' }}>No hay mensajes aún. ¡Empieza la conversación!</Text>
-              </View>
-            )}
-          </ScrollView>
+  const renderOptionsForSelectedMessage = () => {
+    const top = Math.min(useRefPositionMessage.y, height - 180);
+    const left = Math.min(useRefPositionMessage.x, width - 180);
 
-          <View style={styles.writeMessageContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Pregunta..."
-              placeholderTextColor="gray"
-              value={inputMessage}
-              onChangeText={setInputMessage}
-              onFocus={() => setShowingChats(false)}
-              selectionColor={"rgba(255, 170, 0, 0.5)"}
-              selectionHandleColor={"rgba(255, 170, 0, 1)"}
-              cursorColor={"rgba(255, 170, 0, 1)"}
-              multiline={true}
+    return (
+      <Modal
+        visible={showSelectedMessageOptions}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setShowSelectedMessageOptions(false);
+          setSelectedMessageId(-1);
+          setSelectingMessageContent(false);
+        }}
+      >
+        <TouchableOpacity
+          style={{ flex: 1 }}
+          activeOpacity={1}
+          onPress={() => {
+            setShowSelectedMessageOptions(false);
+            setSelectedMessageId(-1);
+            setSelectingMessageContent(false);
+          }}
+        >
+          <View
+            style={{
+              position: "absolute",
+              top,
+              left,
+              backgroundColor: "rgba(50,50,50,1)",
+              padding: 10,
+              borderRadius: 10,
+              width: 180,
+            }}
+          >
+            <TouchableOpacity
+              onPress={() => {
+                if (selectedMessageId !== -1) {
+                  const messageToCopy = chatMessages.find(
+                    (msg) => msg.id === selectedMessageId
+                  );
+                  if (messageToCopy) {
+                    Clipboard.setStringAsync(messageToCopy.content);
+                  }
+                }
+                setShowSelectedMessageOptions(false);
+                setSelectedMessageId(-1);
+                setSelectingMessageContent(false);
+              }}
+              style={{ padding: 5 }}
             >
-            </TextInput>
+              <Text style={{ color: "white" }}>Copiar</Text>
+            </TouchableOpacity>
 
             <TouchableOpacity
-              onPress={() => handleSendMessage()}
-              style={styles.sendButton}
+              onPress={() => {
+                setSelectingMessageContent(true);
+                setShowSelectedMessageOptions(false);
+                setEnabledSelection(true);
+              }}
+              style={{ padding: 5 }}
             >
-              <MaterialCommunityIcons name="send" size={20} color={"rgba(255, 255, 255, 1)"} />
+              <Text style={{ color: "white" }}>Seleccionar texto</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={async () => {
+                if (selectedMessageId !== -1) {
+                  await deleteMessageById(selectedMessageId);
+                  const updatedMessages = (await getAiSessionMessages(currentIdChat)).filter((msg) => msg.role !== "system");
+                  setChatMessages(updatedMessages);
+                }
+                setShowSelectedMessageOptions(false);
+                setSelectedMessageId(-1);
+                setSelectingMessageContent(false);
+              }}
+              style={{ padding: 5 }}
+            >
+              <Text style={{ color: "red" }}>Eliminar mensaje</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => {
+                setEnabledSelection(false);
+                setShowSelectedMessageOptions(false);
+                setSelectedMessageId(-1);
+                setSelectingMessageContent(false);
+              }}
+              style={{ padding: 5 }}
+            >
+              <Text style={{ color: "white" }}>Cancelar</Text>
             </TouchableOpacity>
           </View>
+        </TouchableOpacity>
+      </Modal>
+    );
+  };
+
+  const renderChatOptions = () => {
+    const left = Math.min(useRefPositionChatOptions.x, width - 180);
+
+    return (
+      <Modal
+        visible={showingChatOptions}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowingChatOptions(false)}
+      >
+        <TouchableOpacity
+          style={{ flex: 1 }}
+          activeOpacity={1}
+          onPress={() => setShowingChatOptions(false)}
+        >
+          <View
+            style={{
+              position: "absolute",
+              top: 50,
+              left,
+              backgroundColor: "rgba(40, 40, 40, 1)",
+              padding: 15,
+              borderRadius: 10,
+              width: 180,
+            }}
+          >
+            {!enableSelectingMessages ? (
+              <View>
+                <TouchableOpacity
+                  onPress={() => {
+                    if (enableSelectingMessages) {
+                      setSelectedMessages([]);
+                    }
+                    setEnableSelectingMessages(true);
+                    setShowingChatOptions(false);
+                    setSelectingMessageContent(false);
+                    setEnabledSelection(false);
+                    setShowSelectedMessageOptions(false);
+                    setSelectedMessageId(-1);
+                  }}
+                  style={{ padding: 5 }}
+                >
+                  <Text style={{ color: "white" }}>Seleccionar mensajes</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={async () => {
+                    await deleteSession();
+                    setShowingChatOptions(false);
+                  }}
+                  style={{ padding: 5 }}
+                >
+                  <Text style={{ color: "red" }}>Eliminar chat</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowingChatOptions(false);
+                  }}
+                  style={{ padding: 5 }}
+                >
+                  <Text style={{ color: "white" }}>Cancelar</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View>
+                <TouchableOpacity
+                  onPress={() => {
+                    if (selectedMessages.length > 0) {
+                      const messagesToCopy = chatMessages.filter(
+                        (msg) => selectedMessages.includes(msg.id)
+                      );
+                      if (messagesToCopy.length > 0) {
+                        const combinedContent = messagesToCopy.map(msg => `[${msg.role === 'assistant' ? 'Ai' : 'User'}] ` + msg.content).join('\n\n');
+                        Clipboard.setStringAsync(combinedContent);
+                      }
+                    }
+                    setEnableSelectingMessages(false);
+                    setSelectedMessages([]);
+                    setEnableSelectingMessages(false);
+                    setShowingChatOptions(false);
+                  }}
+                  style={{ padding: 5 }}
+                >
+                  <Text style={{ color: "white" }}>Copiar mensajes</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={async () => {
+                    if (selectedMessages.length > 0) {
+                      for (const messageId of selectedMessages) {
+                        await deleteMessageById(messageId);
+                      }
+                      const updatedMessages = (await getAiSessionMessages(currentIdChat)).filter((msg) => msg.role !== "system");
+                      setChatMessages(updatedMessages);
+                    }
+                    setSelectedMessages([]);
+                    setEnableSelectingMessages(false);
+                    setEnableSelectingMessages(false);
+                    setShowingChatOptions(false);
+                  }}
+                  style={{ padding: 5 }}
+                >
+                  <Text style={{ color: "red" }}>Eliminar mensajes</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedMessages([]);
+                    setEnableSelectingMessages(false);
+                    setEnableSelectingMessages(false);
+                    setShowingChatOptions(false);
+                  }}
+                  style={{ padding: 5 }}
+                >
+                  <Text style={{ color: "white" }}>Cancelar</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    );
+  };
+
+  const renderChatMessages = () => {
+    return (
+      <View style={{ flex: 1, }}>
+        <ScrollView ref={scrollViewRef} style={styles.scrollContainer}>
+          {chatMessages.length > 0 ? (
+            chatMessages.map((message, i) => (
+              <TouchableOpacity
+                key={i}
+                activeOpacity={enableSelectingMessages ? 0.5 : 1}
+                style={{
+                  backgroundColor: enableSelectingMessages && selectedMessages.includes(message.id) ? "rgba(250, 170, 0, 0.3)" : "transparent",
+                  paddingHorizontal: 15,
+                  flexDirection: "row",
+                  alignItems: "center",
+                  marginBottom: 1,
+                }}
+                onPress={() => {
+                  if (enableSelectingMessages) {
+                    if (selectedMessages.includes(message.id)) {
+                      setSelectedMessages(selectedMessages.filter(id => id !== message.id));
+                    } else {
+                      setSelectedMessages([...selectedMessages, message.id]);
+                    }
+                  }
+                }}
+              >
+                {enableSelectingMessages &&
+                  <MaterialCommunityIcons
+                    name={selectedMessages.includes(message.id) ? "checkbox-marked" : "checkbox-blank-outline"}
+                    size={24}
+                    color="rgba(255, 170, 0, 1)"
+                    style={{ position: "fixed", paddingRight: 15 }}
+                  />
+                }
+                <View style={{ flex: 1 }}>
+                  <TouchableOpacity
+                    activeOpacity={1}
+                    disabled={enableSelectingMessages}
+                    style={[message.role === "assistant" ?
+                      styles.aiResponses : styles.userMessages,
+                    message.id === selectedMessageId && { borderColor: "rgba(255, 170, 0, 0.7)" }]
+                    }
+                    onLongPress={(event) => {
+                      if (selectingMessageContent && message.id === selectedMessageId) {
+                        setSelectingMessageContent(false);
+                      } else {
+                        setEnabledSelection(false);
+                        setSelectedMessageId(message.id);
+                        setUseRefPositionMessage({
+                          x: event.nativeEvent.pageX,
+                          y: event.nativeEvent.pageY,
+                        });
+                        setShowSelectedMessageOptions(true);
+                        setSelectingMessageContent(false);
+                      }
+                    }}
+                  >
+                    <Text
+                      selectable={
+                        message.id === selectedMessageId && enabledSelection
+                      }
+                      selectionColor={"rgba(255, 170, 0, 0.5)"}
+                      style={styles.messageText}
+                    >
+                      {message.content}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View
+              style={{
+                flex: 1,
+                justifyContent: "center",
+                alignItems: "center",
+                marginTop: 50,
+              }}
+            >
+              <Text style={{ color: "gray" }}>
+                No hay mensajes aún. ¡Empieza la conversación!
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+
+        <View style={styles.writeMessageContainer}>
+          <TextInput
+            style={styles.input}
+            placeholder="Pregunta..."
+            placeholderTextColor="gray"
+            value={inputMessage}
+            onChangeText={setInputMessage}
+            onFocus={() => setShowingChats(false)}
+            selectionColor={"rgba(255, 170, 0, 0.5)"}
+            selectionHandleColor={"rgba(255, 170, 0, 1)"}
+            cursorColor={"rgba(255, 170, 0, 1)"}
+            multiline
+          />
+          <TouchableOpacity
+            onPress={handleSendMessage}
+            style={styles.sendButton}
+          >
+            <MaterialCommunityIcons
+              name="send"
+              size={20}
+              color={"rgba(255, 255, 255, 1)"}
+            />
+          </TouchableOpacity>
         </View>
       </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: "space-between",
+          flexDirection: "row",
+        }}
+      >
+        {showingChats && renderStoredChats()}
+        {renderChatMessages()}
+      </View>
+      {showSelectedMessageOptions && renderOptionsForSelectedMessage()}
+      {showingChatOptions && renderChatOptions()}
     </View>
   );
 }
@@ -208,7 +604,6 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flex: 1,
     marginTop: 5,
-    marginHorizontal: 15,
   },
   aiResponses: {
     backgroundColor: "rgba(80, 80, 80, 1)",
@@ -218,6 +613,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     borderBottomLeftRadius: 0,
     marginVertical: 5,
+    borderWidth: 2,
+    borderColor: "rgba(80, 80, 80, 1)",
   },
   userMessages: {
     backgroundColor: "rgba(100, 0, 200, 1)",
@@ -228,6 +625,8 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 0,
     marginVertical: 5,
     alignSelf: "flex-end",
+    borderWidth: 2,
+    borderColor: "rgba(100, 0, 200, 1)"
   },
   messageText: {
     color: "white",
@@ -240,7 +639,7 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     marginRight: 5,
     right: 0,
-    position: 'absolute',
+    position: 'fixed',
   },
   input: {
     maxHeight: 100,

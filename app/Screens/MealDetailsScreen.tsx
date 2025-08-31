@@ -15,7 +15,7 @@ export default function MealDetailScreen({ route }: { route: any }) {
       headerLeft: () => (
         <TouchableOpacity
           style={{ marginLeft: 20 }}
-          onPress={() => navigation.goBack()}
+          onPress={() => navigation.canGoBack() ? navigation.goBack() : null }
         >
           <MaterialCommunityIcons name="arrow-left" size={30} color="rgba(255, 170, 0, 1)" />
         </TouchableOpacity>
