@@ -117,6 +117,7 @@ export default function AiChatScreen() {
     setEnableSelectingMessages(false);
     setSelectedMessages([]);
     setShowingChatOptions(false);
+
     const sessions = await getAllAiSessions();
     setStoredChats(sessions);
   }
@@ -232,8 +233,7 @@ export default function AiChatScreen() {
           <TouchableOpacity
             key={chat.id}
             style={{
-              backgroundColor: chat.id === currentIdChat ?
-                "rgba(100, 0, 200, 1)" : "rgba(70, 70, 70, 1)",
+              backgroundColor: chat.id === currentIdChat ? "rgba(100, 0, 200, 1)" : "rgba(70, 70, 70, 1)",
               padding: 15,
               borderRadius: 10,
               marginVertical: 5,
@@ -265,8 +265,10 @@ export default function AiChatScreen() {
   };
 
   const renderOptionsForSelectedMessage = () => {
-    const top = Math.min(useRefPositionMessage.y, height - 180);
-    const left = Math.min(useRefPositionMessage.x, width - 180);
+    const width_size = 180;
+
+    const top = Math.min(useRefPositionMessage.y, height - width_size);
+    const left = Math.min(useRefPositionMessage.x, width - width_size);
 
     return (
       <Modal
@@ -296,7 +298,7 @@ export default function AiChatScreen() {
               backgroundColor: "rgba(40, 40, 40, 1)",
               padding: 10,
               borderRadius: 10,
-              width: 180,
+              width: width_size,
             }}
           >
             <TouchableOpacity
@@ -313,8 +315,9 @@ export default function AiChatScreen() {
                 setSelectedMessageId(-1);
                 setSelectingMessageContent(false);
               }}
-              style={{ padding: 5 }}
+              style={{ padding: 5, flexDirection: 'row', alignItems: 'center', maxWidth: "85%" }}
             >
+              <MaterialCommunityIcons style={{ paddingRight: 5 }} name="content-copy" size={20} color={"white"} />
               <Text style={{ color: "white" }}>Copiar</Text>
             </TouchableOpacity>
 
@@ -324,8 +327,9 @@ export default function AiChatScreen() {
                 setShowSelectedMessageOptions(false);
                 setEnabledSelection(true);
               }}
-              style={{ padding: 5 }}
+              style={{ padding: 5, flexDirection: 'row', alignItems: 'center', maxWidth: "85%" }}
             >
+              <MaterialCommunityIcons style={{ paddingRight: 5 }} name="selection" size={20} color={"white"} />
               <Text style={{ color: "white" }}>Seleccionar texto</Text>
             </TouchableOpacity>
 
@@ -340,8 +344,9 @@ export default function AiChatScreen() {
                 setSelectedMessageId(-1);
                 setSelectingMessageContent(false);
               }}
-              style={{ padding: 5 }}
+              style={{ padding: 5, flexDirection: 'row', alignItems: 'center', maxWidth: "85%" }}
             >
+              <MaterialCommunityIcons style={{ paddingRight: 5 }} name="trash-can-outline" size={20} color={"red"} />
               <Text style={{ color: "red" }}>Eliminar mensaje</Text>
             </TouchableOpacity>
           </View>
@@ -351,7 +356,8 @@ export default function AiChatScreen() {
   };
 
   const renderChatOptions = () => {
-    const left = Math.min(useRefPositionChatOptions.x, width - 180);
+    const width_size = 180;
+    const left = Math.min(useRefPositionChatOptions.x, width - width_size);
 
     return (
       <Modal
@@ -373,7 +379,7 @@ export default function AiChatScreen() {
               backgroundColor: "rgba(40, 40, 40, 1)",
               padding: 15,
               borderRadius: 10,
-              width: 180,
+              width: width_size,
             }}
           >
             {!enableSelectingMessages ? (
@@ -390,8 +396,9 @@ export default function AiChatScreen() {
                     setShowSelectedMessageOptions(false);
                     setSelectedMessageId(-1);
                   }}
-                  style={{ padding: 5 }}
+                  style={{ padding: 5, flexDirection: 'row', alignItems: 'center', maxWidth: "85%" }}
                 >
+                  <MaterialCommunityIcons style={{ paddingRight: 5 }} name="selection-multiple" size={20} color={"white"} />
                   <Text style={{ color: "white" }}>Seleccionar mensajes</Text>
                 </TouchableOpacity>
 
@@ -400,8 +407,9 @@ export default function AiChatScreen() {
                     await deleteSession();
                     setShowingChatOptions(false);
                   }}
-                  style={{ padding: 5 }}
+                  style={{ padding: 5, flexDirection: 'row', alignItems: 'center', maxWidth: "85%" }}
                 >
+                  <MaterialCommunityIcons style={{ paddingRight: 5 }} name="trash-can-outline" size={20} color={"red"} />
                   <Text style={{ color: "red" }}>Eliminar chat</Text>
                 </TouchableOpacity>
               </View>
@@ -423,8 +431,9 @@ export default function AiChatScreen() {
                     setEnableSelectingMessages(false);
                     setShowingChatOptions(false);
                   }}
-                  style={{ padding: 5 }}
+                  style={{ padding: 5, flexDirection: 'row', alignItems: 'center', maxWidth: "85%" }}
                 >
+                  <MaterialCommunityIcons style={{ paddingRight: 5 }} name="content-copy" size={20} color={"white"} />
                   <Text style={{ color: "white" }}>Copiar mensajes</Text>
                 </TouchableOpacity>
 
@@ -442,8 +451,9 @@ export default function AiChatScreen() {
                     setEnableSelectingMessages(false);
                     setShowingChatOptions(false);
                   }}
-                  style={{ padding: 5 }}
+                  style={{ padding: 5, flexDirection: 'row', alignItems: 'center', maxWidth: "85%" }}
                 >
+                  <MaterialCommunityIcons style={{ paddingRight: 5 }} name="trash-can-outline" size={20} color={"red"} />
                   <Text style={{ color: "red" }}>Eliminar mensajes</Text>
                 </TouchableOpacity>
 
@@ -454,8 +464,9 @@ export default function AiChatScreen() {
                     setEnableSelectingMessages(false);
                     setShowingChatOptions(false);
                   }}
-                  style={{ padding: 5 }}
+                  style={{ padding: 5, flexDirection: 'row', alignItems: 'center', maxWidth: "85%" }}
                 >
+                  <MaterialCommunityIcons style={{ paddingRight: 5 }} name="close" size={20} color={"white"} />
                   <Text style={{ color: "white" }}>Cancelar</Text>
                 </TouchableOpacity>
               </View>
@@ -470,6 +481,7 @@ export default function AiChatScreen() {
     return (
       <View style={{
         flexDirection: "row",
+        flexWrap: 'wrap',
         maxWidth: 250
       }}
       >
@@ -492,13 +504,15 @@ export default function AiChatScreen() {
               }
             }
           }}
-          style={{ padding: 5, marginRight: 10 }}
+          style={{ padding: 5, marginRight: 10, flexDirection: 'row', alignItems: 'center' }}
         >
           <MaterialCommunityIcons
-            name="card-bulleted"
+            name="text-box-plus-outline"
             size={20}
             color="rgba(255, 255, 255, 1)"
           />
+          <Text style={{ color: "white", paddingLeft: 5 }}>Añadir receta</Text>
+
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -515,13 +529,14 @@ export default function AiChatScreen() {
             console.log("j ", parsed);
             (navigation as any).navigate("MealDetailsScreen", { mealJson: parsed });
           }}
-          style={{ padding: 5 }}
+          style={{ padding: 5, flexDirection: 'row', alignItems: 'center' }}
         >
           <MaterialCommunityIcons
             name="view-dashboard-variant"
             size={20}
             color="rgba(255, 255, 255, 1)"
           />
+          <Text style={{ color: "white", paddingLeft: 5 }}>Ver</Text>
         </TouchableOpacity>
       </View>
     );
@@ -617,13 +632,12 @@ export default function AiChatScreen() {
           ) : (
             <View
               style={{
-                flex: 1,
-                justifyContent: "center",
                 alignItems: "center",
                 marginTop: 50,
+                paddingHorizontal: 5,
               }}
             >
-              <Text style={{ color: "gray" }}>
+              <Text style={{ color: "gray", textAlign:'center' }}>
                 No hay mensajes aún. ¡Empieza la conversación!
               </Text>
             </View>

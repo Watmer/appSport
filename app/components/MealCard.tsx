@@ -113,7 +113,7 @@ export default function MealCard({ dayInfoKey, refreshTrigger, isTodayMeal }: Me
   const renderMealGroup = (title: string, items: MealInfo[]) => (
     <View key={title} style={styles.cardContainer}>
       <View style={styles.groupCard}>
-        <TouchableOpacity onPress={() => handleCardPress(title)}>
+        <TouchableOpacity activeOpacity={0.6} onPress={() => handleCardPress(title)}>
           <View style={styles.groupCardTitle}>
             <Text style={styles.groupCardTitleText}>{title}</Text>
           </View>

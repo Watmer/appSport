@@ -33,7 +33,7 @@ export default function TimerScreen() {
     up: boolean;
     paused: boolean;
     sentNotif: boolean;
-    notificationId: string;
+    notificationId: string | null;
   }
 
   const [timers, setTimers] =
@@ -62,9 +62,7 @@ export default function TimerScreen() {
 
     let notificationId: string | null = null;
 
-    if (inputTotalSeconds >= 5) {
-      notificationId = await createNotifAsync(inputTitle, id, inputTotalSeconds);
-    }
+    notificationId = await createNotifAsync(inputTitle, id, inputTotalSeconds);
 
     const newTimer: Timer = {
       id,
@@ -76,7 +74,7 @@ export default function TimerScreen() {
       up: false,
       paused: false,
       sentNotif: false,
-      notificationId: notificationId ?? "",
+      notificationId: notificationId ?? null,
     };
 
     setTimers((prev) => [...prev, newTimer]);
@@ -110,7 +108,7 @@ export default function TimerScreen() {
       up: true,
       paused: false,
       sentNotif: false,
-      notificationId: "",
+      notificationId: null,
     };
 
     setTimers((prev) => [...prev, newCrono]);
@@ -151,7 +149,7 @@ export default function TimerScreen() {
       if (oldTimer?.notificationId) {
         await cancelNotifAsync(oldTimer.notificationId);
       }
-      let newNotificationId = "";
+      let newNotificationId = null;
       if (oldTimer?.paused) {
         newNotificationId = await createNotifAsync(oldTimer?.title, oldTimer?.id, oldTimer?.remaining);
       }
@@ -165,7 +163,7 @@ export default function TimerScreen() {
               remaining: newDuration,
               initialDuration: newDuration,
               startTime: now,
-              notificationId: newNotificationId ?? "",
+              notificationId: newNotificationId ?? null,
               sentNotif: false,
             }
             : timer
@@ -180,7 +178,7 @@ export default function TimerScreen() {
           remaining: newDuration,
           initialDuration: newDuration,
           startTime: now.toISOString(),
-          notificationId: newNotificationId ?? "",
+          notificationId: newNotificationId ?? null,
         })
       );
     }
@@ -226,10 +224,6 @@ export default function TimerScreen() {
     const handler = () => {
       loadTimers();
     };
-
-    eventBus.on('REFRESH_STREAKDAYS_WIDGET', () => console.log("c"));
-    eventBus.off('REFRESH_STREAKDAYS_WIDGET', () => console.log("d"));
-
     eventBus.on('timersUpdated', handler);
 
     return () => {
@@ -298,7 +292,7 @@ export default function TimerScreen() {
                   totalDuration: 60,
                   remaining: 60,
                   sentNotif: false,
-                  notificationId: newNotificationId ?? "",
+                  notificationId: newNotificationId ?? null,
                 }
                 : timer
             )
@@ -319,7 +313,7 @@ export default function TimerScreen() {
                   totalDuration: 300,
                   remaining: 300,
                   sentNotif: false,
-                  notificationId: newNotificationId ?? "",
+                  notificationId: newNotificationId ?? null,
                 }
                 : timer
             )
@@ -356,7 +350,11 @@ export default function TimerScreen() {
       visible={addingTimer}
       onRequestClose={() => setAddingTimer(false)}
     >
-      <View style={styles.modalContainer}>
+      <TouchableOpacity
+        activeOpacity={1}
+        onPress={() => setAddingTimer(false)}
+        style={styles.modalContainer}
+      >
         <View style={styles.modalView}>
           <Text style={styles.modalText}>Introduce el tiempo:</Text>
           <TextInput
@@ -424,7 +422,7 @@ export default function TimerScreen() {
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     </Modal>
   );
 
@@ -435,7 +433,11 @@ export default function TimerScreen() {
       visible={addingCrono}
       onRequestClose={() => setAddingCrono(false)}
     >
-      <View style={styles.modalContainer}>
+      <TouchableOpacity
+        activeOpacity={1}
+        onPress={() => setAddingCrono(false)}
+        style={styles.modalContainer}
+      >
         <View style={styles.modalView}>
           <Text style={styles.modalText}>Introduce el tiempo:</Text>
           <TextInput
@@ -469,7 +471,7 @@ export default function TimerScreen() {
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </TouchableOpacity>
     </Modal>
   );
 
@@ -482,12 +484,23 @@ export default function TimerScreen() {
         transparent
         visible={editing}
         onRequestClose={() => {
-          setEditing(false);
-          setEditingTime(false);
-          setEditId("");
+          if (editingTime) {
+            setEditingTime(false);
+          } else {
+            setEditing(false);
+            setEditId("");
+          }
         }}
       >
-        <View style={styles.modalContainer}>
+        <TouchableOpacity
+          activeOpacity={1}
+          onPress={() => {
+            setEditing(false);
+            setEditingTime(false);
+            setEditId("");
+          }}
+          style={styles.modalContainer}
+        >
           <View key={timer.id} style={styles.modalTimerContainer}>
             <View style={styles.modalTimerTextContainer}>
               {timer.up ? (
@@ -509,9 +522,12 @@ export default function TimerScreen() {
               <TouchableOpacity
                 style={{ paddingRight: 10 }}
                 onPress={() => {
-                  setEditing(false);
-                  setEditId("");
-                  setEditingTime(false);
+                  if (editingTime) {
+                    setEditingTime(false);
+                  } else {
+                    setEditing(false);
+                    setEditId("");
+                  }
                 }}>
                 <MaterialCommunityIcons name="close" size={35} color={"rgba(255, 50, 50, 1)"} />
               </TouchableOpacity>
@@ -532,7 +548,7 @@ export default function TimerScreen() {
                   <TextInput
                     style={[styles.inputTime, { fontSize: 30 }]}
                     placeholder={Math.floor(timer.totalDuration / 3600).toString().padStart(2, '0')}
-                    placeholderTextColor={"rgba(255, 255, 255, 0.7)"}
+                    placeholderTextColor={"rgba(255, 255, 255, 0.5)"}
                     keyboardType="numeric"
                     onChangeText={(text) => setInputHours(parseInt(text) || 0)}
                     selectionColor={"rgba(255, 170, 0, 0.5)"}
@@ -543,7 +559,7 @@ export default function TimerScreen() {
                   <TextInput
                     style={[styles.inputTime, { fontSize: 30 }]}
                     placeholder={(Math.floor(timer.totalDuration / 60) % 60).toString().padStart(2, '0')}
-                    placeholderTextColor={"rgba(255, 255, 255, 0.7)"}
+                    placeholderTextColor={"rgba(255, 255, 255, 0.5)"}
                     keyboardType="numeric"
                     onChangeText={(text) => setInputMinutes(parseInt(text) || 0)}
                     selectionColor={"rgba(255, 170, 0, 0.5)"}
@@ -554,7 +570,7 @@ export default function TimerScreen() {
                   <TextInput
                     style={[styles.inputTime, { fontSize: 30 }]}
                     placeholder={Math.floor(timer.totalDuration % 60).toString().padStart(2, '0')}
-                    placeholderTextColor={"rgba(255, 255, 255, 0.7)"}
+                    placeholderTextColor={"rgba(255, 255, 255, 0.5)"}
                     keyboardType="numeric"
                     onChangeText={(text) => setInputSeconds(parseInt(text) || 0)}
                     selectionColor={"rgba(255, 170, 0, 0.5)"}
@@ -600,7 +616,7 @@ export default function TimerScreen() {
                 </TouchableOpacity>)}
             </View>
           </View>
-        </View>
+        </TouchableOpacity>
       </Modal>
     );
   };
@@ -690,19 +706,21 @@ export default function TimerScreen() {
           : new Date(now - (timer.totalDuration - timer.remaining) * 1000);
 
         let newNotifId: string | null = null;
-        newNotifId = await createNotifAsync(timer.title, id, timer.remaining);
+        if (!timer.up) {
+          newNotifId = await createNotifAsync(timer.title, id, timer.remaining);
+        }
 
         updatedTimers.push({
           ...timer,
           startTime: newStartTime,
           paused: false,
-          notificationId: newNotifId ?? "",
+          notificationId: newNotifId ?? null,
         });
       } else {
         if (timer.notificationId) {
           await cancelNotifAsync(timer.notificationId);
         }
-        updatedTimers.push({ ...timer, paused: true, notificationId: "" });
+        updatedTimers.push({ ...timer, paused: true, notificationId: null });
       }
     }
 
@@ -719,7 +737,7 @@ export default function TimerScreen() {
 
     let notifId: string | null = null;
 
-    if (!timer.paused) {
+    if (!timer.paused && !timer.up) {
       notifId = await createNotifAsync(timer.title, timer.id, timer.initialDuration);
     }
 
@@ -732,7 +750,7 @@ export default function TimerScreen() {
             remaining: timer.initialDuration,
             totalDuration: timer.initialDuration,
             sentNotif: false,
-            notificationId: notifId ?? "",
+            notificationId: notifId ?? null,
           }
           : timer
       )
@@ -814,10 +832,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(100, 100, 100, 0.9)",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
   },
   modalView: {
-    backgroundColor: "rgba(55, 55, 55, 1)",
+    backgroundColor: "rgba(35, 35, 35, 1)",
     borderRadius: 15,
     padding: 10,
     alignItems: "center",
@@ -825,11 +843,13 @@ const styles = StyleSheet.create({
     width: "85%",
   },
   modalButton: {
-    backgroundColor: "rgba(60, 80, 145, 1)",
+    flex: 1,
+    backgroundColor: "rgba(65, 65, 65, 1)",
     padding: 10,
     borderRadius: 5,
     marginTop: 10,
-    width: "47%",
+    margin: 2,
+    justifyContent: 'center',
   },
   buttonText: {
     color: "rgba(255, 255, 255, 1)",
@@ -837,14 +857,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   modalCancelButton: {
-    backgroundColor: "rgba(250, 50, 50, 1)",
+    flex: 1,
+    backgroundColor: "rgba(65, 65, 65, 1)",
     padding: 10,
     borderRadius: 5,
     marginTop: 10,
-    width: "47%",
+    margin: 2,
+    justifyContent: 'center',
   },
   modalCancelButtonText: {
-    color: "rgba(255, 255, 255, 1)",
+    color: "rgba(255, 0, 0, 1)",
     textAlign: "center",
     fontSize: 16,
   },
@@ -863,17 +885,6 @@ const styles = StyleSheet.create({
   },
   modalButtonText: {
     color: "white",
-    textAlign: "center",
-    fontSize: 16,
-  },
-  modalButtonButton: {
-    backgroundColor: "rgba(200, 200, 200, 1)",
-    padding: 10,
-    borderRadius: 5,
-    marginTop: 10,
-  },
-  modalButtonButtonText: {
-    color: "black",
     textAlign: "center",
     fontSize: 16,
   },

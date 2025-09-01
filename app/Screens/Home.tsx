@@ -8,11 +8,8 @@ import { Alert, Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacit
 import { RefreshControl } from "react-native-gesture-handler";
 import Dashboard from "../components/Dashboard";
 import MealCard from "../components/MealCard";
-import { exportAllInfoString, getDayInfo, getStreakInfo, importAllInfoString, updateCompletedMealById } from "../db/DaySqlLiteCRUD";
+import { exportAllInfoString, importAllInfoString } from "../db/DaySqlLiteCRUD";
 import { eventBus } from "../utils/EventBus";
-import { StreakDaysWidget, TodayMealsWidget } from "../utils/Widget";
-import { WidgetTaskHandlerProps } from "react-native-android-widget";
-import { StatusBar } from "react-native";
 
 const { width, height } = Dimensions.get("window");
 
@@ -60,7 +57,6 @@ export default function Home() {
   useEffect(() => {
     const handler = () => {
       onRefresh();
-      console.log("aa");
     };
 
     eventBus.on('REFRESH_HOME', handler);
@@ -76,39 +72,55 @@ export default function Home() {
 
   const renderModalImport = () => {
     return (
-      <Modal
-        animationType="fade"
-        transparent
-        visible={importing}
-        onRequestClose={() => setImporting(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalView}>
-            <Text style={styles.modalText}>Selecciona el archivo a importar:</Text>
+      <>
+        <Modal
+          animationType="fade"
+          transparent
+          visible={importing}
+          onRequestClose={() => setImporting(false)}
+        >
+          <View style={{ flex: 1, backgroundColor: "rgba(0, 0, 0, 0.7)" }} />
+        </Modal>
+        <Modal
+          animationType="slide"
+          transparent
+          visible={importing}
+          onRequestClose={() => setImporting(false)}
+        >
+          <TouchableOpacity
+            activeOpacity={1}
+            style={styles.modalContainer}
+            onPress={() => setImporting(false)}
+          >
+            <View style={styles.modalView}>
+              <View style={styles.modalTitleContainer}>
+                <Text style={styles.modalText}>Importar archivos</Text>
+              </View>
 
-            <View style={{ flexDirection: "row", gap: 10 }}>
-              <TouchableOpacity
-                style={styles.modalButton}
-                onPress={() => {
-                  handleImport();
-                  setImporting(false);
-                }}
-              >
-                <Text style={styles.buttonText}>Seleccionar</Text>
-              </TouchableOpacity>
+              <View style={{ width: '90%' }}>
+                <TouchableOpacity
+                  style={styles.modalButton}
+                  onPress={() => {
+                    handleImport();
+                    setImporting(false);
+                  }}
+                >
+                  <Text style={styles.buttonText}>Seleccionar archivo</Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.modalCancelButton}
-                onPress={() => {
-                  setImporting(false);
-                }}
-              >
-                <Text style={styles.modalCancelButtonText}>Cancelar</Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.modalCancelButton}
+                  onPress={() => {
+                    setImporting(false);
+                  }}
+                >
+                  <Text style={styles.modalCancelButtonText}>Cancelar</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-          </View>
-        </View>
-      </Modal>
+          </TouchableOpacity>
+        </Modal>
+      </>
     );
   }
 
@@ -199,75 +211,47 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(100, 100, 100, 0.9)",
+    justifyContent: "flex-end",
   },
   modalView: {
-    backgroundColor: "rgba(55, 55, 55, 1)",
-    borderRadius: 15,
-    padding: 10,
+    backgroundColor: "rgba(35, 35, 35, 1)",
+    borderTopLeftRadius: 15,
+    borderTopRightRadius: 15,
     alignItems: "center",
     overflow: "hidden",
-    width: "85%",
+
+  },
+  modalTitleContainer: {
+    paddingTop: 20,
+    marginBottom: 10,
+    width: '100%',
+    alignItems: 'center',
   },
   modalButton: {
-    backgroundColor: "rgba(60, 80, 145, 1)",
-    padding: 10,
-    borderRadius: 5,
-    marginTop: 10,
-    width: "47%",
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+    backgroundColor: "rgba(65, 65, 65, 1)",
   },
   buttonText: {
     color: "white",
     textAlign: "center",
-    fontSize: 16,
+    fontSize: 18,
   },
   modalCancelButton: {
-    backgroundColor: "rgba(250, 50, 50, 1)",
-    padding: 10,
-    borderRadius: 5,
-    marginTop: 10,
-    width: "47%",
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+    backgroundColor: "rgba(65, 65, 65, 1)",
   },
   modalCancelButtonText: {
-    color: "white",
+    color: "red",
     textAlign: "center",
-    fontSize: 16,
-  },
-  scrollModalContainer: {
-    width: "100%",
+    fontSize: 18,
   },
   modalText: {
     color: "rgba(255, 255, 255, 1)",
     fontSize: 18,
     marginBottom: 10,
-  },
-  modalButtonText: {
-    color: "white",
-    textAlign: "center",
-    fontSize: 16,
-  },
-  modalButtonButton: {
-    backgroundColor: "rgba(200, 200, 200, 1)",
-    padding: 10,
-    borderRadius: 5,
-    marginTop: 10,
-  },
-  modalButtonButtonText: {
-    color: "black",
-    textAlign: "center",
-    fontSize: 16,
-  },
-  inputText: {
-    borderColor: "rgba(200, 200, 200, 1)",
-    borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    marginBottom: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    color: "rgba(0, 0, 0, 1)",
-    height: 40,
-    width: 290,
   },
 });
