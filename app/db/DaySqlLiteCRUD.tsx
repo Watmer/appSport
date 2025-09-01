@@ -424,17 +424,15 @@ Formato de salida (OBLIGATORIO):
 1. Cada respuesta debe contener **dos partes diferenciadas**:
    - **[RESPUESTA]** → Texto normal para el usuario.  
    - **[JSON]** → Objeto JSON con la siguiente estructura:
-     [JSON]
+     [JSON]  
      {
-       "meal_table": {
-         "meal": string, // Desayuno, Almuerzo, Comida, Merienda, Cena. Pero no uses Almuerzo a menos que el usuario lo pida expresamente.
-         "foodName": string,
-         "time": number, // en segundos
-         "completed": 0 | 1,
-         "recepy": string,
-         "comments": string
-       },
-       "ingredients_table": [
+       "meal": string, // Desayuno, Almuerzo, Comida, Merienda, Cena. Pero no uses Almuerzo a menos que el usuario lo pida expresamente.
+       "foodName": string,
+       "time": number, // en minutos
+       "completed": 0 | 1,
+       "recepy": string,
+       "comments": string,
+       "ingredients": [
          {
            "ingName": string,
            "quantity": string
@@ -476,15 +474,13 @@ Si quieres, puedo sugerirte más recetas similares.
 
 [JSON]  
 {
-  "meal_table": {
-    "meal": "Comida",
-    "foodName": "Ensalada de garbanzos",
-    "time": 3600,
-    "completed": 0,
-    "recepy": "Mezclar garbanzos cocidos con verduras frescas y aliñar al gusto",
-    "comments": "Opción ligera, rica en proteínas y con bajo contenido en grasas"
-  },
-  "ingredients_table": [
+  "meal": "Comida",
+  "foodName": "Ensalada de garbanzos",
+  "time": 60,
+  "completed": 0,
+  "recepy": "Mezclar garbanzos cocidos con verduras frescas y aliñar al gusto",
+  "comments": "Opción ligera, rica en proteínas y con bajo contenido en grasas",
+  "ingredients": [
     { "ingName": "Garbanzos cocidos", "quantity": "150g" },
     { "ingName": "Tomate", "quantity": "100g" },
     { "ingName": "Pepino", "quantity": "80g" }
@@ -536,10 +532,13 @@ export async function addAiResponse(chatId: number, response: string) {
     message: responseText,
     jsonParsed: responseJson,
   })
+
+  const savedResponse = await db.select().from(aiMessagesTable).where(eq(aiMessagesTable.aiChatId, chatId)).orderBy(desc(aiMessagesTable.id)).limit(1);
+  console.log("Saved AI Response:", savedResponse);
 }
 
 export async function getAiSessionMessages(id: number) {
-  const systemMessage = await db
+  const systemRows = await db
     .select({
       id: aiChatSessionTable.id,
       role: aiChatSessionTable.systemRole,
@@ -548,20 +547,33 @@ export async function getAiSessionMessages(id: number) {
     .from(aiChatSessionTable)
     .where(eq(aiChatSessionTable.id, id));
 
-  const messages = await db
+  const messageRows = await db
     .select({
       id: aiMessagesTable.id,
       role: aiMessagesTable.role,
       content: aiMessagesTable.message,
+      jsonParsed: aiMessagesTable.jsonParsed,
     })
     .from(aiMessagesTable)
-    .where(eq(aiMessagesTable.aiChatId, id)).orderBy((aiMessagesTable.id)).limit(100);
+    .where(eq(aiMessagesTable.aiChatId, id))
+    .orderBy(aiMessagesTable.id)
+    .limit(100);
 
-  return [...systemMessage, ...messages].map(message => ({
-    id: message.id,
-    role: message.role as "system" | "user" | "assistant",
-    content: message.content,
+  const systemArray = systemRows.map(row => ({
+    id: row.id,
+    role: row.role as "system" | "user" | "assistant",
+    content: row.content,
+    jsonParsed: null,
   }));
+
+  const messagesArray = messageRows.map(row => ({
+    id: row.id,
+    role: row.role as "system" | "user" | "assistant",
+    content: row.content,
+    jsonParsed: row.jsonParsed ?? null,
+  }));
+
+  return [...systemArray, ...messagesArray];
 }
 
 export async function getAllAiSessions() {

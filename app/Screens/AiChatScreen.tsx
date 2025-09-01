@@ -3,8 +3,9 @@ import { useNavigation } from "@react-navigation/native";
 import * as Clipboard from 'expo-clipboard';
 import { AzureOpenAI } from "openai";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Dimensions, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { addAiResponse, addUserMessage, createAiSession, deleteAiSession, deleteMessageById, getAiSessionMessages, getAllAiSessions } from "../db/DaySqlLiteCRUD";
+import { Alert, BackHandler, Dimensions, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { addAiResponse, addMealWithIngredients, addUserMessage, createAiSession, deleteAiSession, deleteMessageById, getAiSessionMessages, getAllAiSessions } from "../db/DaySqlLiteCRUD";
+import { eventBus } from "../utils/EventBus";
 
 const { width, height } = Dimensions.get("window");
 
@@ -16,8 +17,12 @@ export default function AiChatScreen() {
   const [deployment, setDeployment] = useState("");
   const [currentIdChat, setCurrentIdChat] = useState(-1);
   const [chatMessages, setChatMessages] = useState<{
-    id: number; role: string; content: string
+    id: number;
+    role: string;
+    content: string;
+    jsonParsed?: string | null;
   }[]>([]);
+
   const [inputMessage, setInputMessage] = useState("");
   const [storedChats, setStoredChats] = useState<{
     id: number;
@@ -175,6 +180,24 @@ export default function AiChatScreen() {
     }
   }
 
+  useEffect(() => {
+    const backAction = () => {
+      if (enableSelectingMessages) {
+        setEnableSelectingMessages(false);
+        setSelectedMessages([]);
+        return true;
+      }
+      return false;
+    };
+
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction
+    );
+
+    return () => backHandler.remove();
+  }, [enableSelectingMessages]);
+
   const renderStoredChats = () => {
     return (
       <ScrollView
@@ -270,7 +293,7 @@ export default function AiChatScreen() {
               position: "absolute",
               top,
               left,
-              backgroundColor: "rgba(50,50,50,1)",
+              backgroundColor: "rgba(40, 40, 40, 1)",
               padding: 10,
               borderRadius: 10,
               width: 180,
@@ -320,18 +343,6 @@ export default function AiChatScreen() {
               style={{ padding: 5 }}
             >
               <Text style={{ color: "red" }}>Eliminar mensaje</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => {
-                setEnabledSelection(false);
-                setShowSelectedMessageOptions(false);
-                setSelectedMessageId(-1);
-                setSelectingMessageContent(false);
-              }}
-              style={{ padding: 5 }}
-            >
-              <Text style={{ color: "white" }}>Cancelar</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
@@ -392,15 +403,6 @@ export default function AiChatScreen() {
                   style={{ padding: 5 }}
                 >
                   <Text style={{ color: "red" }}>Eliminar chat</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  onPress={() => {
-                    setShowingChatOptions(false);
-                  }}
-                  style={{ padding: 5 }}
-                >
-                  <Text style={{ color: "white" }}>Cancelar</Text>
                 </TouchableOpacity>
               </View>
             ) : (
@@ -464,6 +466,67 @@ export default function AiChatScreen() {
     );
   };
 
+  const renderJsonOptions = (messageId: number) => {
+    return (
+      <View style={{
+        flexDirection: "row",
+        maxWidth: 250
+      }}
+      >
+        <TouchableOpacity
+          onPress={async () => {
+            const today = new Date();
+            const currentDay = today.getDate();
+            const dayId = `dayInfo:${currentDay}-${today.getMonth() + 1}-${today.getFullYear()}`;
+
+            const msg = chatMessages.find(msg => msg.id === messageId);
+
+            if (msg?.jsonParsed) {
+              try {
+                const parsed = JSON.parse(msg.jsonParsed);
+                await addMealWithIngredients(dayId, parsed);
+                eventBus.emit('REFRESH_HOME');
+                Alert.alert("Comida añadida", "Se ha añadido correctamente.")
+              } catch (e) {
+                console.error("Error al parsear JSON:", e);
+              }
+            }
+          }}
+          style={{ padding: 5, marginRight: 10 }}
+        >
+          <MaterialCommunityIcons
+            name="card-bulleted"
+            size={20}
+            color="rgba(255, 255, 255, 1)"
+          />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => {
+            const msg = chatMessages.find(msg => msg.id === messageId);
+            console.log("i ", msg?.jsonParsed);
+
+            let parsed = {};
+            try {
+              parsed = msg?.jsonParsed ? JSON.parse(msg.jsonParsed) : {};
+            } catch (e) {
+              console.error("Error al parsear JSON:", e);
+            }
+            console.log("j ", parsed);
+            (navigation as any).navigate("MealDetailsScreen", { mealJson: parsed });
+          }}
+          style={{ padding: 5 }}
+        >
+          <MaterialCommunityIcons
+            name="view-dashboard-variant"
+            size={20}
+            color="rgba(255, 255, 255, 1)"
+          />
+        </TouchableOpacity>
+      </View>
+    );
+  };
+
   const renderChatMessages = () => {
     return (
       <View style={{ flex: 1, }}>
@@ -487,6 +550,22 @@ export default function AiChatScreen() {
                     } else {
                       setSelectedMessages([...selectedMessages, message.id]);
                     }
+                  } else {
+                    setSelectedMessages([]);
+                    setSelectedMessageId(-1);
+                    setShowSelectedMessageOptions(false);
+                    setSelectingMessageContent(false);
+                    setEnabledSelection(false);
+                  }
+                }}
+                onLongPress={() => {
+                  if (!enableSelectingMessages) {
+                    setEnableSelectingMessages(true);
+                    setSelectedMessages([message.id]);
+                    setSelectedMessageId(-1);
+                    setShowSelectedMessageOptions(false);
+                    setSelectingMessageContent(false);
+                    setEnabledSelection(false);
                   }
                 }}
               >
@@ -522,15 +601,16 @@ export default function AiChatScreen() {
                     }}
                   >
                     <Text
-                      selectable={
-                        message.id === selectedMessageId && enabledSelection
-                      }
+                      selectable={message.id === selectedMessageId && enabledSelection}
                       selectionColor={"rgba(255, 170, 0, 0.5)"}
                       style={styles.messageText}
                     >
                       {message.content}
                     </Text>
+
                   </TouchableOpacity>
+                  {message.jsonParsed && renderJsonOptions(message.id)}
+
                 </View>
               </TouchableOpacity>
             ))
@@ -607,7 +687,7 @@ const styles = StyleSheet.create({
   },
   aiResponses: {
     backgroundColor: "rgba(80, 80, 80, 1)",
-    maxWidth: "70%",
+    maxWidth: 250,
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderRadius: 10,
@@ -618,7 +698,7 @@ const styles = StyleSheet.create({
   },
   userMessages: {
     backgroundColor: "rgba(100, 0, 200, 1)",
-    maxWidth: "70%",
+    maxWidth: 250,
     paddingHorizontal: 15,
     paddingVertical: 10,
     borderRadius: 10,

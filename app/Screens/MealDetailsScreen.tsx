@@ -6,6 +6,7 @@ import { getMealById } from "../db/DaySqlLiteCRUD";
 
 export default function MealDetailScreen({ route }: { route: any }) {
   const { mealInfoKey } = route.params || {};
+  const { mealJson } = route.params || {};
   const [mealData, setMealData] = useState<any>(null);
 
   const navigation = useNavigation();
@@ -15,7 +16,7 @@ export default function MealDetailScreen({ route }: { route: any }) {
       headerLeft: () => (
         <TouchableOpacity
           style={{ marginLeft: 20 }}
-          onPress={() => navigation.canGoBack() ? navigation.goBack() : null }
+          onPress={() => navigation.canGoBack() ? navigation.goBack() : null}
         >
           <MaterialCommunityIcons name="arrow-left" size={30} color="rgba(255, 170, 0, 1)" />
         </TouchableOpacity>
@@ -25,6 +26,14 @@ export default function MealDetailScreen({ route }: { route: any }) {
 
   const fetchMealData = async () => {
     try {
+      if (mealJson) {
+        setMealData(mealJson);
+        return;
+      } else if (!mealInfoKey) {
+        setMealData(null);
+        return;
+      }
+
       const mealInfo = await getMealById(mealInfoKey);
       if (mealInfo) {
         setMealData(mealInfo);

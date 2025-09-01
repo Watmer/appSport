@@ -1,6 +1,7 @@
 import React from 'react';
 import type { WidgetTaskHandlerProps } from 'react-native-android-widget';
 import { getDayInfo, getStreakInfo, updateCompletedMealById } from '../db/DaySqlLiteCRUD';
+import { eventBus } from './EventBus';
 import { StreakDaysWidget, TodayMealsWidget, } from './Widget';
 
 export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
@@ -51,11 +52,13 @@ export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
         if (props.clickAction === 'MARK_COMPLETED') {
           const { mealId } = props.clickActionData as any;
           await toggleCompleted(mealId, true);
+          eventBus.emit('REFRESH_HOME');
         }
 
         if (props.clickAction === 'MARK_UNCOMPLETED') {
           const { mealId } = props.clickActionData as any;
           await toggleCompleted(mealId, false);
+          eventBus.emit('REFRESH_HOME');
         }
       }
 
