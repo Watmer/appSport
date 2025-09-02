@@ -837,6 +837,8 @@ const styles = StyleSheet.create({
   modalView: {
     backgroundColor: "rgba(35, 35, 35, 1)",
     borderRadius: 15,
+    borderWidth: 1,
+    borderColor: "rgba(70, 70, 70, 1)",
     padding: 10,
     alignItems: "center",
     overflow: "hidden",

@@ -4,12 +4,14 @@ import * as Clipboard from 'expo-clipboard';
 import { AzureOpenAI } from "openai";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Alert, BackHandler, Dimensions, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { addAiResponse, addMealWithIngredients, addUserMessage, createAiSession, deleteAiSession, deleteMessageById, getAiSessionMessages, getAllAiSessions } from "../db/DaySqlLiteCRUD";
+import { addAiResponse, addAskAboutMessage, addMealWithIngredients, addUserMessage, createAiSession, deleteAiSession, deleteMessageById, getAiSessionMessages, getAllAiSessions } from "../db/DaySqlLiteCRUD";
 import { eventBus } from "../utils/EventBus";
 
 const { width, height } = Dimensions.get("window");
 
-export default function AiChatScreen() {
+export default function AiChatScreen({ route }: { route: any }) {
+  const { mealInfo } = route.params || {};
+
   const navigation = useNavigation();
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -29,6 +31,7 @@ export default function AiChatScreen() {
     createdAt: number | null;
     systemRole: string;
     systemMessage: string;
+    hasMessages: boolean;
   }[]>([]);
   const [showingChats, setShowingChats] = useState(false);
   const [selectedMessageId, setSelectedMessageId] = useState(-1);
@@ -39,6 +42,8 @@ export default function AiChatScreen() {
   const [enableSelectingMessages, setEnableSelectingMessages] = useState(false);
   const [showSelectedMessageOptions, setShowSelectedMessageOptions] = useState(false);
   const [showingChatOptions, setShowingChatOptions] = useState(false);
+
+  const [fetchingMessages, setFetchingMessages] = useState(true);
 
   const [useRefPositionMessage, setUseRefPositionMessage] = useState({
     x: 0,
@@ -104,9 +109,21 @@ export default function AiChatScreen() {
     const sessionId = await createAiSession();
     setCurrentIdChat(sessionId);
     setClient(initClient);
+    if (mealInfo) {
+      await addMealToChat(sessionId, mealInfo)
+    }
+  }
+
+  async function addMealToChat(sessionId: number, mealData: any) {
+    await addAskAboutMessage(sessionId, mealData);
+    const updatedMessages = await getAiSessionMessages(sessionId);
+    setChatMessages(updatedMessages.filter(msg => msg.role !== "system"));
   }
 
   async function fetchStoredChats() {
+    (navigation as any).setParams({ mealInfo: undefined });
+
+    setFetchingMessages(true);
     setChatMessages([]);
     setInputMessage("");
     setShowingChats(false);
@@ -120,7 +137,18 @@ export default function AiChatScreen() {
 
     const sessions = await getAllAiSessions();
     setStoredChats(sessions);
+    const currentMessages = (await getAiSessionMessages(currentIdChat)).filter((msg) => msg.role !== "system");
+    setChatMessages(currentMessages);
+    setFetchingMessages(false);
   }
+
+  useEffect(() => {
+    if (!fetchingMessages) {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  }, [fetchingMessages]);
 
   useEffect(() => {
     configureAiChat();
@@ -128,7 +156,7 @@ export default function AiChatScreen() {
   }, []);
 
   useEffect(() => {
-    fetchStoredChats();
+    if (currentIdChat > 0) fetchStoredChats();
   }, [currentIdChat]);
 
   async function createNewSession() {
@@ -146,10 +174,20 @@ export default function AiChatScreen() {
   async function sendMessage(message: string) {
     if (client) {
       await addUserMessage(currentIdChat, message);
-      const sessionMessages = await getAiSessionMessages(currentIdChat);
+      let sessionMessages = await getAiSessionMessages(currentIdChat);
+
+      sessionMessages = sessionMessages.map(msg => ({
+        ...msg,
+        content: msg.jsonParsed && msg.role === 'user'
+          ? `\n${msg.content}\n\n[JSON]${msg.jsonParsed}`
+          : msg.content,
+      }));
+
       setTimeout(() => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 100);
+
+      console.log(sessionMessages);
 
       const result = await client.chat.completions.create({
         model: deployment,
@@ -247,17 +285,20 @@ export default function AiChatScreen() {
               setShowingChats(false);
             }}
           >
-            <Text style={{ color: "white" }}>
-              {new Date(chat.createdAt ?? Date.now()).toLocaleString("default", {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-                weekday: "long",
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-              })}
-            </Text>
+            {chat.hasMessages || (chat.id === currentIdChat && chatMessages.length > 0) ? (
+              <Text style={{ color: "white" }}>
+                {new Date(chat.createdAt ?? Date.now()).toLocaleString("default", {
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                  weekday: "long",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                })}
+              </Text>
+            ) : (<Text style={{ color: "white" }}>Nuevo Chat</Text>)
+            }
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -477,59 +518,87 @@ export default function AiChatScreen() {
     );
   };
 
-  const renderJsonOptions = (messageId: number) => {
+  const renderJsonOptions = (messageId: number, role: string) => {
+    const msg = chatMessages.find(msg => msg.id === messageId);
+
+    let parsed: any = {};
+    try {
+      parsed = msg?.jsonParsed ? JSON.parse(msg.jsonParsed) : {};
+    } catch (e) {
+      console.error("Error al parsear JSON:", e);
+    }
+
     return (
-      <View style={{
-        flexDirection: "row",
-        flexWrap: 'wrap',
-        maxWidth: 250
-      }}
+      <View
+        style={{
+          flexDirection: "row",
+          flexWrap: "wrap",
+          maxWidth: 250,
+          alignSelf: role === "assistant" ? "flex-start" : "flex-end",
+        }}
       >
-        <TouchableOpacity
-          onPress={async () => {
-            const today = new Date();
-            const currentDay = today.getDate();
-            const dayId = `dayInfo:${currentDay}-${today.getMonth() + 1}-${today.getFullYear()}`;
+        {role === "assistant" && (
+          <>
+            {parsed?.id ? (
+              <TouchableOpacity
+                onPress={async () => {
+                  // regla para actualizar, no tocar
+                  console.log("actualizar receta");
+                }}
+                style={{
+                  padding: 5,
+                  marginRight: 10,
+                  flexDirection: "row",
+                  alignItems: "center",
+                }}
+              >
+                <MaterialCommunityIcons
+                  name="reload"
+                  size={20}
+                  color="rgba(255, 255, 255, 1)"
+                />
+                <Text style={{ color: "white", paddingLeft: 5 }}>Actualizar receta</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={async () => {
+                  const today = new Date();
+                  const currentDay = today.getDate();
+                  const dayId = `dayInfo:${currentDay}-${today.getMonth() + 1}-${today.getFullYear()}`;
 
-            const msg = chatMessages.find(msg => msg.id === messageId);
-
-            if (msg?.jsonParsed) {
-              try {
-                const parsed = JSON.parse(msg.jsonParsed);
-                await addMealWithIngredients(dayId, parsed);
-                eventBus.emit('REFRESH_HOME');
-                Alert.alert("Comida añadida", "Se ha añadido correctamente.")
-              } catch (e) {
-                console.error("Error al parsear JSON:", e);
-              }
-            }
-          }}
-          style={{ padding: 5, marginRight: 10, flexDirection: 'row', alignItems: 'center' }}
-        >
-          <MaterialCommunityIcons
-            name="text-box-plus-outline"
-            size={20}
-            color="rgba(255, 255, 255, 1)"
-          />
-          <Text style={{ color: "white", paddingLeft: 5 }}>Añadir receta</Text>
-
-        </TouchableOpacity>
+                  try {
+                    if (Object.keys(parsed).length > 0) {
+                      await addMealWithIngredients(dayId, parsed);
+                      eventBus.emit("REFRESH_HOME");
+                      Alert.alert("Comida añadida", "Se ha añadido correctamente.");
+                    }
+                  } catch (e) {
+                    console.error("Error al guardar receta:", e);
+                  }
+                }}
+                style={{
+                  padding: 5,
+                  marginRight: 10,
+                  flexDirection: "row",
+                  alignItems: "center",
+                }}
+              >
+                <MaterialCommunityIcons
+                  name="text-box-plus-outline"
+                  size={20}
+                  color="rgba(255, 255, 255, 1)"
+                />
+                <Text style={{ color: "white", paddingLeft: 5 }}>Añadir receta</Text>
+              </TouchableOpacity>
+            )}
+          </>
+        )}
 
         <TouchableOpacity
           onPress={() => {
-            const msg = chatMessages.find(msg => msg.id === messageId);
-            console.log("i ", msg?.jsonParsed);
-
-            let parsed = {};
-            try {
-              parsed = msg?.jsonParsed ? JSON.parse(msg.jsonParsed) : {};
-            } catch (e) {
-              console.error("Error al parsear JSON:", e);
-            }
-            console.log("j ", parsed);
             (navigation as any).navigate("MealDetailsScreen", { mealJson: parsed });
           }}
-          style={{ padding: 5, flexDirection: 'row', alignItems: 'center' }}
+          style={{ padding: 5, flexDirection: "row", alignItems: "center" }}
         >
           <MaterialCommunityIcons
             name="view-dashboard-variant"
@@ -541,6 +610,7 @@ export default function AiChatScreen() {
       </View>
     );
   };
+
 
   const renderChatMessages = () => {
     return (
@@ -592,7 +662,7 @@ export default function AiChatScreen() {
                     style={{ position: "fixed", paddingRight: 15 }}
                   />
                 }
-                <View style={{ flex: 1 }}>
+                <View style={{ flex: 1, justifyContent: 'center' }}>
                   <TouchableOpacity
                     activeOpacity={1}
                     disabled={enableSelectingMessages}
@@ -624,7 +694,7 @@ export default function AiChatScreen() {
                     </Text>
 
                   </TouchableOpacity>
-                  {message.jsonParsed && renderJsonOptions(message.id)}
+                  {message.jsonParsed && renderJsonOptions(message.id, message.role)}
 
                 </View>
               </TouchableOpacity>
@@ -637,7 +707,7 @@ export default function AiChatScreen() {
                 paddingHorizontal: 5,
               }}
             >
-              <Text style={{ color: "gray", textAlign:'center' }}>
+              <Text style={{ color: "gray", textAlign: 'center' }}>
                 No hay mensajes aún. ¡Empieza la conversación!
               </Text>
             </View>

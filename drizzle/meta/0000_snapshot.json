@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "21453ae8-fa31-4041-8501-f1afff517dbd",
+  "id": "7c1fb605-8be1-4084-846f-59b2be916142",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "aiChatSession_table": {
@@ -262,6 +262,84 @@
           "tableTo": "day_table",
           "columnsFrom": [
             "dayId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "mealsInAiChat_table": {
+      "name": "mealsInAiChat_table",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "aiChatId": {
+          "name": "aiChatId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "mealId": {
+          "name": "mealId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "messageId": {
+          "name": "messageId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "mealsInAiChat_table_aiChatId_aiChatSession_table_id_fk": {
+          "name": "mealsInAiChat_table_aiChatId_aiChatSession_table_id_fk",
+          "tableFrom": "mealsInAiChat_table",
+          "tableTo": "aiChatSession_table",
+          "columnsFrom": [
+            "aiChatId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "mealsInAiChat_table_mealId_meal_table_id_fk": {
+          "name": "mealsInAiChat_table_mealId_meal_table_id_fk",
+          "tableFrom": "mealsInAiChat_table",
+          "tableTo": "meal_table",
+          "columnsFrom": [
+            "mealId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "mealsInAiChat_table_messageId_aiMessages_table_id_fk": {
+          "name": "mealsInAiChat_table_messageId_aiMessages_table_id_fk",
+          "tableFrom": "mealsInAiChat_table",
+          "tableTo": "aiMessages_table",
+          "columnsFrom": [
+            "messageId"
           ],
           "columnsTo": [
             "id"

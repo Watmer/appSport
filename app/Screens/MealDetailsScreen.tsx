@@ -56,6 +56,11 @@ export default function MealDetailScreen({ route }: { route: any }) {
         <View style={styles.card}>
           <View style={styles.arson}>
             <View style={styles.arsonText}>
+              <Text style={{
+                marginVertical: 5,
+                color: "rgba(255, 255, 255, 1)",
+                fontSize: 20,
+              }}>{mealData?.meal}</Text>
               <Text style={styles.name}>🍽 {mealData?.foodName}</Text>
               <Text style={styles.text}>⏱ Tiempo: {mealData?.time} min</Text>
             </View>

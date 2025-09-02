@@ -87,8 +87,8 @@ export default function FoodDetailScreen({ route }: { route: any }) {
                 <Text style={styles.name}>🍽 {item.foodName}</Text>
                 <Text style={styles.text}>⏱ Tiempo: {item.time} min</Text>
               </View>
-              {editing && (
-                <View style={{ flexDirection: "row", flex: 1, }}>
+              {editing ? (
+                <View style={{ flexDirection: "row", flex: 1, alignItems: 'flex-end' }}>
                   <TouchableOpacity
                     style={{ marginRight: 20 }}
                     onPress={() =>
@@ -114,33 +114,57 @@ export default function FoodDetailScreen({ route }: { route: any }) {
                     />
                   </TouchableOpacity>
                 </View>
-              )}
+              ) : (
+                <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                  <TouchableOpacity
+                    onPress={() =>
+                      (navigation as any).navigate("Main", {
+                        screen: "AiChatScreen",
+                        params: { mealInfo: item },
+                      })
+                    }
+                  >
+                    <MaterialCommunityIcons
+                      name="message-question-outline"
+                      size={30}
+                      color="rgba(255, 255, 255, 1)"
+                    />
+                  </TouchableOpacity>
+                </View>
+              )
+              }
             </View>
 
-            {item.ingredients && (
-              <View style={{ marginTop: 8 }}>
-                <Text style={styles.section}>Ingredientes:</Text>
-                {item.ingredients.map((ing: any, i: number) => (
-                  <Text style={styles.text} key={i}>
-                    • {ing.ingName} - {ing.quantity}
-                  </Text>
-                ))}
-              </View>
-            )}
+            {
+              item.ingredients && (
+                <View style={{ marginTop: 8 }}>
+                  <Text style={styles.section}>Ingredientes:</Text>
+                  {item.ingredients.map((ing: any, i: number) => (
+                    <Text style={styles.text} key={i}>
+                      • {ing.ingName} - {ing.quantity}
+                    </Text>
+                  ))}
+                </View>
+              )
+            }
 
-            {item.recepy && (
-              <View style={{ marginTop: 8 }}>
-                <Text style={styles.section}>📋 Receta:</Text>
-                <Text style={styles.text}>{item.recepy}</Text>
-              </View>
-            )}
+            {
+              item.recepy && (
+                <View style={{ marginTop: 8 }}>
+                  <Text style={styles.section}>📋 Receta:</Text>
+                  <Text style={styles.text}>{item.recepy}</Text>
+                </View>
+              )
+            }
 
-            {item.comments && (
-              <View style={{ marginTop: 8 }}>
-                <Text style={styles.section}>💬 Comentarios:</Text>
-                <Text style={styles.text}>{item.comments}</Text>
-              </View>
-            )}
+            {
+              item.comments && (
+                <View style={{ marginTop: 8 }}>
+                  <Text style={styles.section}>💬 Comentarios:</Text>
+                  <Text style={styles.text}>{item.comments}</Text>
+                </View>
+              )
+            }
           </View>
         ))}
 
@@ -150,7 +174,7 @@ export default function FoodDetailScreen({ route }: { route: any }) {
           </Text>
         )}
       </View>
-    </ScrollView>
+    </ScrollView >
   );
 }
 
@@ -169,7 +193,7 @@ const styles = StyleSheet.create({
     color: "rgba(255, 255, 255, 1)"
   },
   card: {
-    backgroundColor: "rgba(0, 60, 90, 1)", 
+    backgroundColor: "rgba(0, 60, 90, 1)",
     borderRadius: 10,
     padding: 12,
     marginBottom: 16,

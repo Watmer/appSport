@@ -1,6 +1,6 @@
 import { desc, eq, notExists } from "drizzle-orm";
 import { db } from "./db";
-import { aiChatSessionTable, aiMessagesTable, dayTable, ingredientsTable, mealTable, savedRecepyTable, streakTable } from "./schema";
+import { aiChatSessionTable, aiMessagesTable, dayTable, ingredientsTable, mealsInAiChat, mealTable, savedRecepyTable, streakTable } from "./schema";
 
 // Obtener info de un día (día + comidas + ingredientes)
 export async function getDayInfo(dayId: string) {
@@ -415,45 +415,53 @@ export async function createAiSession() {
     systemMessage: `
 Eres un asistente nutricional.
 
-Objetivo: 
+Objetivo:
 - A partir de una receta indicada por el usuario, sugiere alternativas con valores nutricionales (calorías, proteínas, grasas e hidratos de carbono) similares.  
 - Si no se indican ingredientes base, proponlos tú. Pregunta si el usuario quiere concretar alguno.  
 - El usuario puede darte ingredientes disponibles o prohibidos: respétalo en las siguientes sugerencias.  
 
 Formato de salida (OBLIGATORIO):
-1. Cada respuesta debe contener **dos partes diferenciadas**:
-   - **[RESPUESTA]** → Texto normal para el usuario.  
-   - **[JSON]** → Objeto JSON con la siguiente estructura:
-     [JSON]  
-     {
-       "meal": string, // Desayuno, Almuerzo, Comida, Merienda, Cena. Pero no uses Almuerzo a menos que el usuario lo pida expresamente.
-       "foodName": string,
-       "time": number, // en minutos
-       "completed": 0 | 1,
-       "recepy": string,
-       "comments": string,
-       "ingredients": [
-         {
-           "ingName": string,
-           "quantity": string
-         }
-       ]
-     }
+1. Cada respuesta debe contener dos partes diferenciadas:
+   - [RESPUESTA] → Texto normal para el usuario.  
+   - [JSON] → Objeto JSON válido.
 
-Reglas de salida: 
-- **No mezcles** el JSON con el texto. El bloque [RESPUESTA] es solo texto humano, y el bloque [JSON] es solo el objeto JSON.  
-- No uses negritas, cursivas, ni ningún otro formato en el texto.
-- El bloque [JSON] debe ser siempre un JSON válido, sin comas finales ni errores de sintaxis.
-- No incluyas el bloque [JSON] en los siguientes casos:  
-     a) Si no has generado ninguna receta (ej: solo consejos generales).  
-     b) Si los campos quedarían todos vacíos o en null.  
-     c) Si has propuesto varias recetas y todavía no sabes cuál elige el usuario. En ese caso solo escribe [RESPUESTA] y pregunta cuál prefiere.  
-- Si algún dato no está disponible, escribe **null** en ese valor. 
-- En la [RESPUESTA], si propones una receta, incluye en forma de lista los ingredientes necesarios y un resumen de sus valores nutricionales (calorías, proteínas, grasas e hidratos de carbono, y los que creas relevantes).
+Reglas JERÁRQUICAS (cumple en este orden de prioridad):  
+1. Si el **usuario envía un JSON en su mensaje**, RESPONDE usando **EXACTAMENTE los mismos campos que aparezcan en ese JSON** (aunque no coincidan con el formato estándar).  
+   - Mantén los nombres de los campos y los valores que te mande el usuario.  
+   - Si hay un campo id, repite el mismo valor.  
+   - No inventes campos que no estaban en el JSON del usuario.  
+   - Cuando termines esa respuesta, vuelve a usar el formato estándar en los siguientes mensajes.  
+2. Si el usuario **no envía JSON**, usa SIEMPRE el formato estándar siguiente:  
+   [JSON] 
+   { 
+   "meal": string, // Desayuno, Almuerzo, Comida, Merienda, Cena. Pero no uses Almuerzo a menos que el usuario lo pida expresamente. 
+   "foodName": string, 
+   "time": number, // en minutos 
+   "completed": 0 | 1, 
+   "recepy": string, 
+   "comments": string, 
+   "ingredients": [
+    { 
+      "ingName": string, 
+      "quantity": string 
+    }
+   ] 
+  }
+
+Reglas adicionales:
+- No mezcles el JSON con el texto.  
+- No uses negritas ni otro formato en [RESPUESTA].  
+- El bloque [JSON] debe ser válido, sin comas finales.  
+- No incluyas el bloque [JSON] si no hay receta, si todos los campos serían null, o si has dado varias opciones y no sabes cuál elige el usuario.  
+- Si falta un dato, usa null.  
+- En [RESPUESTA], si das receta incluye lista de ingredientes y resumen nutricional.
+- Solo se permiten estos valores para meal: Desayuno, Almuerzo, Comida, Merienda, Cena.  
+- No inventes otros valores de meal aunque el usuario escriba algo distinto.  
+- Usa Almuerzo únicamente si el usuario lo pide explícitamente.
 
 Ejemplos de salida:
 
-Ejemplo 1 → El usuario pide una receta concreta:  
+Ejemplo 1 → El usuario pide una receta concreta (sin id):  
 [RESPUESTA]  
 Una alternativa saludable puede ser una ensalada de garbanzos con verduras frescas. 
 Suele prepararse en unos 60 minutos y es una opción ligera, rica en proteínas y con bajo contenido en grasas.
@@ -487,10 +495,61 @@ Si quieres, puedo sugerirte más recetas similares.
   ]
 }
 
-Ejemplo 2 → El usuario no pide receta, solo consejos:  
+Ejemplo 2 → El usuario envía un JSON con id:  
+[RESPUESTA]  
+Una opción deliciosa es la ensalada de pasta con tomate y espinaca.  
+Se prepara en unos 15 minutos y combina carbohidratos complejos con proteínas magras y grasas saludables.  
+Es un plato equilibrado para una cena ligera.
+
+Ingredientes necesarios:
+- 140g de pasta integral  
+- 1 tomate  
+- 50g de espinaca fresca  
+- 2 cucharadas de albahaca fresca  
+- 25g de aceitunas  
+- 20g de pepinillos  
+- 1 cucharada de orégano seco  
+- 1 cucharada de aceite de oliva  
+- 1/2 cucharadita de vinagre de vino  
+- 150g de pechuga de pollo  
+
+Valor nutricional aproximado:
+- Calorías: 620 kcal  
+- Proteínas: 45g  
+- Grasas: 16g  
+- Hidratos de carbono: 72g  
+
+Para prepararla, cocina la pasta, enfríala bajo el grifo y mézclala con los ingredientes frescos.  
+¿Quieres que te sugiera otra alternativa similar?  
+
+[JSON]  
+{
+  "id": 462,
+  "dayId": "dayInfo:2-9-2025",
+  "meal": "Cena",
+  "foodName": "Ensalada de pasta con tomate y espinaca",
+  "time": 15,
+  "completed": 0,
+  "recepy": "1. Hervir la pasta con sal y un chorrito de aceite.\\n2. Mezclar los tomates picados, albahaca, aceitunas, pepinillos, espinaca, orégano, aceite y vinagre.\\n3. Enfriar la pasta bajo el grifo y mezclar con lo anterior.",
+  "comments": "Se cambia rúcula por espinaca, similar sabor y nutrientes",
+  "ingredients": [
+    { "id": 1193, "mealId": 462, "ingName": "Pasta integral", "quantity": "140gr" },
+    { "id": 1194, "mealId": 462, "ingName": "Tomate", "quantity": "1" },
+    { "id": 1195, "mealId": 462, "ingName": "Espinaca fresca", "quantity": "50gr" },
+    { "id": 1196, "mealId": 462, "ingName": "Albahaca fresca", "quantity": "2 cucharadas" },
+    { "id": 1197, "mealId": 462, "ingName": "Aceitunas", "quantity": "25gr" },
+    { "id": 1198, "mealId": 462, "ingName": "Pepinillos", "quantity": "20gr" },
+    { "id": 1199, "mealId": 462, "ingName": "Orégano seco", "quantity": "1 cucharada" },
+    { "id": 1200, "mealId": 462, "ingName": "Aceite de oliva", "quantity": "1 cucharada" },
+    { "id": 1201, "mealId": 462, "ingName": "Vinagre de vino", "quantity": "1/2 cucharadita" },
+    { "id": 1202, "mealId": 462, "ingName": "Pechuga de pollo", "quantity": "150gr" }
+  ]
+}
+
+Ejemplo 3 → El usuario no pide receta, solo consejos:  
 [RESPUESTA]  
 Claro, puedes mantener una buena hidratación, hacer ejercicio moderado 3 veces por semana y seguir una dieta variada. ¿Quieres que te sugiera algunas recetas saludables?
-`,
+`
   }).returning();
   return initialMessage.id;
 }
@@ -510,12 +569,21 @@ export async function deleteMessageById(messageId: number) {
   await db.delete(aiMessagesTable).where(eq(aiMessagesTable.id, messageId));
 }
 
-export async function addUserMessage(chatId: number, message: string) {
-  await db.insert(aiMessagesTable).values({
+export async function addUserMessage(chatId: number, message: string, mealInfo?: any) {
+  let jsonMessage = null;
+  if (mealInfo) {
+    jsonMessage = `${JSON.stringify(mealInfo)}`
+
+    console.log(jsonMessage);
+  }
+  const [messageInfo] = await db.insert(aiMessagesTable).values({
     aiChatId: chatId,
     role: 'user',
     message: message,
-  })
+    jsonParsed: jsonMessage
+  }).returning();
+
+  return messageInfo;
 }
 
 export async function addAiResponse(chatId: number, response: string) {
@@ -535,6 +603,24 @@ export async function addAiResponse(chatId: number, response: string) {
 
   const savedResponse = await db.select().from(aiMessagesTable).where(eq(aiMessagesTable.aiChatId, chatId)).orderBy(desc(aiMessagesTable.id)).limit(1);
   console.log("Saved AI Response:", savedResponse);
+}
+
+export async function addAskAboutMessage(chatId: number, mealInfo: any) {
+  let messageToAsk = "";
+  messageToAsk = `
+Detalles de la receta:
+#${mealInfo.meal}
+- ${mealInfo.foodName}
+- Tiempo de preparación: 
+${mealInfo.time ? mealInfo.time % 60 + " minutos" : "No disponible"}
+${mealInfo.comments ? `- Comentarios: ${mealInfo.comments}\n` : ''}
+Ingredientes necesarios:
+${mealInfo.ingredients && mealInfo.ingredients.map((ing: any) => `- ${ing.ingName}: ${ing.quantity}`).join("\n")}
+${mealInfo.recepy ? `\n- Preparacion:\n${mealInfo.recepy}` : ''}
+`;
+
+  const messageInfo = await addUserMessage(chatId, messageToAsk.trim(), mealInfo);
+  await addMealIdToChat(mealInfo.id, chatId, messageInfo.id);
 }
 
 export async function getAiSessionMessages(id: number) {
@@ -577,7 +663,66 @@ export async function getAiSessionMessages(id: number) {
 }
 
 export async function getAllAiSessions() {
-  const sessions = await db.select().from(aiChatSessionTable).orderBy(desc(aiChatSessionTable.id));
+  const sessions = await db
+    .select()
+    .from(aiChatSessionTable)
+    .orderBy(desc(aiChatSessionTable.id));
 
-  return sessions || [];
+  if (!sessions) return [];
+
+  const sessionsWithHasMessages = [];
+  for (const session of sessions) {
+    const messages = await getAiSessionMessages(session.id);
+    sessionsWithHasMessages.push({
+      ...session,
+      hasMessages: messages.some(msg => msg.role !== "system"),
+    });
+  }
+
+  return sessionsWithHasMessages;
+}
+
+export async function updateAiChatMealById(mealId: number, mealData: {
+  meal: string;
+  foodName: string;
+  time: number;
+  completed: boolean;
+  recepy: string;
+  comments: string;
+  ingredients: { ingName: string; quantity: string }[];
+}) {
+  await db.update(mealTable)
+    .set({
+      meal: mealData.meal,
+      foodName: mealData.foodName,
+      time: mealData.time,
+      completed: mealData.completed ? 1 : 0,
+      recepy: mealData.recepy,
+      comments: mealData.comments,
+    })
+    .where(eq(mealTable.id, mealId));
+
+  // Borrar ingredientes anteriores y agregar los nuevos
+  await db.delete(ingredientsTable).where(eq(ingredientsTable.mealId, mealId));
+
+  for (const ing of mealData.ingredients || []) {
+    await db.insert(ingredientsTable).values({
+      mealId,
+      ingName: ing.ingName,
+      quantity: ing.quantity,
+    });
+  }
+  return mealId;
+}
+
+export async function addMealIdToChat(mealId: number, aiChatId: number, messageId: number) {
+  await db.insert(mealsInAiChat).values({
+    mealId: mealId,
+    aiChatId: aiChatId,
+    messageId: messageId
+  })
+}
+
+export async function removeMealIdFromChat(mealId: number, aiChatId: number, messageId: number) {
+  await db.delete(mealsInAiChat).where(eq(mealsInAiChat.mealId, mealId) && eq(mealsInAiChat.aiChatId, aiChatId) && eq(mealsInAiChat.messageId, messageId));
 }
