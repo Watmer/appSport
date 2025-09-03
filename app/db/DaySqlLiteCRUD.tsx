@@ -690,7 +690,7 @@ export async function updateAiChatMealById(mealId: number, mealData: {
   recepy: string;
   comments: string;
   ingredients: { ingName: string; quantity: string }[];
-}) {
+}, dayId?: string) {
   await db.update(mealTable)
     .set({
       meal: mealData.meal,
@@ -699,6 +699,7 @@ export async function updateAiChatMealById(mealId: number, mealData: {
       completed: mealData.completed ? 1 : 0,
       recepy: mealData.recepy,
       comments: mealData.comments,
+      dayId: dayId
     })
     .where(eq(mealTable.id, mealId));
 

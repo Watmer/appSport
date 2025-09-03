@@ -618,11 +618,13 @@ const styles = StyleSheet.create({
     width: "85%",
   },
   modalButton: {
-    backgroundColor: "rgba(60, 80, 145, 1)",
+    flex: 1,
+    backgroundColor: "rgba(95, 95, 95, 1)",
     padding: 10,
     borderRadius: 5,
     marginTop: 10,
-    width: "47%",
+    margin: 2,
+    justifyContent: 'center',
   },
   buttonText: {
     color: "white",
@@ -630,16 +632,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   modalCancelButton: {
-    backgroundColor: "rgba(250, 50, 50, 1)",
+    flex: 1,
+    backgroundColor: "rgba(95, 95, 95, 1)",
     padding: 10,
     borderRadius: 5,
     marginTop: 10,
-    width: "47%",
+    margin: 2,
+    justifyContent: 'center',
   },
   modalCancelButtonText: {
-    color: "white",
+    color: "rgba(255, 0, 0, 1)",
     textAlign: "center",
     fontSize: 16,
+    fontWeight: 'bold'
   },
   scrollModalContainer: {
     width: "100%",

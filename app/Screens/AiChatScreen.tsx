@@ -4,7 +4,7 @@ import * as Clipboard from 'expo-clipboard';
 import { AzureOpenAI } from "openai";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Alert, BackHandler, Dimensions, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
-import { addAiResponse, addAskAboutMessage, addMealWithIngredients, addUserMessage, createAiSession, deleteAiSession, deleteMessageById, getAiSessionMessages, getAllAiSessions } from "../db/DaySqlLiteCRUD";
+import { addAiResponse, addAskAboutMessage, addMealWithIngredients, addUserMessage, createAiSession, deleteAiSession, deleteMessageById, getAiSessionMessages, getAllAiSessions, updateAiChatMealById } from "../db/DaySqlLiteCRUD";
 import { eventBus } from "../utils/EventBus";
 
 const { width, height } = Dimensions.get("window");
@@ -14,6 +14,10 @@ export default function AiChatScreen({ route }: { route: any }) {
 
   const navigation = useNavigation();
   const scrollViewRef = useRef<ScrollView>(null);
+
+  const today = new Date();
+  const currentDay = today.getDate();
+  const dayId = `dayInfo:${currentDay}-${today.getMonth() + 1}-${today.getFullYear()}`;
 
   const [client, setClient] = useState<AzureOpenAI>();
   const [deployment, setDeployment] = useState("");
@@ -33,6 +37,7 @@ export default function AiChatScreen({ route }: { route: any }) {
     systemMessage: string;
     hasMessages: boolean;
   }[]>([]);
+
   const [showingChats, setShowingChats] = useState(false);
   const [selectedMessageId, setSelectedMessageId] = useState(-1);
   const [selectedMessages, setSelectedMessages] = useState<number[]>([])
@@ -542,8 +547,7 @@ export default function AiChatScreen({ route }: { route: any }) {
             {parsed?.id ? (
               <TouchableOpacity
                 onPress={async () => {
-                  // regla para actualizar, no tocar
-                  console.log("actualizar receta");
+                  await updateMealFromChat(parsed);
                 }}
                 style={{
                   padding: 5,
@@ -562,19 +566,7 @@ export default function AiChatScreen({ route }: { route: any }) {
             ) : (
               <TouchableOpacity
                 onPress={async () => {
-                  const today = new Date();
-                  const currentDay = today.getDate();
-                  const dayId = `dayInfo:${currentDay}-${today.getMonth() + 1}-${today.getFullYear()}`;
-
-                  try {
-                    if (Object.keys(parsed).length > 0) {
-                      await addMealWithIngredients(dayId, parsed);
-                      eventBus.emit("REFRESH_HOME");
-                      Alert.alert("Comida añadida", "Se ha añadido correctamente.");
-                    }
-                  } catch (e) {
-                    console.error("Error al guardar receta:", e);
-                  }
+                  await addMealFromChat(parsed);
                 }}
                 style={{
                   padding: 5,
@@ -611,6 +603,30 @@ export default function AiChatScreen({ route }: { route: any }) {
     );
   };
 
+  async function addMealFromChat(mealData: any, dayId?: string) {
+    try {
+      if (Object.keys(mealData).length > 0) {
+        if (dayId) {
+          await addMealWithIngredients(dayId, mealData);
+        } else {
+          await addMealWithIngredients(mealData.dayId, mealData);
+        }
+        eventBus.emit("REFRESH_HOME");
+        Alert.alert("Comida añadida", "Se ha añadido correctamente.");
+      } else {
+        console.log("asdfg");
+      }
+    } catch (e) {
+      console.error("Error al guardar receta:", e);
+    }
+  };
+
+  async function updateMealFromChat(mealData: any, dayId?: string) {
+    if (dayId) {
+      await updateAiChatMealById(mealData.id, mealData, dayId);
+    }
+    await updateAiChatMealById(mealData.id, mealData, mealData.dayId);
+  };
 
   const renderChatMessages = () => {
     return (
