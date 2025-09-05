@@ -66,4 +66,10 @@ export const mealsInAiChat = sqliteTable("mealsInAiChat_table", {
   aiChatId: int().references(() => aiChatSessionTable.id),
   mealId: int().references(() => mealTable.id),
   messageId: int().references(() => aiMessagesTable.id),
-})
+});
+
+export const aiImagesTable = sqliteTable("aiImages_table", {
+  id: int().primaryKey({ autoIncrement: true }),
+  messageId: int().references(() => aiMessagesTable.id),
+  imageUrl: text(),
+});

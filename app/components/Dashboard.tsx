@@ -59,7 +59,7 @@ export default function Dashboard({ refreshTrigger }: { refreshTrigger: number }
     for (const week of weeks) {
       let frozenAdded = false;
 
-      for (const {key, isToday } of week) {
+      for (const { key, isToday } of week) {
         const dayId = `dayInfo:${key}`;
         const dayData = await getDayInfo(dayId);
 
@@ -261,7 +261,9 @@ const styles = StyleSheet.create({
   dashboardContainer: {
     flex: 1,
     maxWidth: height / 1.5,
-    maxHeight: height / 1,
+    maxHeight: height / 1.5,
+    minWidth: width / 2,
+    minHeight: width / 2,
     backgroundColor: "rgba(60, 60, 60, 1)",
     borderRadius: 15,
     marginBottom: 20,

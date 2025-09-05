@@ -62,7 +62,7 @@ export function TodayMealsWidget({ widgetInfo }: any) {
                       padding: 10,
                     }}
                     clickAction="OPEN_URI"
-                    clickActionData={{ uri: `sportappdev://meal-details/${meal.id}` }}
+                    clickActionData={{ uri: `sportapp://meal-details/${meal.id}` }}
                   >
                     <IconWidget
                       font="MaterialIcons-Regular"
@@ -115,7 +115,7 @@ export function TodayMealsWidget({ widgetInfo }: any) {
                       padding: 10,
                     }}
                     clickAction="OPEN_URI"
-                    clickActionData={{ uri: `sportappdev://meal-details/${meal.id}` }}
+                    clickActionData={{ uri: `sportapp://meal-details/${meal.id}` }}
                   >
                     <IconWidget
                       font="MaterialIcons-Regular"

@@ -5,6 +5,13 @@ CREATE TABLE `aiChatSession_table` (
 	`createdAt` integer
 );
 --> statement-breakpoint
+CREATE TABLE `aiImages_table` (
+	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+	`messageId` integer,
+	`imageUrl` text,
+	FOREIGN KEY (`messageId`) REFERENCES `aiMessages_table`(`id`) ON UPDATE no action ON DELETE no action
+);
+--> statement-breakpoint
 CREATE TABLE `aiMessages_table` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`role` text NOT NULL,

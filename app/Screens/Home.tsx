@@ -142,6 +142,7 @@ export default function Home() {
 
       if (success) {
         Alert.alert("Importación exitosa", "Los datos se han importado correctamente.");
+        eventBus.emit('REFRESH_HOME');
       } else {
         Alert.alert("Error", "No se pudieron importar los datos.");
       }

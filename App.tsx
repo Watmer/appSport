@@ -1,16 +1,19 @@
+import { fetch as expoFetch } from "expo/fetch";
 import React, { useEffect } from "react";
 import { registerWidgetTaskHandler } from "react-native-android-widget";
 
 import notifee from "@notifee/react-native";
 import { NavigationContainer, useNavigationContainerRef } from "@react-navigation/native";
-import { registerRootComponent } from "expo";
 import { ActivityIndicator, StatusBar, StyleSheet, Text, View } from "react-native";
 import { useInitDb } from "./app/db/initializeDb";
 import RootNavigator from "./app/navigation/RootNavigator";
 import { configureNotificationHandler } from "./app/utils/Notification";
 import { widgetTaskHandler } from "./app/utils/WidgetHandler";
 
-registerRootComponent(App);
+if (typeof global.fetch !== "function" || !("__isExpoFetch" in (global.fetch as any))) {
+  (global as any).fetch = expoFetch;
+}
+
 registerWidgetTaskHandler(widgetTaskHandler);
 
 function NotificationHandler() {
@@ -38,7 +41,7 @@ function NotificationHandler() {
 }
 
 const linking = {
-  prefixes: ["sportappdev://"],
+  prefixes: ["sportapp://"],
   config: {
     screens: {
       TimerScreen: "timer",

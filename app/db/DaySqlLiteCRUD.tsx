@@ -1,8 +1,7 @@
 import { desc, eq, notExists } from "drizzle-orm";
 import { db } from "./db";
-import { aiChatSessionTable, aiMessagesTable, dayTable, ingredientsTable, mealsInAiChat, mealTable, savedRecepyTable, streakTable } from "./schema";
+import { aiChatSessionTable, aiImagesTable, aiMessagesTable, dayTable, ingredientsTable, mealsInAiChat, mealTable, savedRecepyTable, streakTable } from "./schema";
 
-// Obtener info de un día (día + comidas + ingredientes)
 export async function getDayInfo(dayId: string) {
   const [day] = await db.select().from(dayTable).where(eq(dayTable.id, dayId)).limit(1);
   const meals = await getMealsDayInfo(dayId);
@@ -426,11 +425,13 @@ Formato de salida (OBLIGATORIO):
    - [JSON] → Objeto JSON válido.
 
 Reglas JERÁRQUICAS (cumple en este orden de prioridad):  
-1. Si el **usuario envía un JSON en su mensaje**, RESPONDE usando **EXACTAMENTE los mismos campos que aparezcan en ese JSON** (aunque no coincidan con el formato estándar).  
+1. Si el **usuario envía un JSON en su mensaje**, RESPONDE usando **EXACTAMENTE los mismos campos que aparezcan en ese JSON** (aunque no coincidan con el formato estándar).
+   - No incluyas el bloque [JSON] si no has proporcionado una receta, o si el json que vas a dar no podria considerarse una receta, por ejemplo que solo tuviera comentario y nada mas, en esos casos no mandes ningun [JSON].
    - Mantén los nombres de los campos y los valores que te mande el usuario.  
    - Si hay un campo id, repite el mismo valor.  
    - No inventes campos que no estaban en el JSON del usuario.  
    - Cuando termines esa respuesta, vuelve a usar el formato estándar en los siguientes mensajes.  
+   
 2. Si el usuario **no envía JSON**, usa SIEMPRE el formato estándar siguiente:  
    [JSON] 
    { 
@@ -452,7 +453,7 @@ Reglas adicionales:
 - No mezcles el JSON con el texto.  
 - No uses negritas ni otro formato en [RESPUESTA].  
 - El bloque [JSON] debe ser válido, sin comas finales.  
-- No incluyas el bloque [JSON] si no hay receta, si todos los campos serían null, o si has dado varias opciones y no sabes cuál elige el usuario.  
+- No incluyas el bloque [JSON] si no hay receta, si todos los campos serían null, o si has dado varias opciones y no sabes cuál elige el usuario.
 - Si falta un dato, usa null.  
 - En [RESPUESTA], si das receta incluye lista de ingredientes y resumen nutricional.
 - Solo se permiten estos valores para meal: Desayuno, Almuerzo, Comida, Merienda, Cena.  
@@ -623,6 +624,24 @@ ${mealInfo.recepy ? `\n- Preparacion:\n${mealInfo.recepy}` : ''}
   await addMealIdToChat(mealInfo.id, chatId, messageInfo.id);
 }
 
+export async function getMessageImageUrl(messageId: number) {
+  const images = await db
+    .select({ imageUrl: aiImagesTable.imageUrl })
+    .from(aiImagesTable)
+    .where(eq(aiImagesTable.messageId, messageId))
+    .orderBy(desc(aiImagesTable.id))
+    .limit(1);
+
+  return images.length > 0 ? images[0].imageUrl : null;
+}
+
+export async function setMessageImageUrl(messageId: number, imageUrl: string){
+  await db.insert(aiImagesTable).values({
+    messageId: messageId,
+    imageUrl: imageUrl,
+  })
+}
+
 export async function getAiSessionMessages(id: number) {
   const systemRows = await db
     .select({
@@ -650,14 +669,21 @@ export async function getAiSessionMessages(id: number) {
     role: row.role as "system" | "user" | "assistant",
     content: row.content,
     jsonParsed: null,
+    imageUrl: null,
   }));
 
-  const messagesArray = messageRows.map(row => ({
-    id: row.id,
-    role: row.role as "system" | "user" | "assistant",
-    content: row.content,
-    jsonParsed: row.jsonParsed ?? null,
-  }));
+  const messagesArray = [];
+  for (const row of messageRows) {
+    const lastImageUrl = await getMessageImageUrl(row.id);
+
+    messagesArray.push({
+      id: row.id,
+      role: row.role as "system" | "user" | "assistant",
+      content: row.content,
+      jsonParsed: row.jsonParsed ?? null,
+      imageUrl: lastImageUrl,
+    });
+  }
 
   return [...systemArray, ...messagesArray];
 }

@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "7c1fb605-8be1-4084-846f-59b2be916142",
+  "id": "995671ef-8fee-4bfe-a3fb-922b733d6a1c",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
     "aiChatSession_table": {
@@ -38,6 +38,51 @@
       },
       "indexes": {},
       "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "aiImages_table": {
+      "name": "aiImages_table",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "integer",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": true
+        },
+        "messageId": {
+          "name": "messageId",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "imageUrl": {
+          "name": "imageUrl",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "aiImages_table_messageId_aiMessages_table_id_fk": {
+          "name": "aiImages_table_messageId_aiMessages_table_id_fk",
+          "tableFrom": "aiImages_table",
+          "tableTo": "aiMessages_table",
+          "columnsFrom": [
+            "messageId"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
