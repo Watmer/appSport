@@ -642,6 +642,11 @@ export async function setMessageImageUrl(messageId: number, imageUrl: string){
   })
 }
 
+export async function removeMessageImageUrl(messageId: number) {
+  await db.delete(aiImagesTable)
+  .where(eq(aiImagesTable.messageId, messageId));
+};
+
 export async function getAiSessionMessages(id: number) {
   const systemRows = await db
     .select({

@@ -4,11 +4,14 @@ import { registerWidgetTaskHandler } from "react-native-android-widget";
 
 import notifee from "@notifee/react-native";
 import { NavigationContainer, useNavigationContainerRef } from "@react-navigation/native";
-import { ActivityIndicator, StatusBar, StyleSheet, Text, View } from "react-native";
+import * as Device from "expo-device";
+import * as ScreenOrientation from "expo-screen-orientation";
+import { ActivityIndicator, Platform, StatusBar, StyleSheet, Text, View } from "react-native";
 import { useInitDb } from "./app/db/initializeDb";
 import RootNavigator from "./app/navigation/RootNavigator";
 import { configureNotificationHandler } from "./app/utils/Notification";
 import { widgetTaskHandler } from "./app/utils/WidgetHandler";
+
 
 if (typeof global.fetch !== "function" || !("__isExpoFetch" in (global.fetch as any))) {
   (global as any).fetch = expoFetch;
@@ -23,6 +26,21 @@ function NotificationHandler() {
     configureNotificationHandler().catch(err =>
       console.error("Error configuring notifications:", err)
     );
+  }, []);
+
+  useEffect(() => {
+    async function lockOrientation() {
+      if (Platform.OS === "android") {
+        if (Device.deviceType === Device.DeviceType.TABLET) {
+          await ScreenOrientation.unlockAsync();
+        } else {
+          await ScreenOrientation.lockAsync(
+            ScreenOrientation.OrientationLock.PORTRAIT_UP
+          );
+        }
+      }
+    }
+    lockOrientation();
   }, []);
 
   useEffect(() => {
@@ -71,7 +89,7 @@ export default function App() {
 
   return (
     <NavigationContainer linking={linking}>
-      <StatusBar backgroundColor="transparent"/>
+      <StatusBar backgroundColor="transparent" />
       <RootNavigator />
       <NotificationHandler />
     </NavigationContainer>

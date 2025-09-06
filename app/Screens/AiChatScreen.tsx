@@ -1,15 +1,17 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Zoomable, ZoomableRef } from "@likashefqet/react-native-image-zoom";
 import { useNavigation } from "@react-navigation/native";
 import * as Clipboard from 'expo-clipboard';
 import LottieView from 'lottie-react-native';
 import { AzureOpenAI } from "openai";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Alert, BackHandler, Dimensions, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useSharedValue } from "react-native-reanimated";
 import loadingDots from '../../assets/animations/loadingDots.json';
-import { addAiResponse, addAskAboutMessage, addMealWithIngredients, addUserMessage, createAiSession, deleteAiSession, deleteMessageById, getAiSessionMessages, getAllAiSessions, setMessageImageUrl, updateAiChatMealById } from "../db/DaySqlLiteCRUD";
+import { addAiResponse, addAskAboutMessage, addMealWithIngredients, addUserMessage, createAiSession, deleteAiSession, deleteMessageById, getAiSessionMessages, getAllAiSessions, removeMessageImageUrl, setMessageImageUrl, updateAiChatMealById } from "../db/DaySqlLiteCRUD";
 import { eventBus } from "../utils/EventBus";
 import { renderImage, sendImagePrompt } from "./AiImageGenerator";
-
 
 const { width, height } = Dimensions.get("window");
 
@@ -26,6 +28,11 @@ export default function AiChatScreen({ route }: { route: any }) {
   const [client, setClient] = useState<AzureOpenAI>();
   const [deployment, setDeployment] = useState("");
   const [currentIdChat, setCurrentIdChat] = useState(-1);
+
+  const [showModalImage, setShowModalImage] = useState(false);
+  const [showingMsgImage, setShowingMsgImage] = useState("");
+  const scale = useSharedValue(1);
+  const zoomableRef = useRef<ZoomableRef>(null);
 
   const [chatMessages, setChatMessages] = useState<{
     id: number;
@@ -241,7 +248,7 @@ export default function AiChatScreen({ route }: { route: any }) {
         scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 100);
 
-    }, 30);
+    }, 10);
 
     try {
       const stream = await client.chat.completions.stream({
@@ -431,27 +438,55 @@ export default function AiChatScreen({ route }: { route: any }) {
               <Text style={{ color: "white" }}>Seleccionar texto</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              onPress={() => {
-                if (selectedMessageId !== -1) {
-                  const messagePrompt = chatMessages.find(
-                    (msg) => msg.id === selectedMessageId
-                  );
-                  if (messagePrompt) {
-                    handleSendImagePrompt(messagePrompt.content);
-                  }
-                }
-                setShowSelectedMessageOptions(false);
-                setSelectedMessageId(-1);
-                setSelectingMessageContent(false);
-              }}
-              style={{ padding: 5, flexDirection: 'row', alignItems: 'center', maxWidth: "85%" }}
-            >
-              <MaterialCommunityIcons style={{ paddingRight: 5 }} name="palette" size={20} color={"white"} />
-              <Text style={{ color: "white" }}>Convertir a imagen</Text>
-            </TouchableOpacity>
+            {chatMessages.find(
+              (msg) => msg.id === selectedMessageId && msg.imageUrl !== 'loading'
+            )?.imageUrl ? (
+              <TouchableOpacity
+                onPress={async () => {
+                  if (selectedMessageId !== -1) {
+                    const message = chatMessages.find(
+                      (msg) => msg.id === selectedMessageId
+                    );
+                    if (message) {
+                      await removeMessageImageUrl(message.id);
 
-            <TouchableOpacity
+                      const updatedMessages = (await getAiSessionMessages(currentIdChat)).filter((msg) => msg.role !== "system");
+                      setChatMessages(updatedMessages);
+                    }
+                  }
+                  setShowSelectedMessageOptions(false);
+                  setSelectedMessageId(-1);
+                  setSelectingMessageContent(false);
+                }}
+                style={{ padding: 5, flexDirection: 'row', alignItems: 'center', maxWidth: "85%" }}
+              >
+                <MaterialCommunityIcons style={{ paddingRight: 5 }} name="image-off-outline" size={20} color={"red"} />
+                <Text style={{ color: "red" }}>Eliminar imagen</Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                onPress={() => {
+                  if (selectedMessageId !== -1) {
+                    const messagePrompt = chatMessages.find(
+                      (msg) => msg.id === selectedMessageId
+                    );
+                    if (messagePrompt) {
+                      handleSendImagePrompt(messagePrompt.content);
+                    }
+                  }
+                  setShowSelectedMessageOptions(false);
+                  setSelectedMessageId(-1);
+                  setSelectingMessageContent(false);
+                }}
+                style={{ padding: 5, flexDirection: 'row', alignItems: 'center', maxWidth: "85%" }}
+              >
+                <MaterialCommunityIcons style={{ paddingRight: 5 }} name="palette" size={20} color={"white"} />
+                <Text style={{ color: "white" }}>Convertir a imagen</Text>
+              </TouchableOpacity>
+            )
+            }
+
+            < TouchableOpacity
               onPress={async () => {
                 if (selectedMessageId !== -1) {
                   await deleteMessageById(selectedMessageId);
@@ -468,8 +503,8 @@ export default function AiChatScreen({ route }: { route: any }) {
               <Text style={{ color: "red" }}>Eliminar mensaje</Text>
             </TouchableOpacity>
           </View>
-        </TouchableOpacity>
-      </Modal>
+        </TouchableOpacity >
+      </Modal >
     );
   };
 
@@ -796,7 +831,31 @@ export default function AiChatScreen({ route }: { route: any }) {
                         style={{ width: 50, height: 35 }}
                       />
                     )}
-                    {message.imageUrl && renderImage(message.imageUrl)}
+                    {message.imageUrl &&
+                      <TouchableOpacity
+                        activeOpacity={1}
+                        onPress={() => {
+                          setShowModalImage(true);
+                          message.imageUrl &&
+                            setShowingMsgImage(message.imageUrl)
+                        }}
+                        onLongPress={(event) => {
+                          if (selectingMessageContent && message.id === selectedMessageId) {
+                            setSelectingMessageContent(false);
+                          } else {
+                            setEnabledSelection(false);
+                            setSelectedMessageId(message.id);
+                            setUseRefPositionMessage({
+                              x: event.nativeEvent.pageX,
+                              y: event.nativeEvent.pageY,
+                            });
+                            setShowSelectedMessageOptions(true);
+                            setSelectingMessageContent(false);
+                          }
+                        }}
+                      >
+                        {renderImage(message.imageUrl)}
+                      </TouchableOpacity>}
 
                   </TouchableOpacity>
 
@@ -850,6 +909,32 @@ export default function AiChatScreen({ route }: { route: any }) {
     );
   };
 
+  function renderModalImage() {
+    return (
+      <Modal
+        visible={showModalImage}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {
+          setShowModalImage(false);
+          setShowingMsgImage("");
+        }}
+      >
+        <GestureHandlerRootView style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.8)' }}>
+          <Zoomable
+            minScale={0.5}
+            maxScale={5}
+            scale={scale}
+            isDoubleTapEnabled
+            style={{ justifyContent: 'center' }}
+          >
+            {renderImage(showingMsgImage)}
+          </Zoomable>
+        </GestureHandlerRootView>
+      </Modal>
+    );
+  }
+
   async function handleSendImagePrompt(prompt: string) {
     await setMessageImageUrl(selectedMessageId, "loading");
     let sessionMessages = await getAiSessionMessages(currentIdChat);
@@ -873,6 +958,7 @@ export default function AiChatScreen({ route }: { route: any }) {
       </View>
       {showSelectedMessageOptions && renderOptionsForSelectedMessage()}
       {showingChatOptions && renderChatOptions()}
+      {renderModalImage()}
     </View>
   );
 }
@@ -934,5 +1020,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     margin: 7,
     alignItems: 'center',
-  }
+  },
+  modalOverlay: {
+    width: '100%',
+    aspectRatio: 1,
+    backgroundColor: "rgba(0,0,0,0.8)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  zoomableModal: {
+    width: "100%",
+    height: "100%",
+  },
+  modalImage: {
+    width: "100%",
+    height: "100%",
+  },
 });

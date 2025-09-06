@@ -33,16 +33,9 @@
       "edgeToEdgeEnabled": true,
       "enableBackgroundNotification": true,
       "useNextNotificationsApi": true,
-      "statusBar": {
-        "backgroundColor": "transparent",
-        "translucent": true,
-        "barStyle": "light-content"
-      },
-      "navigationBar": {
-        "backgroundColor": "transparent",
-        "barStyle": "light-content",
-        "visible": true
-      }
+      "resizeMode": "responsive",
+      "supportsTablet": true,
+      "orientation": "default"
     },
     "web": {
       "bundler": "metro",

@@ -1,9 +1,11 @@
 import LottieView from "lottie-react-native";
 import { AzureOpenAI } from "openai";
-import { Image, View } from "react-native";
+import { Image, Modal, StyleSheet, View } from "react-native";
 import loadingBrush from '../../assets/animations/loaderDrawBrush.json';
 import loadingCat from '../../assets/animations/loaderCat.json';
 import { getAiSessionMessages, setMessageImageUrl } from "../db/DaySqlLiteCRUD";
+import { Zoomable } from "@likashefqet/react-native-image-zoom";
+
 
 let imageClient: AzureOpenAI | null = null;
 let imageDeployment: string | null = null;
@@ -61,7 +63,7 @@ export function renderImage(url: string) {
   if (url === "loading") {
     return (
       <View style={{
-        width: "40%",
+        width: 100,
         aspectRatio: 1,
         alignSelf: "center"
       }}>
@@ -76,19 +78,29 @@ export function renderImage(url: string) {
   }
 
   return (
-    <Image
-      source={{ uri: url }}
-      style={{
-        width: "95%",
-        aspectRatio: 1,
-        borderRadius: 10,
-        marginTop: 5,
-        margin: 10,
-        alignSelf: "center",
-        borderColor: "rgba(255, 255, 255, 0.5)",
-        borderWidth: 1,
-      }}
-      resizeMode="contain"
-    />
+    <View style={styles.container}>
+      <Image
+        source={{ uri: url }}
+        style={styles.image}
+        resizeMode="contain"
+      />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    width: "95%",
+    aspectRatio: 1,
+    alignSelf: "center",
+    margin: 10,
+    borderRadius: 10,
+    overflow: "hidden",
+    borderColor: "rgba(255, 255, 255, 0.5)",
+    borderWidth: 1,
+  },
+  image: {
+    width: "100%",
+    height: "100%",
+  },
+});
