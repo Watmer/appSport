@@ -4,7 +4,6 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { useNavigation } from "@react-navigation/native";
 import AiChatScreen from "../Screens/AiChatScreen";
 import Home from "../Screens/Home";
-import { PreviewWidgets } from "../Screens/PreviewWidgets";
 import ShopListScreen from "../Screens/ShopListScreen";
 import TimerScreen from "../Screens/TimerScreen";
 
@@ -40,11 +39,6 @@ export default function TabsNavigator() {
       <Tab.Screen name="ShopListScreen" component={ShopListScreen} options={{
         title: "Shop List", tabBarIcon: ({ color, focused }) => (
           <MaterialCommunityIcons name={focused ? 'cart' : 'cart-outline'} color={color} size={25} />
-        ),
-      }} />
-      <Tab.Screen name="PreviewWidgets" component={PreviewWidgets} options={{
-        title: "Preview Widgets", tabBarIcon: ({ color, focused }) => (
-          <MaterialCommunityIcons name={focused ? 'widgets' : 'widgets-outline'} color={color} size={25} />
         ),
       }} />
       <Tab.Screen name="AiChatScreen" component={AiChatScreen} options={{

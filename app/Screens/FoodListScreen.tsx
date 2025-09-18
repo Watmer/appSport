@@ -1,13 +1,11 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useLayoutEffect, useState } from "react";
-import { Alert, Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { RefreshControl } from "react-native-gesture-handler";
 import MealCard from "../components/MealCard";
-import { getDayInfo, setDayInfo, swapDayInfo } from "../db/DaySqlLiteCRUD";
+import { getDayInfo, setDayInfo, swapDayInfo } from "../db/CRUD/DayMealsCRUD";
 import { eventBus } from "../utils/EventBus";
-
-const { width, height } = Dimensions.get("window");
 
 const meals = ["Desayuno", "Almuerzo", "Comida", "Merienda", "Cena"];
 

@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useEffect, useLayoutEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { addRecepy, getAllMealsInRecepys, getAllRecepys, removeRecepy } from "../db/DaySqlLiteCRUD";
+import { addRecepy, getAllMealsInRecepys, getAllRecepys, removeRecepy } from "../db/CRUD/RecepyMealsCRUD";
 import { eventBus } from "../utils/EventBus";
 
 interface Ingredient {

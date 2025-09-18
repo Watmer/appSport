@@ -4,7 +4,7 @@ import * as Clipboard from 'expo-clipboard';
 import React, { useEffect, useLayoutEffect, useState } from "react";
 import { Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from "react-native";
 import { RefreshControl } from "react-native-gesture-handler";
-import { getAsyncInfo, setAsyncInfo } from "../components/AsyncStorageCRUD";
+import { getAsyncInfo, setAsyncInfo } from "../db/CRUD/AsyncStorageCRUD";
 
 const shopKey = "shopList";
 

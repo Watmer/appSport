@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useEffect, useLayoutEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { getMealById } from "../db/DaySqlLiteCRUD";
+import { getMealById } from "../db/CRUD/DayMealsCRUD";
 
 export default function MealDetailScreen({ route }: { route: any }) {
   const { mealInfoKey } = route.params || {};

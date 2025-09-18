@@ -3,7 +3,6 @@ import { useNavigation } from "@react-navigation/native";
 import { useState } from "react";
 import {
   Alert,
-  Dimensions,
   Keyboard,
   KeyboardAvoidingView,
   Modal,
@@ -15,10 +14,8 @@ import {
   TouchableWithoutFeedback,
   View
 } from "react-native";
-import { addMealWithIngredients } from "../db/DaySqlLiteCRUD";
+import { addMealWithIngredients } from "../db/CRUD/DayMealsCRUD";
 import { eventBus } from "../utils/EventBus";
-
-const { width, height } = Dimensions.get("window");
 
 const meals = ["Desayuno", "Almuerzo", "Comida", "Merienda", "Cena"];
 

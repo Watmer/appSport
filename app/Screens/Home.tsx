@@ -4,14 +4,12 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
-import { Alert, Dimensions, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { RefreshControl } from "react-native-gesture-handler";
 import Dashboard from "../components/Dashboard";
 import MealCard from "../components/MealCard";
-import { exportAllInfoString, importAllInfoString } from "../db/DaySqlLiteCRUD";
+import { exportAllInfoString, importAllInfoString } from "../db/CRUD/DayMealsCRUD";
 import { eventBus } from "../utils/EventBus";
-
-const { width, height } = Dimensions.get("window");
 
 export default function Home() {
   const navigation = useNavigation();

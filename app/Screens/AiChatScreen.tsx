@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Zoomable, ZoomableRef } from "@likashefqet/react-native-image-zoom";
+import { Zoomable } from "@likashefqet/react-native-image-zoom";
 import { useNavigation } from "@react-navigation/native";
 import * as Clipboard from 'expo-clipboard';
 import LottieView from 'lottie-react-native';
@@ -9,7 +9,8 @@ import { Alert, BackHandler, Dimensions, Modal, ScrollView, StyleSheet, Text, Te
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useSharedValue } from "react-native-reanimated";
 import loadingDots from '../../assets/animations/loadingDots.json';
-import { addAiResponse, addAskAboutMessage, addMealWithIngredients, addUserMessage, createAiSession, deleteAiSession, deleteMessageById, getAiSessionMessages, getAllAiSessions, removeMessageImageUrl, setMessageImageUrl, updateAiChatMealById } from "../db/DaySqlLiteCRUD";
+import { addAiResponse, addAskAboutMessage, addUserMessage, createAiSession, deleteAiSession, deleteMessageById, getAiSessionMessages, getAllAiSessions, removeMessageImageUrl, setMessageImageUrl, updateAiChatMealById } from "../db/CRUD/AiChatCRUD";
+import { addMealWithIngredients } from "../db/CRUD/DayMealsCRUD";
 import { eventBus } from "../utils/EventBus";
 import { renderImage, sendImagePrompt } from "./AiImageGenerator";
 
@@ -32,7 +33,6 @@ export default function AiChatScreen({ route }: { route: any }) {
   const [showModalImage, setShowModalImage] = useState(false);
   const [showingMsgImage, setShowingMsgImage] = useState("");
   const scale = useSharedValue(1);
-  const zoomableRef = useRef<ZoomableRef>(null);
 
   const [chatMessages, setChatMessages] = useState<{
     id: number;

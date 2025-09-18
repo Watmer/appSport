@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { WidgetPreview } from 'react-native-android-widget';
-import { getDayInfo } from '../db/DaySqlLiteCRUD';
+import { getDayInfo } from '../db/CRUD/DayMealsCRUD';
 import { StreakDaysWidget, TodayMealsWidget } from '../utils/Widget';
 
 export function PreviewWidgets() {

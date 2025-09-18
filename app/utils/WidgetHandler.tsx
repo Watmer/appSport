@@ -1,6 +1,7 @@
 import React from 'react';
 import type { WidgetTaskHandlerProps } from 'react-native-android-widget';
-import { getDayInfo, getStreakInfo, updateCompletedMealById } from '../db/DaySqlLiteCRUD';
+import { getDayInfo, updateCompletedMealById } from '../db/CRUD/DayMealsCRUD';
+import { getStreakInfo } from '../db/CRUD/StreakCRUD';
 import { eventBus } from './EventBus';
 import { StreakDaysWidget, TodayMealsWidget, } from './Widget';
 

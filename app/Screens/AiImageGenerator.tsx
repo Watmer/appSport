@@ -1,10 +1,8 @@
 import LottieView from "lottie-react-native";
 import { AzureOpenAI } from "openai";
-import { Image, Modal, StyleSheet, View } from "react-native";
+import { Image, StyleSheet, View } from "react-native";
 import loadingBrush from '../../assets/animations/loaderDrawBrush.json';
-import loadingCat from '../../assets/animations/loaderCat.json';
-import { getAiSessionMessages, setMessageImageUrl } from "../db/DaySqlLiteCRUD";
-import { Zoomable } from "@likashefqet/react-native-image-zoom";
+import { getAiSessionMessages, setMessageImageUrl } from "../db/CRUD/AiChatCRUD";
 
 
 let imageClient: AzureOpenAI | null = null;

@@ -3,7 +3,7 @@
     "name": "SportApp",
     "slug": "SportApp",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "sportapp",
     "userInterfaceStyle": "automatic",
@@ -34,8 +34,7 @@
       "enableBackgroundNotification": true,
       "useNextNotificationsApi": true,
       "resizeMode": "responsive",
-      "supportsTablet": true,
-      "orientation": "default"
+      "supportsTablet": true
     },
     "web": {
       "bundler": "metro",
