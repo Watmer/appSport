@@ -245,8 +245,8 @@ export default function AiChatScreen({ route }: { route: any }) {
     setLoadingResponse(true);
     setShowingChats(false);
 
-    {/* Primero se añade el mensaje del usuario para verlo en el chat, 
-      y se hace scroll hasta el final */}
+    /* Primero se añade el mensaje del usuario para verlo en el chat, 
+      y se hace scroll hasta el final */
     await addUserMessage(currentIdChat, message);
 
     let sessionMessages = await getAiSessionMessages(currentIdChat);
@@ -256,7 +256,7 @@ export default function AiChatScreen({ route }: { route: any }) {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
 
-    {/* Se crea un id temporal y se inician variables */ }
+    /* Se crea un id temporal y se inician variables */
     const tempId = Date.now();
     setChatMessages(prev => [...prev, { id: tempId, role: "assistant", content: "" }]);
 
@@ -264,32 +264,44 @@ export default function AiChatScreen({ route }: { route: any }) {
     let pending = "";
     let currentVisible = "";
     let hideRest = false;
+    let streamDone = false;
 
     const interval = setInterval(async () => {
       if (pending.length > 0) {
-        const char = pending[0];
-        pending = pending.slice(1);
-        currentVisible += char;
-
-        {/* Limpia el prefijo [RESPUESTA] y corta a partir de [JSON] */ }
-        let visible = currentVisible.replace(/\[RESPUESTA\][^\S\r\n]*\r?\n?/, "");
-        if (!hideRest && visible.includes("[JSON]")) {
-          visible = visible.split("[JSON]")[0].trim();
-          hideRest = true;
+        /* Corta a partir de [JSON] */
+        if (!hideRest) {
+          if (pending.includes("[JSON]")) {
+            pending = pending.split("[JSON]")[0].trim();
+            hideRest = true;
+          }
         }
+        /* Limpia el prefijo [RESPUESTA] y muestra el mensaje con efecto typing */
+        if (pending.length > 0) {
+          const char = pending[0];
+          pending = pending.slice(1);
+          currentVisible += char;
+          let visible = currentVisible.replace(/\[RESPUESTA\][^\S\r\n]*\r?\n?/, "");
 
-        setChatMessages(prev =>
-          prev.map(msg => (msg.id === tempId ? { ...msg, content: visible } : msg))
-        );
+          setChatMessages(prev =>
+            prev.map(msg => (msg.id === tempId ? { ...msg, content: visible } : msg))
+          );
 
-        setTimeout(() => {
-          scrollViewRef.current?.scrollToEnd({ animated: true });
-        }, 100);
+          setTimeout(() => {
+            scrollViewRef.current?.scrollToEnd({ animated: true });
+          }, 100);
+        }
       }
 
-      {/* Si ya no muestra más mensaje, detiene el intervalo */ }
-      if (hideRest) {
-        clearInterval(interval);
+      /* Si ya no muestra más mensaje, detiene el intervalo y guarda la respuesta */
+      if (pending.length === 0) {
+        if (streamDone) {
+          clearInterval(interval);
+
+          await addAiResponse(currentIdChat, fullText);
+          const updated = (await getAiSessionMessages(currentIdChat)).filter(m => m.role !== "system");
+          setChatMessages(updated);
+          setLoadingResponse(false);
+        }
       }
     }, 10);
 
@@ -302,7 +314,7 @@ export default function AiChatScreen({ route }: { route: any }) {
         top_p: 0.95,
       });
 
-      {/* Añade el contenido del stream y los va acumulando*/ }
+      /* Añade el contenido del stream y los va acumulando*/
       for await (const event of stream) {
         const chunk = event.choices?.[0]?.delta?.content;
         if (chunk) {
@@ -313,11 +325,7 @@ export default function AiChatScreen({ route }: { route: any }) {
         }
       }
 
-      {/* Al final añade la respuesta al chat*/ }
-      await addAiResponse(currentIdChat, fullText);
-      const updated = (await getAiSessionMessages(currentIdChat)).filter(m => m.role !== "system");
-      setChatMessages(updated);
-      setLoadingResponse(false);
+      streamDone = true;
 
     } catch (err) {
       clearInterval(interval);

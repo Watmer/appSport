@@ -1,14 +1,14 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { useEffect, useState } from "react";
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 import { requestWidgetUpdate } from "react-native-android-widget";
-import { addRecepy, getAllRecepys, getDayInfo, removeRecepy, updateMealById } from "../db/DaySqlLiteCRUD";
-import { TodayMealsWidget } from "../utils/Widget";
-import { eventBus } from "../utils/EventBus";
+import { getDayInfo, updateMealById } from "../db/CRUD/DayMealsCRUD";
+import { addRecepy, getAllRecepys, removeRecepy } from "../db/CRUD/RecepyMealsCRUD";
 
-const { width, height } = Dimensions.get("window");
+import { eventBus } from "../utils/EventBus";
+import { TodayMealsWidget } from "../utils/Widget";
 
 interface Ingredient {
   ingName: string;
