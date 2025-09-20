@@ -151,7 +151,7 @@ export default function TimerScreen() {
       }
       let newNotificationId = null;
       if (oldTimer?.paused) {
-        newNotificationId = await createNotifAsync(oldTimer?.title, oldTimer?.id, oldTimer?.remaining);
+        newNotificationId = await createNotifAsync(oldTimer?.title, oldTimer?.id, newDuration);
       }
 
       setTimers((prevTimers) =>
