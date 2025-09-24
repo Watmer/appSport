@@ -1,7 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 
-import { useNavigation } from "@react-navigation/native";
 import AiChatScreen from "../Screens/AiChatScreen";
 import Home from "../Screens/Home";
 import ShopListScreen from "../Screens/ShopListScreen";
@@ -10,8 +9,6 @@ import TimerScreen from "../Screens/TimerScreen";
 const Tab = createBottomTabNavigator();
 
 export default function TabsNavigator() {
-  const navigation = useNavigation();
-
   return (
     <Tab.Navigator
       initialRouteName={"Home"}

@@ -2,7 +2,8 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import React, { useEffect, useState } from "react";
 import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { addFailedDay, addFrozenDay, addStreak, addStreakDay, getDayInfo, getLastFailedDay, getOrderedDays, removeFailedDay, removeFrozenDay, removeStreakDay } from "../db/DaySqlLiteCRUD";
+import { getDayInfo } from "../db/CRUD/DayMealsCRUD";
+import { addFailedDay, addFrozenDay, addStreak, addStreakDay, getLastFailedDay, getOrderedDays, removeFailedDay, removeFrozenDay, removeStreakDay } from "../db/CRUD/StreakCRUD";
 import { eventBus } from "../utils/EventBus";
 
 const { width, height } = Dimensions.get("window");
