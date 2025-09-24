@@ -19,7 +19,7 @@ export default function TimerScreen() {
 
   const [addingCrono, setAddingCrono] = useState(false);
   const [addingTimer, setAddingTimer] = useState(false);
-  const [editing, setEditing] = useState(false);
+  const [editingTitle, setEditingTitle] = useState(false);
   const [editId, setEditId] = useState("");
   const [editingTime, setEditingTime] = useState(false);
 
@@ -54,6 +54,172 @@ export default function TimerScreen() {
     });
   }, [navigation]);
 
+  /*
+    Al escuchar el evento timersUpdated recarga los timers
+  */
+  useEffect(() => {
+    const handler = () => {
+      loadTimers();
+    };
+    eventBus.on('timersUpdated', handler);
+
+    return () => {
+      eventBus.off('timersUpdated', handler);
+    };
+  }, []);
+
+  /*
+    Al montar la screen carga los timers que hay
+  */
+  useEffect(() => {
+    loadTimers();
+  }, []);
+
+  /*
+    Al motarse la screen crea un intervalo para el efecto de transcurrir tiempo
+  */
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimers((prev) => {
+        const sortedTimers = [...prev].sort((a, b) => a.remaining - b.remaining);
+        return sortedTimers.map((timer) => {
+          if (timer.paused) return timer;
+
+          const now = new Date();
+          const elapsed = (now.getTime() - new Date(timer.startTime).getTime()) / 1000;
+
+          const currentRemaining = timer.up
+            ? elapsed
+            : Math.max(timer.totalDuration - elapsed, 0);
+
+          if (currentRemaining <= 0 && !timer.up && !timer.sentNotif) {
+            return {
+              ...timer,
+              remaining: 0,
+              sentNotif: true,
+            };
+          }
+
+          return {
+            ...timer,
+            remaining: currentRemaining,
+          };
+        });
+      });
+    }, 150);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  /*
+    Se encarga de recibir las acciones de la notificacion para actualizar los timers
+  */
+  useEffect(() => {
+    const unsubscribe = handleTimerNotifResponse(
+      async (action, timerData, notificationId) => {
+        if (!timerData?.id) return;
+
+        await notifee.cancelNotification(notificationId);
+
+        const timer = timers.find((timer) => timer.id === timerData.id);
+        if (!timer) return;
+
+        /* Accion de añadir 1 min */
+        if (action === "DISMISS_ONE_TIMER") {
+          if (timer.notificationId) {
+            await cancelNotifAsync(timer.notificationId);
+          }
+          const newNotificationId = await createNotifAsync(timer.title, timer.id, 60);
+          setTimers((prev) =>
+            prev.map((timer) =>
+              timer.id === timerData.id
+                ? {
+                  ...timer,
+                  startTime: new Date(),
+                  totalDuration: 60,
+                  remaining: 60,
+                  sentNotif: false,
+                  notificationId: newNotificationId ?? null,
+                }
+                : timer
+            )
+          );
+        }
+
+        /* Accion de añadir 5 min */
+        else if (action === "DISMISS_FIVE_TIMER") {
+          if (timer.notificationId) {
+            await cancelNotifAsync(timer.notificationId);
+          }
+          const newNotificationId = await createNotifAsync(timer.title, timer.id, 300);
+          setTimers((prev) =>
+            prev.map((timer) =>
+              timer.id === timerData.id
+                ? {
+                  ...timer,
+                  startTime: new Date(),
+                  totalDuration: 300,
+                  remaining: 300,
+                  sentNotif: false,
+                  notificationId: newNotificationId ?? null,
+                }
+                : timer
+            )
+          );
+        }
+
+        /* Accion de parar el timer */
+        else if (action === "STOP_TIMER") {
+          setTimers((prev) =>
+            prev.map((timer) =>
+              timer.id === timerData.id ? { ...timer, paused: true } : timer
+            )
+          );
+        }
+
+        /* Al pulsar cualquier parte de la notificacion navega a TimerScreen  */
+        else {
+          (navigation as any).navigate("TimerScreen");
+        }
+      }
+    );
+
+    return unsubscribe;
+  }, [timers, navigation]);
+
+  /* 
+    Guarda los timers cada vez que se modifica la lista de timers
+  */
+  useEffect(() => {
+    timers.forEach(async (timer) => {
+      await AsyncStorage.setItem(timer.id, JSON.stringify(timer));
+    });
+  }, [timers]);
+
+  /*
+    Se encarga de cargar los temporizadores y cronos que hay en asyncStorage
+   */
+  const loadTimers = async () => {
+    const keys = await AsyncStorage.getAllKeys();
+    const timerKeys = keys.filter((key) => key.startsWith("timer_"));
+    const data = await AsyncStorage.multiGet(timerKeys);
+
+    const loaded = data.map(([, value]) => {
+      if (!value) return null;
+      const parsed = JSON.parse(value);
+      return {
+        ...parsed,
+        startTime: new Date(parsed.startTime),
+      };
+    });
+    setTimers(loaded.slice().sort((a, b) => {
+      return a.remaining - b.remaining;
+    }));
+  };
+
+  /*
+    Se encarga de crear el timer y su notificacion
+   */
   const addTimer = async () => {
     const id = `timer_${Date.now()}`;
 
@@ -93,6 +259,9 @@ export default function TimerScreen() {
     setInputTitle("");
   };
 
+  /*
+    Se encarga de crear el crono
+   */
   const addCrono = async () => {
     const id = `timer_${Date.now()}`;
 
@@ -119,6 +288,9 @@ export default function TimerScreen() {
     setInputTitle("");
   };
 
+  /*
+    Se encarga de actualizar el timer/crono con el nuevo titulo
+   */
   const handleUpdateTimerTitle = async (id: string, newTitle: string) => {
     setTimers((prevTimers) =>
       prevTimers.map((timer) =>
@@ -140,6 +312,9 @@ export default function TimerScreen() {
     }
   };
 
+  /*
+    Se encarga de actualizar el timer con la nueva duracion
+   */
   const handleUpdateTimerDuration = async (id: string) => {
     if (inputHours !== 0 || inputMinutes !== 0 || inputSeconds !== 0) {
       const newDuration = inputHours * 3600 + inputMinutes * 60 + inputSeconds;
@@ -188,6 +363,115 @@ export default function TimerScreen() {
     setInputSeconds(0);
   };
 
+  /*
+    Maneja la eliminacion del timer/crono
+   */
+  const handleDeleteTimer = async (id: string) => {
+    /* Busca si existe el id */
+    const timer = timers.find((timer) => timer.id === id);
+    /* Si tenia notificacion la cancela */
+    if (timer?.notificationId) {
+      await cancelNotifAsync(timer.notificationId);
+    }
+    /* Borra el timer del asyncStorage y actualiza la lista de timers */
+    await AsyncStorage.removeItem(id);
+    setTimers((prev) => prev.filter((timer) => timer.id !== id));
+  };
+
+  /*
+    Maneja la pausa del timer/crono
+   */
+  const handlePauseTimer = async (id: string) => {
+    const updatedTimers: Timer[] = [];
+
+    /* Recorre la lista de timers */
+    for (const timer of timers) {
+      /* Si coincide el id con el que se busca */
+      if (timer.id === id) {
+        /* Si estaba pausado */
+        if (timer.paused) {
+          /* Si ya tenia notificacion se cancela */
+          if (timer.notificationId) {
+            await cancelNotifAsync(timer.notificationId);
+          }
+
+          /* Calcula el nuevo tiempo con la fecha en el que se reanuda el timer */
+          const now = Date.now();
+          const newStartTime = timer.up
+            ? new Date(now - timer.remaining * 1000)
+            : new Date(now - (timer.totalDuration - timer.remaining) * 1000);
+
+          /* Si el timer no es un crono crea la notificacion */
+          let newNotifId: string | null = null;
+          if (!timer.up) {
+            newNotifId = await createNotifAsync(timer.title, id, timer.remaining);
+          }
+
+          /* Guarda el timer reanudado a la lista temporal */
+          updatedTimers.push({
+            ...timer,
+            startTime: newStartTime,
+            paused: false,
+            notificationId: newNotifId ?? null,
+          });
+        } else {
+          /* Si no estaba pausado y tenia notificacion, la cancela */
+          if (timer.notificationId) {
+            await cancelNotifAsync(timer.notificationId);
+          }
+          /* Guarda el timer pausado a la lista temporal */
+          updatedTimers.push({ ...timer, paused: true, notificationId: null });
+        }
+      } else {
+        /* Si no coincide el id se añade a la lista de updatedTimers sin cambios */
+        updatedTimers.push(timer);
+      }
+    }
+
+    /* Actualiza los timers a la lista */
+    setTimers(updatedTimers);
+  };
+
+  /*
+    Maneja el restart del timer/crono
+   */
+  const handleRestartTime = async (id: string) => {
+    /* Busca a ver si existe el id, si no hay termina */
+    const timer = timers.find((t) => t.id === id);
+    if (!timer) return;
+
+    /* Si tenia notificacion la cancela */
+    if (timer.notificationId) {
+      await cancelNotifAsync(timer.notificationId);
+    }
+
+    let notifId: string | null = null;
+
+    /* Si no está pausado y no es crono, crea  una notificacion */
+    if (!timer.paused && !timer.up) {
+      notifId = await createNotifAsync(timer.title, timer.id, timer.initialDuration);
+    }
+
+    /* Actualiza la lista de timers con el restart del timer */
+    setTimers((prev) =>
+      prev.map((timer) =>
+        timer.id === id
+          ? {
+            ...timer,
+            startTime: new Date(),
+            remaining: timer.initialDuration,
+            totalDuration: timer.initialDuration,
+            sentNotif: false,
+            notificationId: notifId ?? null,
+          }
+          : timer
+      )
+    );
+  };
+
+  /*
+    Se encarga de crear la notificacion
+  */
   const createNotifAsync = async (
     title: string,
     id: string,
@@ -202,147 +486,6 @@ export default function TimerScreen() {
     );
   };
 
-  const loadTimers = async () => {
-    const keys = await AsyncStorage.getAllKeys();
-    const timerKeys = keys.filter((key) => key.startsWith("timer_"));
-    const data = await AsyncStorage.multiGet(timerKeys);
-
-    const loaded = data.map(([, value]) => {
-      if (!value) return null;
-      const parsed = JSON.parse(value);
-      return {
-        ...parsed,
-        startTime: new Date(parsed.startTime),
-      };
-    });
-    setTimers(loaded.slice().sort((a, b) => {
-      return a.remaining - b.remaining;
-    }));
-  };
-
-  useEffect(() => {
-    const handler = () => {
-      loadTimers();
-    };
-    eventBus.on('timersUpdated', handler);
-
-    return () => {
-      eventBus.off('timersUpdated', handler);
-    };
-  }, []);
-
-  useEffect(() => {
-    loadTimers();
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTimers((prev) => {
-        const sortedTimers = [...prev].sort((a, b) => a.remaining - b.remaining);
-        return sortedTimers.map((timer) => {
-          if (timer.paused) return timer;
-
-          const now = new Date();
-          const elapsed = (now.getTime() - new Date(timer.startTime).getTime()) / 1000;
-
-          const currentRemaining = timer.up
-            ? elapsed
-            : Math.max(timer.totalDuration - elapsed, 0);
-
-          if (currentRemaining <= 0 && !timer.up && !timer.sentNotif) {
-            return {
-              ...timer,
-              remaining: 0,
-              sentNotif: true,
-            };
-          }
-
-          return {
-            ...timer,
-            remaining: currentRemaining,
-          };
-        });
-      });
-    }, 150);
-
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    const unsubscribe = handleTimerNotifResponse(
-      async (action, timerData, notificationId) => {
-        if (!timerData?.id) return;
-
-        await notifee.cancelNotification(notificationId);
-
-        const timer = timers.find((timer) => timer.id === timerData.id);
-        if (!timer) return;
-
-        if (action === "DISMISS_ONE_TIMER") {
-          if (timer.notificationId) {
-            await cancelNotifAsync(timer.notificationId);
-          }
-          const newNotificationId = await createNotifAsync(timer.title, timer.id, 60);
-          setTimers((prev) =>
-            prev.map((timer) =>
-              timer.id === timerData.id
-                ? {
-                  ...timer,
-                  startTime: new Date(),
-                  totalDuration: 60,
-                  remaining: 60,
-                  sentNotif: false,
-                  notificationId: newNotificationId ?? null,
-                }
-                : timer
-            )
-          );
-        }
-
-        else if (action === "DISMISS_FIVE_TIMER") {
-          if (timer.notificationId) {
-            await cancelNotifAsync(timer.notificationId);
-          }
-          const newNotificationId = await createNotifAsync(timer.title, timer.id, 300);
-          setTimers((prev) =>
-            prev.map((timer) =>
-              timer.id === timerData.id
-                ? {
-                  ...timer,
-                  startTime: new Date(),
-                  totalDuration: 300,
-                  remaining: 300,
-                  sentNotif: false,
-                  notificationId: newNotificationId ?? null,
-                }
-                : timer
-            )
-          );
-        }
-
-        else if (action === "STOP_TIMER") {
-          setTimers((prev) =>
-            prev.map((timer) =>
-              timer.id === timerData.id ? { ...timer, paused: true } : timer
-            )
-          );
-        }
-
-        else {
-          (navigation as any).navigate("TimerScreen");
-        }
-      }
-    );
-
-    return unsubscribe;
-  }, [timers, navigation]);
-
-  useEffect(() => {
-    timers.forEach(async (timer) => {
-      await AsyncStorage.setItem(timer.id, JSON.stringify(timer));
-    });
-  }, [timers]);
-
   const renderModalTimer = () => (
     <Modal
       animationType="fade"
@@ -350,13 +493,17 @@ export default function TimerScreen() {
       visible={addingTimer}
       onRequestClose={() => setAddingTimer(false)}
     >
+      {/* Al pusar fuera del recuadro se cierra */}
       <TouchableOpacity
         activeOpacity={1}
         onPress={() => setAddingTimer(false)}
         style={styles.modalContainer}
       >
+        {/* Muestra la UI para intoducir los valores del timer */}
         <View style={styles.modalView}>
           <Text style={styles.modalText}>Introduce el tiempo:</Text>
+
+          {/* Titulo */}
           <TextInput
             style={styles.inputTitle}
             placeholder="Titulo del temporizador"
@@ -366,6 +513,8 @@ export default function TimerScreen() {
             selectionHandleColor={"rgba(255, 170, 0, 1)"}
             cursorColor={"rgba(255, 170, 0, 1)"}
           />
+
+          {/* Input de Tiempo HH:MM:SS */}
           <View style={{ flexDirection: "row", }}>
             <TextInput
               style={styles.inputTime}
@@ -400,6 +549,8 @@ export default function TimerScreen() {
               cursorColor={"rgba(255, 170, 0, 1)"}
             />
           </View>
+
+          {/* Botones */}
           <View style={{ flexDirection: "row", gap: 10 }}>
             <TouchableOpacity
               style={styles.modalButton}
@@ -433,13 +584,16 @@ export default function TimerScreen() {
       visible={addingCrono}
       onRequestClose={() => setAddingCrono(false)}
     >
+      {/* Al pusar fuera del recuadro se cierra */}
       <TouchableOpacity
         activeOpacity={1}
         onPress={() => setAddingCrono(false)}
         style={styles.modalContainer}
       >
+        {/* Muestra la UI para intoducir los valores del crono */}
         <View style={styles.modalView}>
           <Text style={styles.modalText}>Introduce el tiempo:</Text>
+          {/* Titulo */}
           <TextInput
             style={styles.inputTitle}
             placeholder="Titulo del cronometro"
@@ -449,6 +603,8 @@ export default function TimerScreen() {
             cursorColor={"rgba(255, 170, 0, 1)"}
             onChangeText={setInputTitle}
           />
+
+          {/* Botones */}
           <View style={{ flexDirection: "row", gap: 10 }}>
             <TouchableOpacity
               style={styles.modalButton}
@@ -476,31 +632,35 @@ export default function TimerScreen() {
   );
 
   const renderModalEdit = () => {
+    /* Busca a ver si existe el id, si no hay termina */
     const timer = timers.find((item) => item.id === editId);
     if (!timer) return;
+
     return (
       <Modal
         animationType="fade"
         transparent
-        visible={editing}
+        visible={editingTitle}
         onRequestClose={() => {
           if (editingTime) {
             setEditingTime(false);
           } else {
-            setEditing(false);
+            setEditingTitle(false);
             setEditId("");
           }
         }}
       >
+        {/* Al pusar fuera del recuadro se cierra */}
         <TouchableOpacity
           activeOpacity={1}
           onPress={() => {
-            setEditing(false);
+            setEditingTitle(false);
             setEditingTime(false);
             setEditId("");
           }}
           style={styles.modalContainer}
         >
+          {/* Muestra el icono de timer/crono y el Input para actualizar el titulo */}
           <View key={timer.id} style={styles.modalTimerContainer}>
             <View style={styles.modalTimerTextContainer}>
               {timer.up ? (
@@ -519,24 +679,30 @@ export default function TimerScreen() {
                 selectionHandleColor={"rgba(255, 170, 0, 1)"}
                 cursorColor={"rgba(255, 170, 0, 1)"}
               />
+
+              {/* Boton para cerrar el modal */}
               <TouchableOpacity
                 style={{ paddingRight: 10 }}
                 onPress={() => {
                   if (editingTime) {
                     setEditingTime(false);
                   } else {
-                    setEditing(false);
+                    setEditingTitle(false);
                     setEditId("");
                   }
                 }}>
                 <MaterialCommunityIcons name="close" size={35} color={"rgba(255, 50, 50, 1)"} />
               </TouchableOpacity>
             </View>
+
+            {/* Boton para editar el tiempo del timer */}
             <TouchableOpacity
               activeOpacity={!timer.up ? 0 : 1}
               onPress={() => {
+                /* Si no es crono, se activa */
                 if (!timer.up) {
                   setEditingTime(true);
+                  /* Si no está pausado lo pausa */
                   if (!timer.paused) {
                     handlePauseTimer(timer.id);
                   }
@@ -544,49 +710,55 @@ export default function TimerScreen() {
               }}
             >
               {editingTime ?
-                (<View style={{ margin: 10, flexDirection: "row", alignSelf: "center" }}>
-                  <TextInput
-                    style={[styles.inputTime, { fontSize: 30 }]}
-                    placeholder={Math.floor(timer.totalDuration / 3600).toString().padStart(2, '0')}
-                    placeholderTextColor={"rgba(255, 255, 255, 0.5)"}
-                    keyboardType="numeric"
-                    onChangeText={(text) => setInputHours(parseInt(text) || 0)}
-                    selectionColor={"rgba(255, 170, 0, 0.5)"}
-                    selectionHandleColor={"rgba(255, 170, 0, 1)"}
-                    cursorColor={"rgba(255, 170, 0, 1)"}
+                (
+                  /* Muestra los input para actualizar el tiempo */
+                  <View style={{ margin: 10, flexDirection: "row", alignSelf: "center" }}>
+                    <TextInput
+                      style={[styles.inputTime, { fontSize: 30 }]}
+                      placeholder={Math.floor(timer.totalDuration / 3600).toString().padStart(2, '0')}
+                      placeholderTextColor={"rgba(255, 255, 255, 0.5)"}
+                      keyboardType="numeric"
+                      onChangeText={(text) => setInputHours(parseInt(text) || 0)}
+                      selectionColor={"rgba(255, 170, 0, 0.5)"}
+                      selectionHandleColor={"rgba(255, 170, 0, 1)"}
+                      cursorColor={"rgba(255, 170, 0, 1)"}
+                    />
+                    <Text style={[styles.inputSep, { fontSize: 30 }]}>:</Text>
+                    <TextInput
+                      style={[styles.inputTime, { fontSize: 30 }]}
+                      placeholder={(Math.floor(timer.totalDuration / 60) % 60).toString().padStart(2, '0')}
+                      placeholderTextColor={"rgba(255, 255, 255, 0.5)"}
+                      keyboardType="numeric"
+                      onChangeText={(text) => setInputMinutes(parseInt(text) || 0)}
+                      selectionColor={"rgba(255, 170, 0, 0.5)"}
+                      selectionHandleColor={"rgba(255, 170, 0, 1)"}
+                      cursorColor={"rgba(255, 170, 0, 1)"}
+                    />
+                    <Text style={[styles.inputSep, { fontSize: 30 }]}>:</Text>
+                    <TextInput
+                      style={[styles.inputTime, { fontSize: 30 }]}
+                      placeholder={Math.floor(timer.totalDuration % 60).toString().padStart(2, '0')}
+                      placeholderTextColor={"rgba(255, 255, 255, 0.5)"}
+                      keyboardType="numeric"
+                      onChangeText={(text) => setInputSeconds(parseInt(text) || 0)}
+                      selectionColor={"rgba(255, 170, 0, 0.5)"}
+                      selectionHandleColor={"rgba(255, 170, 0, 1)"}
+                      cursorColor={"rgba(255, 170, 0, 1)"}
+                    />
+                  </View>
+                ) : (
+                  /* Si no está editando, muestra la animacion del tiempo */
+                  <CircleTimeComponent
+                    currentTime={timer.remaining}
+                    up={timer.up}
+                    paused={timer.paused}
+                    totalDuration={timer.totalDuration}
+                    size={200}
                   />
-                  <Text style={[styles.inputSep, { fontSize: 30 }]}>:</Text>
-                  <TextInput
-                    style={[styles.inputTime, { fontSize: 30 }]}
-                    placeholder={(Math.floor(timer.totalDuration / 60) % 60).toString().padStart(2, '0')}
-                    placeholderTextColor={"rgba(255, 255, 255, 0.5)"}
-                    keyboardType="numeric"
-                    onChangeText={(text) => setInputMinutes(parseInt(text) || 0)}
-                    selectionColor={"rgba(255, 170, 0, 0.5)"}
-                    selectionHandleColor={"rgba(255, 170, 0, 1)"}
-                    cursorColor={"rgba(255, 170, 0, 1)"}
-                  />
-                  <Text style={[styles.inputSep, { fontSize: 30 }]}>:</Text>
-                  <TextInput
-                    style={[styles.inputTime, { fontSize: 30 }]}
-                    placeholder={Math.floor(timer.totalDuration % 60).toString().padStart(2, '0')}
-                    placeholderTextColor={"rgba(255, 255, 255, 0.5)"}
-                    keyboardType="numeric"
-                    onChangeText={(text) => setInputSeconds(parseInt(text) || 0)}
-                    selectionColor={"rgba(255, 170, 0, 0.5)"}
-                    selectionHandleColor={"rgba(255, 170, 0, 1)"}
-                    cursorColor={"rgba(255, 170, 0, 1)"}
-                  />
-                </View>)
-                : (<CircleTimeComponent
-                  currentTime={timer.remaining}
-                  up={timer.up}
-                  paused={timer.paused}
-                  totalDuration={timer.totalDuration}
-                  size={200}
-                />)
-              }
+                )}
             </TouchableOpacity>
+
+            {/* Botones */}
             <View style={{ margin: 10, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
               <TouchableOpacity
                 onPress={() => {
@@ -603,17 +775,23 @@ export default function TimerScreen() {
               >
                 <MaterialCommunityIcons name={"trash-can-outline"} size={35} color={"rgba(255, 50, 50, 1)"} />
               </TouchableOpacity>
+
               {!editingTime ?
-                (<TouchableOpacity
-                  onPress={() => handleRestartTime(timer.id)}
-                >
-                  <MaterialCommunityIcons name={"restart"} size={40} color={"rgba(255, 255, 255, 1)"} />
-                </TouchableOpacity>)
-                : (<TouchableOpacity
-                  onPress={() => handleUpdateTimerDuration(timer.id)}
-                >
-                  <MaterialCommunityIcons name={"check"} size={40} color={"rgba(255, 255, 255, 1)"} />
-                </TouchableOpacity>)}
+                (
+                  /* Si no esta editando, muestra el boton restart */
+                  <TouchableOpacity
+                    onPress={() => handleRestartTime(timer.id)}
+                  >
+                    <MaterialCommunityIcons name={"restart"} size={40} color={"rgba(255, 255, 255, 1)"} />
+                  </TouchableOpacity>
+                ) : (
+                  /* Si está editando, muestra el boton para aceptar los cambios */
+                  <TouchableOpacity
+                    onPress={() => handleUpdateTimerDuration(timer.id)}
+                  >
+                    <MaterialCommunityIcons name={"check"} size={40} color={"rgba(255, 255, 255, 1)"} />
+                  </TouchableOpacity>
+                )}
             </View>
           </View>
         </TouchableOpacity>
@@ -624,15 +802,18 @@ export default function TimerScreen() {
   const renderTimers = () => {
     return (
       timers.length > 0 ? (
+        /* Recorre la lista de timers */
         timers.map((timer) => (
+          /* Al pulsar en el timer/crono se abre el modal de editar */
           <TouchableOpacity
-            onPress={() => {
-              setEditId(timer.id);
-              setEditing(true);
-            }}
             key={timer.id}
             style={styles.timerContainer}
+            onPress={() => {
+              setEditId(timer.id);
+              setEditingTitle(true);
+            }}
           >
+            {/* Muestra el icono de timer/crono y su titulo */}
             <View style={styles.timerTextContainer}>
               {timer.up ? (
                 <MaterialCommunityIcons name="timer" size={30} color="rgba(255, 255, 255, 1)" />
@@ -641,6 +822,8 @@ export default function TimerScreen() {
               )}
               <Text style={styles.timerText}>{timer.title}</Text>
             </View>
+
+            {/* Muestra la rueda animada del tiempo */}
             <CircleTimeComponent
               currentTime={timer.remaining}
               up={timer.up}
@@ -648,6 +831,8 @@ export default function TimerScreen() {
               totalDuration={timer.totalDuration}
               size={120}
             />
+
+            {/* Botones */}
             <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-end" }}>
               <TouchableOpacity
                 onPress={() => handlePauseTimer(timer.id)}
@@ -670,89 +855,10 @@ export default function TimerScreen() {
           </TouchableOpacity >
         ))
       ) : (
+        /* Si no hay timers muestra texto */
         <View style={{ flex: 1, alignItems: "center", justifyContent: "center" }}>
           <Text style={styles.timerText}>No hay temporizadores</Text>
         </View>
-      )
-    );
-  };
-
-  const handleDeleteTimer = async (id: string) => {
-    const timer = timers.find((timer) => timer.id === id);
-    if (timer?.notificationId) {
-      await cancelNotifAsync(timer.notificationId);
-    }
-    await AsyncStorage.removeItem(id);
-    setTimers((prev) => prev.filter((timer) => timer.id !== id));
-  };
-
-  const handlePauseTimer = async (id: string) => {
-    const updatedTimers: Timer[] = [];
-
-    for (const timer of timers) {
-      if (timer.id !== id) {
-        updatedTimers.push(timer);
-        continue;
-      }
-
-      if (timer.paused) {
-        if (timer.notificationId) {
-          await cancelNotifAsync(timer.notificationId);
-        }
-
-        const now = Date.now();
-        const newStartTime = timer.up
-          ? new Date(now - timer.remaining * 1000)
-          : new Date(now - (timer.totalDuration - timer.remaining) * 1000);
-
-        let newNotifId: string | null = null;
-        if (!timer.up) {
-          newNotifId = await createNotifAsync(timer.title, id, timer.remaining);
-        }
-
-        updatedTimers.push({
-          ...timer,
-          startTime: newStartTime,
-          paused: false,
-          notificationId: newNotifId ?? null,
-        });
-      } else {
-        if (timer.notificationId) {
-          await cancelNotifAsync(timer.notificationId);
-        }
-        updatedTimers.push({ ...timer, paused: true, notificationId: null });
-      }
-    }
-
-    setTimers(updatedTimers);
-  };
-
-  const handleRestartTime = async (id: string) => {
-    const timer = timers.find((t) => t.id === id);
-    if (!timer) return;
-
-    if (timer.notificationId) {
-      await cancelNotifAsync(timer.notificationId);
-    }
-
-    let notifId: string | null = null;
-
-    if (!timer.paused && !timer.up) {
-      notifId = await createNotifAsync(timer.title, timer.id, timer.initialDuration);
-    }
-
-    setTimers((prev) =>
-      prev.map((timer) =>
-        timer.id === id
-          ? {
-            ...timer,
-            startTime: new Date(),
-            remaining: timer.initialDuration,
-            totalDuration: timer.initialDuration,
-            sentNotif: false,
-            notificationId: notifId ?? null,
-          }
-          : timer
       )
     );
   };
